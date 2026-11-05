@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Error Range</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: whiteboard tool, one wide working panel under a slim header; large type for projection */
+:root{
+  --bg:#EEF3FA; --panel:#FFFFFF; --ink:#14213D; --muted:#56627A; --line:#D3DCE9;
+  --accent:#2F5DCC; --accent-ink:#FFFFFF; --warm:#D9661A; --good:#18915A; --bad:#C2372F; --soft:#E3EBF8;
+  --body:"Atkinson Hyperlegible",Verdana,Arial,sans-serif; --mono:"IBM Plex Mono",Consolas,"Courier New",monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0E1524; --panel:#16213A; --ink:#E9EFF9; --muted:#A0ACC2; --line:#2B3A57;
+  --accent:#86A8FF; --accent-ink:#0E1524; --warm:#F2A05A; --good:#4FCB8F; --bad:#F07B72; --soft:#1F2D4C; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E1524; --panel:#16213A; --ink:#E9EFF9; --muted:#A0ACC2; --line:#2B3A57;
+  --accent:#86A8FF; --accent-ink:#0E1524; --warm:#F2A05A; --good:#4FCB8F; --bad:#F07B72; --soft:#1F2D4C; color-scheme:dark}
+[hidden]{display:none!important}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:18px;line-height:1.45;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:18px 32px}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+header.top{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px 20px}
+header.top h1{font-size:clamp(26px,3.2vw,38px);margin:0;text-wrap:balance;letter-spacing:-.01em}
+header.top .spec{font-family:var(--mono);font-size:15px;color:var(--muted);letter-spacing:.04em}
+.tabs{display:flex;flex-wrap:wrap;gap:8px}
+.tabs button{font:inherit;font-weight:700;border:2px solid var(--line);background:var(--panel);color:var(--ink);padding:10px 18px;border-radius:10px;cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px;min-width:0}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}
+@media (max-width:820px){.grid2{grid-template-columns:minmax(0,1fr)}}
+label{font-weight:700;display:block;margin-bottom:4px}
+.row{display:flex;flex-wrap:wrap;gap:12px;align-items:end}
+input[type=number],input[type=text],select{font:inherit;font-family:var(--mono);font-size:20px;padding:8px 10px;border:2px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);min-width:0}
+input[type=range]{width:100%;accent-color:var(--accent)}
+button.go{font:inherit;font-weight:700;background:var(--accent);color:var(--accent-ink);border:0;border-radius:10px;padding:11px 20px;cursor:pointer}
+button.ghost{font:inherit;font-weight:700;background:transparent;color:var(--accent);border:2px solid var(--accent);border-radius:10px;padding:9px 18px;cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--warm);outline-offset:2px}
+.big{font-family:var(--mono);font-size:clamp(24px,3vw,34px);font-weight:600}
+.mono{font-family:var(--mono)}
+.muted{color:var(--muted)}
+.steps{display:flex;flex-direction:column;gap:6px;font-family:var(--mono);font-size:18px}
+.steps div{padding:6px 10px;background:var(--soft);border-radius:8px;overflow-x:auto}
+.good{color:var(--good)} .bad{color:var(--bad)} .warm{color:var(--warm)}
+.chip{display:inline-block;font-size:15px;font-weight:700;padding:3px 10px;border-radius:999px;background:var(--soft)}
+table{border-collapse:collapse;width:100%;font-size:17px}
+th,td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left}
+th{font-size:14px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.scroll{overflow-x:auto}
+canvas{display:block;width:100%;max-width:100%;touch-action:none}
+sup{font-size:.7em}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+<style>body{margin:0}img{max-width:100%}</style>
+</head>
+<body>
+<div class="wrap">
+<header class="top"><h1>Error Range</h1><span class="spec">AQA 7408 · 3.1.2 random and systematic errors</span></header>
+<div class="grid2">
+ <div class="panel">
+  <p style="margin:0 0 10px"><b>Scenario:</b> measuring a length whose true value is <span class="mono">50.0 mm</span>.</p>
+  <label for="preset">Preset</label>
+  <select id="preset" style="width:100%;font-family:var(--body);font-size:18px">
+   <option value="custom">Set your own</option>
+   <option value="ideal">Good instrument, careful technique</option>
+   <option value="zero">Ruler with a worn end (zero error)</option>
+   <option value="parallax">Reading from a consistent angle (parallax)</option>
+   <option value="react">Stopwatch-style reaction errors</option>
+   <option value="cheap">Coarse instrument (1 mm steps)</option>
+  </select>
+  <div style="margin-top:16px"><label for="sys">Systematic error (shifts every reading): <span id="sysv" class="mono"></span></label><input id="sys" type="range" min="-4" max="4" step="0.1" value="0"></div>
+  <div style="margin-top:10px"><label for="ran">Random error (spread of readings): <span id="ranv" class="mono"></span></label><input id="ran" type="range" min="0" max="3" step="0.1" value="0.6"></div>
+  <div style="margin-top:10px"><label for="res">Resolution of instrument</label><select id="res"><option value="0.01">0.01 mm (micrometer)</option><option value="0.1" selected>0.1 mm (vernier)</option><option value="1">1 mm (ruler)</option></select></div>
+  <div class="row" style="margin-top:16px"><button class="go" id="one">Take 1 reading</button><button class="go" id="ten">Take 10</button><button class="ghost" id="clr">Clear</button></div>
+ </div>
+ <div class="panel"><canvas id="board" width="560" height="420" aria-label="Target showing where readings land"></canvas></div>
+</div>
+<div class="panel">
+ <canvas id="line" width="1140" height="150" aria-label="Number line of readings"></canvas>
+ <div class="grid2" style="margin-top:10px">
+  <div>
+   <p class="muted" style="margin:0">Readings (mm)</p>
+   <p id="list" class="mono" style="font-size:18px;word-break:break-word;min-height:1.5em"></p>
+  </div>
+  <div class="steps" id="stats"></div>
+ </div>
+ <p id="verdict" style="font-size:20px;margin:12px 0 0"></p>
+</div>
+</div>
+<script>
+const $=id=>document.getElementById(id);const TRUE=50;let R=[],R2=[];
+const presets={ideal:[0,0.2,"0.01"],zero:[2,0.3,"0.1"],parallax:[-1.2,0.4,"1"],react:[0,2.2,"0.1"],cheap:[0,0.2,"1"]};
+function css(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim()}
+function gauss(){let u=0,v=0;while(!u)u=Math.random();while(!v)v=Math.random();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v)}
+function dp(r){return r==="0.01"?2:r==="0.1"?1:0}
+function take(n){const s=+$("sys").value,r=+$("ran").value,res=+$("res").value;for(let i=0;i<n;i++){const x=TRUE+s+r*gauss();R.push(Math.round(x/res)*res);R2.push(r*gauss())}draw()}
+function setup(c){const dpr=window.devicePixelRatio||1;const w=c.clientWidth,h=c.clientWidth*c.height/c.width;if(c.width!==Math.round(w*dpr)){c._h=c.height/c.width;c.width=Math.round(w*dpr);c.height=Math.round(w*dpr*(c._h))}const x=c.getContext("2d");x.setTransform(c.width/w,0,0,c.width/w,0,0);return [x,w,c.height/(c.width/w)]}
+function draw(){
+ $("sysv").textContent=(+$("sys").value).toFixed(1)+" mm";$("ranv").textContent="± "+(+$("ran").value).toFixed(1)+" mm";
+ const [g,w,h]=setup($("board"));g.clearRect(0,0,w,h);const cx=w/2,cy=h/2,sc=Math.min(w,h)/12;
+ const rings=[5,4,3,2,1];rings.forEach((k,i)=>{g.beginPath();g.arc(cx,cy,k*sc,0,7);g.fillStyle=i%2?css("--panel"):css("--soft");g.fill();g.strokeStyle=css("--line");g.lineWidth=1;g.stroke()});
+ g.beginPath();g.arc(cx,cy,0.5*sc,0,7);g.fillStyle=css("--good");g.fill();
+ g.fillStyle=css("--muted");g.font="15px "+css("--body");g.fillText("bullseye = true value",10,h-12);
+ R.forEach((x,i)=>{const dx=(x-TRUE),dy=R2[i];g.beginPath();g.arc(cx+dx*sc,cy-dy*sc,7,0,7);g.fillStyle=i===R.length-1?css("--warm"):css("--accent");g.globalAlpha=.85;g.fill();g.globalAlpha=1});
+ // number line
+ const [l,W,H]=setup($("line"));l.clearRect(0,0,W,H);const lo=TRUE-6,hi=TRUE+6,X=v=>30+(v-lo)/(hi-lo)*(W-60);const y0=H-40;
+ l.strokeStyle=css("--ink");l.lineWidth=2;l.beginPath();l.moveTo(30,y0);l.lineTo(W-30,y0);l.stroke();
+ l.fillStyle=css("--muted");l.font="15px "+css("--mono");l.textAlign="center";for(let v=lo;v<=hi;v++){l.beginPath();l.moveTo(X(v),y0);l.lineTo(X(v),y0+8);l.stroke();l.fillText(v,X(v),y0+26)}
+ l.strokeStyle=css("--good");l.lineWidth=3;l.beginPath();l.moveTo(X(TRUE),12);l.lineTo(X(TRUE),y0);l.stroke();l.fillStyle=css("--good");l.textAlign="left";l.fillText("true value",X(TRUE)+6,22);
+ const stack={};R.forEach((v,i)=>{const k=v.toFixed(2);stack[k]=(stack[k]||0)+1;l.beginPath();l.arc(X(Math.max(lo,Math.min(hi,v))),y0-8-(stack[k]-1)*11,5,0,7);l.fillStyle=i===R.length-1?css("--warm"):css("--accent");l.fill()});
+ const d=dp($("res").value);$("list").textContent=R.length?R.map(v=>v.toFixed(d)).join(", "):"No readings yet. Take some.";
+ if(R.length<2){$("stats").innerHTML="";$("verdict").textContent="";if(R.length===1){const m=R[0];l.strokeStyle=css("--warm")}return}
+ const mean=R.reduce((a,b)=>a+b,0)/R.length,mx=Math.max(...R),mn=Math.min(...R),half=(mx-mn)/2;
+ l.strokeStyle=css("--warm");l.lineWidth=3;l.setLineDash([6,4]);l.beginPath();l.moveTo(X(mean),12);l.lineTo(X(mean),y0);l.stroke();l.setLineDash([]);l.fillStyle=css("--warm");l.textAlign="right";l.fillText("mean",X(mean)-6,22);
+ const uRes=+$("res").value/2;const u=Math.max(half,uRes);
+ $("stats").innerHTML=`<div>mean = ${mean.toFixed(d+1)} mm</div><div>range = ${mx.toFixed(d)} − ${mn.toFixed(d)} = ${(mx-mn).toFixed(d)} mm</div><div>uncertainty ≈ half the range = ± ${u.toFixed(d+1)} mm${half<uRes?" (limited by resolution)":""}</div><div>mean − true value = ${(mean-TRUE>=0?"+":"")}${(mean-TRUE).toFixed(d+1)} mm</div>`;
+ const off=Math.abs(mean-TRUE),acc=off<=Math.max(u,0.3),prec=half<=0.6;
+ $("verdict").innerHTML=`<span class="chip">${prec?"Precise":"Not precise"}</span> <span class="chip">${acc?"Accurate":"Not accurate"}</span> &nbsp;${!acc&&prec?"Close together but off target: a <b>systematic</b> error. Repeating will not help; recalibrate or correct the zero.":acc&&!prec?"Centred on the true value but scattered: <b>random</b> error. Repeat and take a mean.":acc&&prec?"Close together and centred on the true value.":"Scattered and off target: both kinds of error are present."}`;
+}
+$("one").onclick=()=>take(1);$("ten").onclick=()=>take(10);$("clr").onclick=()=>{R=[];R2=[];draw()};
+["sys","ran","res"].forEach(i=>$(i).addEventListener("input",()=>{$("preset").value="custom";draw()}));
+$("preset").onchange=()=>{const p=presets[$("preset").value];if(p){$("sys").value=p[0];$("ran").value=p[1];$("res").value=p[2];R=[];R2=[];take(10)}};
+window.addEventListener("resize",draw);matchMedia("(prefers-color-scheme: dark)").addEventListener("change",draw);
+take(10);
+</script>
+
+</body>
+</html>
