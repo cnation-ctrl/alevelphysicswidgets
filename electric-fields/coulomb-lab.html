@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Coulomb's Law Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: whiteboard tool, one wide working panel under a slim header; large type for projection */
+:root{
+  --bg:#EEF3FA; --panel:#FFFFFF; --ink:#14213D; --muted:#56627A; --line:#D3DCE9;
+  --accent:#2F5DCC; --accent-ink:#FFFFFF; --warm:#D9661A; --good:#18915A; --bad:#C2372F; --soft:#E3EBF8;
+  --body:"Atkinson Hyperlegible",Verdana,Arial,sans-serif; --mono:"IBM Plex Mono",Consolas,"Courier New",monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0E1524; --panel:#16213A; --ink:#E9EFF9; --muted:#A0ACC2; --line:#2B3A57;
+  --accent:#86A8FF; --accent-ink:#0E1524; --warm:#F2A05A; --good:#4FCB8F; --bad:#F07B72; --soft:#1F2D4C; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E1524; --panel:#16213A; --ink:#E9EFF9; --muted:#A0ACC2; --line:#2B3A57;
+  --accent:#86A8FF; --accent-ink:#0E1524; --warm:#F2A05A; --good:#4FCB8F; --bad:#F07B72; --soft:#1F2D4C; color-scheme:dark}
+[hidden]{display:none!important}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:18px;line-height:1.45;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:18px 32px}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+header.top{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px 20px}
+header.top h1{font-size:clamp(26px,3.2vw,38px);margin:0;text-wrap:balance;letter-spacing:-.01em}
+header.top .spec{font-family:var(--mono);font-size:15px;color:var(--muted);letter-spacing:.04em}
+.tabs{display:flex;flex-wrap:wrap;gap:8px}
+.tabs button{font:inherit;font-weight:700;border:2px solid var(--line);background:var(--panel);color:var(--ink);padding:10px 18px;border-radius:10px;cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px;min-width:0}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}
+@media (max-width:820px){.grid2{grid-template-columns:minmax(0,1fr)}}
+label{font-weight:700;display:block;margin-bottom:4px}
+.row{display:flex;flex-wrap:wrap;gap:12px;align-items:end}
+input[type=number],input[type=text],select{font:inherit;font-family:var(--mono);font-size:20px;padding:8px 10px;border:2px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);min-width:0}
+input[type=range]{width:100%;accent-color:var(--accent)}
+button.go{font:inherit;font-weight:700;background:var(--accent);color:var(--accent-ink);border:0;border-radius:10px;padding:11px 20px;cursor:pointer}
+button.ghost{font:inherit;font-weight:700;background:transparent;color:var(--accent);border:2px solid var(--accent);border-radius:10px;padding:9px 18px;cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--warm);outline-offset:2px}
+.big{font-family:var(--mono);font-size:clamp(24px,3vw,34px);font-weight:600}
+.mono{font-family:var(--mono)}
+.muted{color:var(--muted)}
+.steps{display:flex;flex-direction:column;gap:6px;font-family:var(--mono);font-size:18px}
+.steps div{padding:6px 10px;background:var(--soft);border-radius:8px;overflow-x:auto}
+.good{color:var(--good)} .bad{color:var(--bad)} .warm{color:var(--warm)}
+.chip{display:inline-block;font-size:15px;font-weight:700;padding:3px 10px;border-radius:999px;background:var(--soft)}
+table{border-collapse:collapse;width:100%;font-size:17px}
+th,td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left}
+th{font-size:14px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.scroll{overflow-x:auto}
+canvas{display:block;width:100%;max-width:100%;touch-action:none}
+sup{font-size:.7em}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+.formula{font-family:var(--mono);font-size:20px;padding:10px 14px;background:var(--soft);border-radius:10px;overflow-x:auto}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:18px}
+.kv b{font-weight:700}
+.note{font-size:16px;color:var(--muted)}
+.callout{border-left:5px solid var(--warm);background:var(--soft);padding:10px 14px;border-radius:8px}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:15px}
+.legend span::before{content:"";display:inline-block;width:14px;height:4px;border-radius:2px;margin-right:6px;vertical-align:middle;background:var(--c)}
+</style>
+<style>body{margin:0}img{max-width:100%}</style>
+<script>
+const $=id=>document.getElementById(id);
+const cv=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const EPS0=8.85e-12, K=1/(4*Math.PI*8.85e-12), E_CH=1.60e-19, ME_=9.11e-31, MP=1.673e-27, G=6.67e-11;
+/* number in standard form as HTML, n significant figures */
+function sf(x,n=3){
+  if(x===0)return "0";
+  if(!isFinite(x))return "∞";
+  const neg=x<0;x=Math.abs(x);
+  let e=Math.floor(Math.log10(x));let m=x/Math.pow(10,e);let ms=m.toPrecision(n);
+  if(parseFloat(ms)>=10){e++;ms=(m/10).toPrecision(n);}
+  let s;
+  if(e>=-2&&e<n&&e<=3){s=x.toPrecision(n);if(s.includes("e"))s=ms+" × 10<sup>"+String(e).replace("-","−")+"</sup>";}
+  else s=ms+" × 10<sup>"+String(e).replace("-","−")+"</sup>";
+  return (neg?"−":"")+s;
+}
+/* plain-text version for canvas labels */
+function sft(x,n=3){return sf(x,n).replace(/<sup>/g,"^").replace(/<\/sup>/g,"").replace(" × 10^","e").replace(/e(−?\d+)/,(a,b)=>"×10"+sup(b));}
+function sup(s){const m={"0":"⁰","1":"¹","2":"²","3":"³","4":"⁴","5":"⁵","6":"⁶","7":"⁷","8":"⁸","9":"⁹","−":"⁻","-":"⁻"};return String(s).split("").map(c=>m[c]||c).join("");}
+function setup(c,aspect){
+  const dpr=window.devicePixelRatio||1,w=c.clientWidth||600,h=Math.round(w*aspect);
+  c.width=w*dpr;c.height=h*dpr;c.style.height=h+"px";
+  const g=c.getContext("2d");g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,w,h);
+  return {g,w,h};
+}
+function niceStep(range,target){const raw=range/target;const p=Math.pow(10,Math.floor(Math.log10(raw)));const f=raw/p;return (f<1.5?1:f<3?2:f<7?5:10)*p;}
+/* axes: box {x,y,w,h}; returns mapping functions */
+function axes(g,box,xmin,xmax,ymin,ymax,opt={}){
+  const X=x=>box.x+(x-xmin)/(xmax-xmin)*box.w, Y=y=>box.y+box.h-(y-ymin)/(ymax-ymin)*box.h;
+  const ink=cv("--ink"),line=cv("--line"),muted=cv("--muted");
+  g.save();g.font="14px "+cv("--body");g.lineWidth=1;
+  const xs=opt.xstep||niceStep(xmax-xmin,6), ys=opt.ystep||niceStep(ymax-ymin,5);
+  g.strokeStyle=line;g.fillStyle=muted;g.textAlign="center";g.textBaseline="top";
+  for(let x=Math.ceil(xmin/xs)*xs;x<=xmax+1e-9*xs;x+=xs){g.beginPath();g.moveTo(X(x),box.y);g.lineTo(X(x),box.y+box.h);g.stroke();g.fillText(opt.xfmt?opt.xfmt(x):+x.toPrecision(3),X(x),Math.min(box.y+box.h,Math.max(box.y,Y(0)))+4);}
+  g.textAlign="right";g.textBaseline="middle";
+  for(let y=Math.ceil(ymin/ys)*ys;y<=ymax+1e-9*ys;y+=ys){g.beginPath();g.moveTo(box.x,Y(y));g.lineTo(box.x+box.w,Y(y));g.stroke();g.fillText(opt.yfmt?opt.yfmt(y):+y.toPrecision(3),box.x-6,Y(y));}
+  g.strokeStyle=ink;g.lineWidth=2;g.beginPath();
+  const y0=Math.min(box.y+box.h,Math.max(box.y,Y(0)));g.moveTo(box.x,y0);g.lineTo(box.x+box.w,y0);
+  g.moveTo(box.x,box.y);g.lineTo(box.x,box.y+box.h);g.stroke();
+  g.fillStyle=ink;g.font="bold 15px "+cv("--body");
+  if(opt.xl){g.textAlign="right";g.textBaseline="bottom";g.fillText(opt.xl,box.x+box.w,y0-4);}
+  if(opt.yl){g.textAlign="left";g.textBaseline="top";g.fillText(opt.yl,box.x+6,box.y-2);}
+  g.restore();
+  return {X,Y};
+}
+function arrow(g,x1,y1,x2,y2,col,wid=3,head=10){
+  const a=Math.atan2(y2-y1,x2-x1);g.save();g.strokeStyle=col;g.fillStyle=col;g.lineWidth=wid;
+  g.beginPath();g.moveTo(x1,y1);g.lineTo(x2-Math.cos(a)*head*0.6,y2-Math.sin(a)*head*0.6);g.stroke();
+  g.beginPath();g.moveTo(x2,y2);g.lineTo(x2-head*Math.cos(a-0.4),y2-head*Math.sin(a-0.4));g.lineTo(x2-head*Math.cos(a+0.4),y2-head*Math.sin(a+0.4));g.closePath();g.fill();g.restore();
+}
+function tabs(onchange){
+  document.querySelectorAll(".tabs button").forEach(b=>b.addEventListener("click",()=>{
+    document.querySelectorAll(".tabs button").forEach(x=>x.setAttribute("aria-selected",x===b));
+    document.querySelectorAll("[data-panel]").forEach(p=>p.hidden=p.dataset.panel!==b.dataset.tab);
+    if(onchange)onchange(b.dataset.tab);
+  }));
+}
+function onResize(f){let t;window.addEventListener("resize",()=>{clearTimeout(t);t=setTimeout(f,80);});
+  if(window.matchMedia)window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change",f);}
+
+</script>
+</head>
+<body>
+<div class="wrap">
+<header class="top"><h1>Coulomb's Law Lab</h1><span class="spec">AQA 7408 · 3.7.3.1 Coulomb's law</span></header>
+<div class="tabs" role="tablist">
+ <button data-tab="two" aria-selected="true">Two point charges</button>
+ <button data-tab="cmp" aria-selected="false">Electric vs gravity</button>
+ <button data-tab="quiz" aria-selected="false">Quick-fire quiz</button>
+</div>
+
+<div data-panel="two" class="grid2">
+ <div class="panel">
+  <div class="row">
+   <div style="flex:1;min-width:200px"><label for="q1">Q<sub>1</sub> = <span id="q1v" class="mono"></span> nC</label><input id="q1" type="range" min="-50" max="50" step="1" value="20"></div>
+   <div style="flex:1;min-width:200px"><label for="q2">Q<sub>2</sub> = <span id="q2v" class="mono"></span> nC</label><input id="q2" type="range" min="-50" max="50" step="1" value="-10"></div>
+  </div>
+  <div style="margin-top:10px"><label for="r">Separation r = <span id="rv" class="mono"></span> cm</label><input id="r" type="range" min="2" max="30" step="0.5" value="10"></div>
+  <div class="row" style="margin-top:10px">
+   <button class="ghost" id="dbl">Double r</button><button class="ghost" id="half">Halve r</button><button class="ghost" id="dq">Double Q<sub>1</sub></button>
+  </div>
+  <div class="formula" style="margin-top:12px">F = (1 / 4πε<sub>0</sub>) × Q<sub>1</sub>Q<sub>2</sub> / r<sup>2</sup> &nbsp;&nbsp; ε<sub>0</sub> = 8.85 × 10<sup>−12</sup> F m<sup>−1</sup></div>
+  <div class="steps" id="steps" style="margin-top:12px"></div>
+  <p class="big" id="fout" style="margin:12px 0 4px"></p>
+  <p id="kind" class="chip"></p>
+  <p class="note" id="ratio"></p>
+ </div>
+ <div class="panel">
+  <canvas id="scene" aria-label="Two charged spheres with force arrows"></canvas>
+  <canvas id="fg" style="margin-top:12px" aria-label="Graph of force against separation"></canvas>
+  <div class="legend" style="margin-top:6px"><span style="--c:var(--accent)">F against r (inverse square)</span><span style="--c:var(--warm)">current r</span></div>
+ </div>
+</div>
+
+<div data-panel="cmp" class="grid2" hidden>
+ <div class="panel">
+  <label for="pair">Pair of particles</label>
+  <select id="pair" style="width:100%;font-family:var(--body);font-size:18px">
+   <option value="ep">electron and proton (hydrogen atom)</option>
+   <option value="pp">proton and proton (inside a nucleus)</option>
+   <option value="ee">electron and electron</option>
+   <option value="aa">alpha particle and gold nucleus</option>
+  </select>
+  <div style="margin-top:12px"><label for="rc">Separation r / m</label><input id="rc" type="text" size="12" value="5.3e-11"></div>
+  <div class="steps" id="csteps" style="margin-top:12px"></div>
+  <p class="big" id="cout" style="margin:12px 0 4px"></p>
+  <div class="callout" id="cnote"></div>
+ </div>
+ <div class="panel">
+  <canvas id="bars" aria-label="Log scale bars comparing electric and gravitational force"></canvas>
+  <p class="note">Bars use a log scale: each grid line is a factor of 10. Change r and watch the ratio: it does not change, because both forces are inverse square.</p>
+ </div>
+</div>
+
+<div data-panel="quiz" class="panel" hidden>
+ <p class="muted" style="margin-top:0">Work it out on your mini whiteboard, then type your answer. Use ε<sub>0</sub> = 8.85 × 10<sup>−12</sup> F m<sup>−1</sup>, e = 1.60 × 10<sup>−19</sup> C.</p>
+ <p class="big" id="qq" style="font-size:24px"></p>
+ <div class="row"><div><label for="qa">Your answer</label><input id="qa" type="text" size="14" placeholder="e.g. 2.3e-8"></div><span id="qu" class="mono"></span>
+ <button class="go" id="qcheck">Check</button><button class="ghost" id="qnext">Next question</button><button class="ghost" id="qshow">Show working</button></div>
+ <p id="qfb" style="font-weight:700"></p>
+ <div class="steps" id="qw" hidden></div>
+ <p class="note">Score: <span id="qs">0 / 0</span>. Answers within 2% are accepted.</p>
+</div>
+</div>
+<script>
+const num=s=>parseFloat(String(s).replace(/−/g,"-").replace("×10^","e").replace("x10^","e"));
+let rScale=1;
+function readTwo(){const q1=+$("q1").value*1e-9,q2=+$("q2").value*1e-9,r=+$("r").value/100;return {q1,q2,r};}
+function drawTwo(){
+  const {q1,q2,r}=readTwo();
+  $("q1v").textContent=(+$("q1").value).toString().replace("-","−");$("q2v").textContent=(+$("q2").value).toString().replace("-","−");$("rv").textContent=(+$("r").value).toFixed(1);
+  const F=K*q1*q2/(r*r);
+  $("steps").innerHTML=`<div>Q<sub>1</sub> = ${sf(q1)} C, Q<sub>2</sub> = ${sf(q2)} C, r = ${sf(r)} m</div>
+  <div>F = (${sf(q1)} × ${sf(q2)}) / (4π × 8.85 × 10<sup>−12</sup> × (${sf(r)})<sup>2</sup>)</div>
+  <div>F = ${sf(F)} N</div>`;
+  $("fout").innerHTML="|F| = "+sf(Math.abs(F))+" N";
+  const k=$("kind");
+  if(q1===0||q2===0){k.textContent="No force: one charge is zero";k.style.color="var(--muted)";}
+  else if(F>0){k.textContent="Positive F: like charges REPEL";k.style.color="var(--bad)";}
+  else {k.textContent="Negative F: unlike charges ATTRACT";k.style.color="var(--good)";}
+  $("ratio").innerHTML="Newton's third law: the force on Q<sub>1</sub> and the force on Q<sub>2</sub> are equal in size and opposite in direction, even when the charges are different sizes.";
+  // scene
+  const c=$("scene");const {g,w,h}=setup(c,0.42);
+  const cx=w/2,cy=h/2,px=Math.min(w*0.42,(+$("r").value/30)*w*0.42+30);
+  const x1=cx-px,x2=cx+px;
+  g.strokeStyle=cv("--line");g.setLineDash([6,6]);g.beginPath();g.moveTo(x1,cy+48);g.lineTo(x2,cy+48);g.stroke();g.setLineDash([]);
+  g.fillStyle=cv("--muted");g.font="15px "+cv("--body");g.textAlign="center";g.fillText("r = "+(+$("r").value).toFixed(1)+" cm",cx,cy+66);
+  function ball(x,q){const rr=14+Math.abs(q)*1e9/50*14;g.beginPath();g.arc(x,cy,rr,0,7);g.fillStyle=q>0?cv("--bad"):q<0?cv("--accent"):cv("--line");g.fill();
+    g.fillStyle="#fff";g.font="bold 22px "+cv("--body");g.textBaseline="middle";g.fillText(q>0?"+":q<0?"−":"0",x,cy+1);return rr;}
+  const r1=ball(x1,q1),r2=ball(x2,q2);
+  if(F!==0){
+    let L=Math.max(18,Math.min(w*0.2,14*Math.log10(Math.abs(F)/1e-7+1)+18));
+    if(F>0){L=Math.min(L,x1-r1-8);arrow(g,x1-r1,cy,x1-r1-L,cy,cv("--warm"),4,14);arrow(g,x2+r2,cy,x2+r2+L,cy,cv("--warm"),4,14);}
+    else{L=Math.max(10,Math.min(L,(x2-x1-r1-r2)/2-6));arrow(g,x1+r1,cy,x1+r1+L,cy,cv("--warm"),4,14);arrow(g,x2-r2,cy,x2-r2-L,cy,cv("--warm"),4,14);}
+  }
+  // graph
+  const c2=$("fg");const G2=setup(c2,0.5);const box={x:84,y:18,w:G2.w-76,h:G2.h-52};
+  const rs=[];for(let i=2;i<=30;i+=0.25)rs.push(i/100);
+  const Fs=rs.map(x=>Math.abs(K*q1*q2/(x*x)));const fmax=Math.abs(K*q1*q2/(0.02*0.02))||1;
+  const ymax=Math.max(Math.abs(F)*4,fmax/25)||1;
+  const A=axes(G2.g,box,0,30,0,ymax,{xl:"r / cm",yl:"|F| / N",yfmt:y=>sft(y,2)});
+  G2.g.strokeStyle=cv("--accent");G2.g.lineWidth=3;G2.g.beginPath();let st=false;
+  rs.forEach((x,i)=>{const yy=Math.min(Fs[i],ymax);const X=A.X(x*100),Y=A.Y(yy);if(!st){G2.g.moveTo(X,Y);st=true;}else G2.g.lineTo(X,Y);});G2.g.stroke();
+  G2.g.fillStyle=cv("--warm");G2.g.beginPath();G2.g.arc(A.X(r*100),A.Y(Math.min(Math.abs(F),ymax)),7,0,7);G2.g.fill();
+}
+["q1","q2","r"].forEach(id=>$(id).addEventListener("input",drawTwo));
+$("dbl").onclick=()=>{$("r").value=Math.min(30,+$("r").value*2);drawTwo();};
+$("half").onclick=()=>{$("r").value=Math.max(2,+$("r").value/2);drawTwo();};
+$("dq").onclick=()=>{$("q1").value=Math.max(-50,Math.min(50,+$("q1").value*2));drawTwo();};
+
+const P={ep:[-E_CH,E_CH,ME_,MP,"5.3e-11","In a hydrogen atom the electric attraction is about 10<sup>39</sup> times the gravitational attraction. Gravity is negligible on the atomic scale."],
+ pp:[E_CH,E_CH,MP,MP,"1.0e-15","Two protons in a nucleus repel with a force of over 200 N. Gravity cannot hold a nucleus together: the strong nuclear force does."],
+ ee:[-E_CH,-E_CH,ME_,ME_,"1.0e-10","Electrons repel electrically and attract gravitationally, but the gravitational force is about 10<sup>42</sup> times smaller."],
+ aa:[2*E_CH,79*E_CH,6.64e-27,3.27e-25,"4.5e-14","At the distance of closest approach in Rutherford scattering the repulsion is tens of newtons on a particle of mass 10<sup>−27</sup> kg."]};
+function drawCmp(){
+  const p=P[$("pair").value];let r=num($("rc").value);if(!(r>0)){r=num(p[4]);}
+  const Fe=K*p[0]*p[1]/(r*r),Fg=G*p[2]*p[3]/(r*r);
+  $("csteps").innerHTML=`<div>F<sub>e</sub> = Q<sub>1</sub>Q<sub>2</sub> / 4πε<sub>0</sub>r<sup>2</sup> = (${sf(p[0])})(${sf(p[1])}) / (4π × 8.85 × 10<sup>−12</sup> × (${sf(r)})<sup>2</sup>) = ${sf(Fe)} N</div>
+  <div>F<sub>g</sub> = Gm<sub>1</sub>m<sub>2</sub> / r<sup>2</sup> = (6.67 × 10<sup>−11</sup>)(${sf(p[2])})(${sf(p[3])}) / (${sf(r)})<sup>2</sup> = ${sf(Fg)} N</div>`;
+  $("cout").innerHTML="F<sub>e</sub> / F<sub>g</sub> = "+sf(Math.abs(Fe)/Fg,2);
+  $("cnote").innerHTML=p[5];
+  const c=$("bars");const {g,w,h}=setup(c,0.6);const box={x:70,y:20,w:w-90,h:h-60};
+  const le=Math.log10(Math.abs(Fe)),lg=Math.log10(Fg);const lo=Math.floor(Math.min(le,lg))-2,hi=Math.ceil(Math.max(le,lg))+1;
+  const A=axes(g,box,0,3,lo,hi,{ystep:hi-lo>30?5:2,yfmt:y=>"10"+sup(y),xfmt:()=>""});
+  function bar(x,l,col,lab){g.fillStyle=col;const y0=A.Y(lo),y1=A.Y(l);g.fillRect(A.X(x)-40,y1,80,y0-y1);g.fillStyle=cv("--ink");g.font="bold 16px "+cv("--body");g.textAlign="center";g.textBaseline="top";g.fillText(lab,A.X(x),y0+6);}
+  bar(1,le,cv("--accent"),"electric");bar(2,lg,cv("--warm"),"gravitational");
+  g.fillStyle=cv("--muted");g.font="14px "+cv("--body");g.textAlign="left";g.fillText("force / N (log scale)",box.x+6,box.y-4);
+}
+$("pair").addEventListener("change",()=>{$("rc").value=P[$("pair").value][4];drawCmp();});
+$("rc").addEventListener("input",drawCmp);
+
+/* quiz */
+let cur=null,score=0,tries=0;
+function rnd(a,b,dp=1){return +(a+Math.random()*(b-a)).toFixed(dp);}
+function newQ(){
+  const t=Math.floor(Math.random()*4);$("qa").value="";$("qfb").textContent="";$("qw").hidden=true;
+  if(t===0){const q1=rnd(1,9),q2=rnd(1,9),r=rnd(2,20,0);const F=K*q1*1e-9*q2*1e-9/Math.pow(r/100,2);
+    cur={a:F,u:"N",q:`Two point charges of +${q1} nC and +${q2} nC are ${r} cm apart in air. Calculate the force between them.`,w:[`Convert: Q₁ = ${q1} × 10⁻⁹ C, Q₂ = ${q2} × 10⁻⁹ C, r = ${r/100} m`,`F = Q₁Q₂ / 4πε₀r² = ${sf(F)} N (repulsive)`]};}
+  else if(t===1){const F=rnd(1,9)*1e-3,q=rnd(10,90,0),r=rnd(2,9);const Q=F*4*Math.PI*EPS0*Math.pow(r/100,2)/(q*1e-9);
+    cur={a:Q,u:"C",q:`A charge of ${q} nC feels a force of ${sf(F,2).replace(/<\/?sup>/g,"")} N from a second charge ${r} cm away. Calculate the second charge.`,w:[`Rearrange: Q₂ = 4πε₀r²F / Q₁`,`Q₂ = 4π × 8.85 × 10⁻¹² × (${r/100})² × ${sf(F,2).replace(/<\/?sup>/g,"")} / (${q} × 10⁻⁹) = ${sf(Q)} C`]};}
+  else if(t===2){const k=[2,3,4,0.5][Math.floor(Math.random()*4)],F0=rnd(2,9,1);const F=F0/(k*k);
+    cur={a:F,u:"N",q:`The force between two charges is ${F0} N. The separation is multiplied by ${k}. What is the new force?`,w:[`F ∝ 1/r², so the force is multiplied by 1/${k}² = ${+(1/(k*k)).toPrecision(3)}`,`F = ${F0} / ${k*k} = ${+F.toPrecision(3)} N`]};}
+  else {const r=rnd(1,9)*1e-15;const F=K*E_CH*E_CH/(r*r);
+    cur={a:F,u:"N",q:`Two protons are ${sf(r,2).replace(/<\/?sup>/g,"")} m apart. Calculate the electrostatic force between them.`,w:[`F = e² / 4πε₀r² = (1.60 × 10⁻¹⁹)² / (4π × 8.85 × 10⁻¹² × r²)`,`F = ${sf(F)} N`]};}
+  $("qq").innerHTML=cur.q.replace(/×10\^?(−?\d+)/g,"× 10<sup>$1</sup>");$("qu").textContent=cur.u;
+}
+$("qcheck").onclick=()=>{const v=num($("qa").value);tries++;const ok=isFinite(v)&&Math.abs(v-cur.a)/Math.abs(cur.a)<0.02;if(ok)score++;
+  $("qfb").innerHTML=ok?"<span class='good'>Correct!</span>":"<span class='bad'>Not quite. Answer: "+sf(cur.a)+" "+cur.u+"</span>";$("qs").textContent=score+" / "+tries;};
+$("qnext").onclick=newQ;$("qshow").onclick=()=>{$("qw").innerHTML=cur.w.map(x=>"<div>"+x+"</div>").join("");$("qw").hidden=false;};
+function redraw(){drawTwo();drawCmp();}
+tabs(redraw);onResize(redraw);redraw();newQ();
+</script>
+</body></html>
