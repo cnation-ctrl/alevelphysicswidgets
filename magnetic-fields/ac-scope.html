@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Oscilloscope Trainer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: whiteboard tool, one wide working panel under a slim header; large type for projection */
+:root{
+  --bg:#EEF3FA; --panel:#FFFFFF; --ink:#14213D; --muted:#56627A; --line:#D3DCE9;
+  --accent:#2F5DCC; --accent-ink:#FFFFFF; --warm:#D9661A; --good:#18915A; --bad:#C2372F; --soft:#E3EBF8;
+  --body:"Atkinson Hyperlegible",Verdana,Arial,sans-serif; --mono:"IBM Plex Mono",Consolas,"Courier New",monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0E1524; --panel:#16213A; --ink:#E9EFF9; --muted:#A0ACC2; --line:#2B3A57;
+  --accent:#86A8FF; --accent-ink:#0E1524; --warm:#F2A05A; --good:#4FCB8F; --bad:#F07B72; --soft:#1F2D4C; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E1524; --panel:#16213A; --ink:#E9EFF9; --muted:#A0ACC2; --line:#2B3A57;
+  --accent:#86A8FF; --accent-ink:#0E1524; --warm:#F2A05A; --good:#4FCB8F; --bad:#F07B72; --soft:#1F2D4C; color-scheme:dark}
+[hidden]{display:none!important}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:18px;line-height:1.45;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:18px 32px}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+header.top{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px 20px}
+header.top h1{font-size:clamp(26px,3.2vw,38px);margin:0;text-wrap:balance;letter-spacing:-.01em}
+header.top .spec{font-family:var(--mono);font-size:15px;color:var(--muted);letter-spacing:.04em}
+.tabs{display:flex;flex-wrap:wrap;gap:8px}
+.tabs button{font:inherit;font-weight:700;border:2px solid var(--line);background:var(--panel);color:var(--ink);padding:10px 18px;border-radius:10px;cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px;min-width:0}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}
+@media (max-width:820px){.grid2{grid-template-columns:minmax(0,1fr)}}
+label{font-weight:700;display:block;margin-bottom:4px}
+.row{display:flex;flex-wrap:wrap;gap:12px;align-items:end}
+input[type=number],input[type=text],select{font:inherit;font-family:var(--mono);font-size:20px;padding:8px 10px;border:2px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);min-width:0}
+input[type=range]{width:100%;accent-color:var(--accent)}
+button.go{font:inherit;font-weight:700;background:var(--accent);color:var(--accent-ink);border:0;border-radius:10px;padding:11px 20px;cursor:pointer}
+button.ghost{font:inherit;font-weight:700;background:transparent;color:var(--accent);border:2px solid var(--accent);border-radius:10px;padding:9px 18px;cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--warm);outline-offset:2px}
+.big{font-family:var(--mono);font-size:clamp(24px,3vw,34px);font-weight:600}
+.mono{font-family:var(--mono)}
+.muted{color:var(--muted)}
+.steps{display:flex;flex-direction:column;gap:6px;font-family:var(--mono);font-size:18px}
+.steps div{padding:6px 10px;background:var(--soft);border-radius:8px;overflow-x:auto}
+.good{color:var(--good)} .bad{color:var(--bad)} .warm{color:var(--warm)}
+.chip{display:inline-block;font-size:15px;font-weight:700;padding:3px 10px;border-radius:999px;background:var(--soft)}
+table{border-collapse:collapse;width:100%;font-size:17px}
+th,td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left}
+th{font-size:14px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.scroll{overflow-x:auto}
+canvas{display:block;width:100%;max-width:100%;touch-action:none}
+sup{font-size:.7em}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+.formula{font-family:var(--mono);font-size:20px;padding:10px 14px;background:var(--soft);border-radius:10px;overflow-x:auto}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:18px}
+.kv b{font-weight:700}
+.note{font-size:16px;color:var(--muted)}
+.callout{border-left:5px solid var(--warm);background:var(--soft);padding:10px 14px;border-radius:8px}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:15px}
+.legend span::before{content:"";display:inline-block;width:14px;height:4px;border-radius:2px;margin-right:6px;vertical-align:middle;background:var(--c)}
+
+.ans{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:8px 10px;align-items:center}
+.ans input{width:100%}
+
+</style>
+<script>
+const $=id=>document.getElementById(id);
+const cv=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const EPS0=8.85e-12, K=1/(4*Math.PI*8.85e-12), E_CH=1.60e-19, ME_=9.11e-31, MP=1.673e-27, G=6.67e-11;
+/* number in standard form as HTML, n significant figures */
+function sf(x,n=3){
+  if(x===0)return "0";
+  if(!isFinite(x))return "∞";
+  const neg=x<0;x=Math.abs(x);
+  let e=Math.floor(Math.log10(x));let m=x/Math.pow(10,e);let ms=m.toPrecision(n);
+  if(parseFloat(ms)>=10){e++;ms=(m/10).toPrecision(n);}
+  let s;
+  if(e>=-2&&e<n&&e<=3){s=x.toPrecision(n);if(s.includes("e"))s=ms+" × 10<sup>"+String(e).replace("-","−")+"</sup>";}
+  else s=ms+" × 10<sup>"+String(e).replace("-","−")+"</sup>";
+  return (neg?"−":"")+s;
+}
+/* plain-text version for canvas labels */
+function sft(x,n=3){return sf(x,n).replace(/<sup>/g,"^").replace(/<\/sup>/g,"").replace(" × 10^","e").replace(/e(−?\d+)/,(a,b)=>"×10"+sup(b));}
+function sup(s){const m={"0":"⁰","1":"¹","2":"²","3":"³","4":"⁴","5":"⁵","6":"⁶","7":"⁷","8":"⁸","9":"⁹","−":"⁻","-":"⁻"};return String(s).split("").map(c=>m[c]||c).join("");}
+function setup(c,aspect){
+  const dpr=window.devicePixelRatio||1,w=c.clientWidth||600,h=Math.round(w*aspect);
+  c.width=w*dpr;c.height=h*dpr;c.style.height=h+"px";
+  const g=c.getContext("2d");g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,w,h);
+  return {g,w,h};
+}
+function niceStep(range,target){const raw=range/target;const p=Math.pow(10,Math.floor(Math.log10(raw)));const f=raw/p;return (f<1.5?1:f<3?2:f<7?5:10)*p;}
+/* axes: box {x,y,w,h}; returns mapping functions */
+function axes(g,box,xmin,xmax,ymin,ymax,opt={}){
+  const X=x=>box.x+(x-xmin)/(xmax-xmin)*box.w, Y=y=>box.y+box.h-(y-ymin)/(ymax-ymin)*box.h;
+  const ink=cv("--ink"),line=cv("--line"),muted=cv("--muted");
+  g.save();g.font="14px "+cv("--body");g.lineWidth=1;
+  const xs=opt.xstep||niceStep(xmax-xmin,6), ys=opt.ystep||niceStep(ymax-ymin,5);
+  g.strokeStyle=line;g.fillStyle=muted;g.textAlign="center";g.textBaseline="top";
+  for(let x=Math.ceil(xmin/xs)*xs;x<=xmax+1e-9*xs;x+=xs){g.beginPath();g.moveTo(X(x),box.y);g.lineTo(X(x),box.y+box.h);g.stroke();g.fillText(opt.xfmt?opt.xfmt(x):+x.toPrecision(3),X(x),Math.min(box.y+box.h,Math.max(box.y,Y(0)))+4);}
+  g.textAlign="right";g.textBaseline="middle";
+  for(let y=Math.ceil(ymin/ys)*ys;y<=ymax+1e-9*ys;y+=ys){g.beginPath();g.moveTo(box.x,Y(y));g.lineTo(box.x+box.w,Y(y));g.stroke();g.fillText(opt.yfmt?opt.yfmt(y):+y.toPrecision(3),box.x-6,Y(y));}
+  g.strokeStyle=ink;g.lineWidth=2;g.beginPath();
+  const y0=Math.min(box.y+box.h,Math.max(box.y,Y(0)));g.moveTo(box.x,y0);g.lineTo(box.x+box.w,y0);
+  g.moveTo(box.x,box.y);g.lineTo(box.x,box.y+box.h);g.stroke();
+  g.fillStyle=ink;g.font="bold 15px "+cv("--body");
+  if(opt.xl){g.textAlign="right";g.textBaseline="bottom";g.fillText(opt.xl,box.x+box.w,y0-4);}
+  if(opt.yl){g.textAlign="left";g.textBaseline="top";g.fillText(opt.yl,box.x+6,box.y-2);}
+  g.restore();
+  return {X,Y};
+}
+function arrow(g,x1,y1,x2,y2,col,wid=3,head=10){
+  const a=Math.atan2(y2-y1,x2-x1);g.save();g.strokeStyle=col;g.fillStyle=col;g.lineWidth=wid;
+  g.beginPath();g.moveTo(x1,y1);g.lineTo(x2-Math.cos(a)*head*0.6,y2-Math.sin(a)*head*0.6);g.stroke();
+  g.beginPath();g.moveTo(x2,y2);g.lineTo(x2-head*Math.cos(a-0.4),y2-head*Math.sin(a-0.4));g.lineTo(x2-head*Math.cos(a+0.4),y2-head*Math.sin(a+0.4));g.closePath();g.fill();g.restore();
+}
+function tabs(onchange){
+  document.querySelectorAll(".tabs button").forEach(b=>b.addEventListener("click",()=>{
+    document.querySelectorAll(".tabs button").forEach(x=>x.setAttribute("aria-selected",x===b));
+    document.querySelectorAll("[data-panel]").forEach(p=>p.hidden=p.dataset.panel!==b.dataset.tab);
+    if(onchange)onchange(b.dataset.tab);
+  }));
+}
+function onResize(f){let t;window.addEventListener("resize",()=>{clearTimeout(t);t=setTimeout(f,80);});
+  if(window.matchMedia)window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change",f);}
+</script>
+</head>
+<body>
+<div class="wrap">
+<header class="top"><h1>Oscilloscope Trainer</h1><span class="spec">AQA 7408 · 3.7.5.5 peak, peak-to-peak and rms values, the oscilloscope as a voltmeter and timer</span></header>
+<div class="tabs" role="tablist">
+ <button data-tab="explore" aria-selected="true">Explore</button>
+ <button data-tab="challenge" aria-selected="false">Read the trace (challenge)</button>
+</div>
+<div class="grid2">
+ <div class="panel"><canvas id="scope" aria-label="Oscilloscope screen"></canvas>
+  <div class="row" style="margin-top:10px">
+   <div style="flex:1;min-width:130px"><label for="yg">Y-gain</label><select id="yg"></select></div>
+   <div style="flex:1;min-width:130px"><label for="tb">Time-base</label><select id="tb"></select></div>
+   <div style="flex:1;min-width:110px"><label for="yo">Y-shift</label><input type="range" id="yo" min="-4" max="4" step="0.5" value="0"></div>
+  </div>
+ </div>
+ <div class="panel">
+  <div data-panel="explore">
+   <div class="row"><div style="flex:1;min-width:150px"><label for="sig">Input</label><select id="sig"><option value="ac">sinusoidal ac</option><option value="dc">dc (battery)</option><option value="off">nothing (time-base only)</option></select></div></div>
+   <label for="V0" style="margin-top:10px">Peak voltage V₀: <span class="mono" id="V0v"></span></label><input type="range" id="V0" min="0.5" max="30" step="0.5" value="6">
+   <label for="f">Frequency f: <span class="mono" id="fv"></span></label><input type="range" id="f" min="10" max="2000" step="10" value="50">
+   <div class="steps" id="calc" style="margin-top:10px"></div>
+  </div>
+  <div data-panel="challenge" hidden>
+   <p style="margin-top:0">Read the screen. Give each answer to 2 s.f.</p>
+   <div class="ans">
+    <label for="a1">Peak voltage V₀</label><input type="number" id="a1" step="any"><span>V</span>
+    <label for="a2">Peak-to-peak</label><input type="number" id="a2" step="any"><span>V</span>
+    <label for="a3">rms voltage</label><input type="number" id="a3" step="any"><span>V</span>
+    <label for="a4">Period T</label><input type="number" id="a4" step="any"><span>ms</span>
+    <label for="a5">Frequency f</label><input type="number" id="a5" step="any"><span>Hz</span>
+   </div>
+   <div class="row" style="margin-top:10px"><button class="go" id="check">Check</button><button class="ghost" id="newc">New trace</button><button class="ghost" id="show">Show working</button></div>
+   <div class="steps" id="fb" style="margin-top:10px" aria-live="polite"></div>
+  </div>
+  <div class="callout" style="margin-top:10px"><b>rms value:</b> the steady dc value that would give the same heating effect in a resistor. For a sine wave V<sub>rms</sub> = V₀ ÷ √2 and I<sub>rms</sub> = I₀ ÷ √2. UK mains is 230 V rms, so V₀ = 325 V and peak-to-peak = 650 V.</div>
+ </div>
+</div>
+<script>
+const YG=[0.5,1,2,5,10,20,50],TB=[0.1,0.2,0.5,1,2,5,10]; // V/div, ms/div
+YG.forEach(v=>$("yg").insertAdjacentHTML("beforeend",`<option value="${v}">${v} V / div</option>`));
+TB.forEach(v=>$("tb").insertAdjacentHTML("beforeend",`<option value="${v}">${v} ms / div</option>`));
+$("yg").value=2;$("tb").value=5;
+let mode="explore",ch=null;
+function sig(){if(mode==="challenge")return {type:"ac",V0:ch.V0,f:ch.f};return {type:$("sig").value,V0:+$("V0").value,f:+$("f").value};}
+function draw(){
+  const c=$("scope"),{g,w,h}=setup(c,0.8);g.fillStyle="#0E1F14";g.fillRect(0,0,w,h);
+  g.strokeStyle="rgba(124,245,169,.22)";g.lineWidth=1;for(let i=0;i<=10;i++){g.beginPath();g.moveTo(i*w/10,0);g.lineTo(i*w/10,h);g.stroke();}for(let j=0;j<=8;j++){g.beginPath();g.moveTo(0,j*h/8);g.lineTo(w,j*h/8);g.stroke();}
+  g.strokeStyle="rgba(124,245,169,.5)";for(let i=0;i<=50;i++){g.beginPath();g.moveTo(w/2-4,i*h/40);g.lineTo(w/2+4,i*h/40);g.stroke();g.beginPath();g.moveTo(i*w/50,h/2-4);g.lineTo(i*w/50,h/2+4);g.stroke();}
+  const s=sig(),yg=+$("yg").value,tb=+$("tb").value/1000,yo=+$("yo").value*h/8;const dy=h/8,dx=w/10;
+  g.strokeStyle="#7CF5A9";g.lineWidth=2.5;g.beginPath();
+  for(let x=0;x<=w;x+=1){const t=x/dx*tb;let v=0;if(s.type==="ac")v=s.V0*Math.sin(2*Math.PI*s.f*t);else if(s.type==="dc")v=s.V0;
+    let y=h/2-yo-v/yg*dy;y=Math.max(-5,Math.min(h+5,y));x?g.lineTo(x,y):g.moveTo(x,y);}g.stroke();
+  g.fillStyle="rgba(124,245,169,.85)";g.font="13px "+cv("--mono");g.textAlign="left";g.fillText(yg+" V/div   "+(+$("tb").value)+" ms/div",8,h-8);
+}
+function calc(){const s=sig();$("V0v").textContent=s.V0.toFixed(1)+" V";$("fv").textContent=s.f+" Hz";const yg=+$("yg").value,tb=+$("tb").value;
+  if(s.type==="ac"){const T=1000/s.f;$("calc").innerHTML=`<div>peak height = ${(s.V0/yg).toFixed(2)} div × ${yg} V/div = ${s.V0.toFixed(1)} V</div><div>peak-to-peak = 2V₀ = ${(2*s.V0).toFixed(1)} V</div><div><b>V<sub>rms</sub> = V₀ ÷ √2 = ${sf(s.V0/Math.SQRT2,3)} V</b></div><div>period = ${(T/tb).toFixed(2)} div × ${tb} ms/div = ${sf(T,3)} ms; f = 1/T = ${s.f} Hz</div>${s.V0/yg>4?'<div class="bad">The trace is off the screen: increase the Y-gain (more V per division).</div>':''}${T/tb>10?'<div class="bad">Less than one cycle shows: increase the time-base (more ms per division).</div>':''}`;}
+  else if(s.type==="dc")$("calc").innerHTML=`<div>dc: a horizontal line ${(s.V0/yg).toFixed(2)} div above the zero line</div><div>V = ${(s.V0/yg).toFixed(2)} × ${yg} = ${s.V0.toFixed(1)} V</div><div class="muted">This is the oscilloscope used as a dc voltmeter.</div>`;
+  else $("calc").innerHTML=`<div>With no input the spot sweeps across at the time-base speed: ${tb} ms per division, ${10*tb} ms across the whole screen.</div>`;
+}
+function newChallenge(){const yg=YG[1+Math.floor(Math.random()*4)],tb=TB[1+Math.floor(Math.random()*5)];
+  const divs=[1.5,2,2.5,3,3.5,4][Math.floor(Math.random()*6)],per=[2,2.5,4,5,8][Math.floor(Math.random()*5)];
+  ch={V0:divs*yg,f:1000/(per*tb)};$("yg").value=yg;$("tb").value=tb;$("yo").value=0;["a1","a2","a3","a4","a5"].forEach(id=>$(id).value="");$("fb").innerHTML="";draw();}
+function close(a,b){return isFinite(a)&&Math.abs(a-b)<=Math.abs(b)*0.04+1e-9;}
+$("check").addEventListener("click",()=>{const T=1000/ch.f,ans=[ch.V0,2*ch.V0,ch.V0/Math.SQRT2,T,ch.f];const names=["V₀","peak-to-peak","rms","T","f"];
+  $("fb").innerHTML=["a1","a2","a3","a4","a5"].map((id,i)=>{const v=parseFloat($(id).value);return `<div class="${close(v,ans[i])?"good":"bad"}">${names[i]}: ${isNaN(v)?"no answer":close(v,ans[i])?"✓":"✗ check again"}</div>`;}).join("");});
+$("show").addEventListener("click",()=>{const yg=+$("yg").value,tb=+$("tb").value,T=1000/ch.f;
+  $("fb").innerHTML=`<div>peak = ${(ch.V0/yg).toFixed(1)} div × ${yg} V/div = ${sf(ch.V0,2)} V</div><div>pk-pk = ${sf(2*ch.V0,2)} V</div><div>V<sub>rms</sub> = ${sf(ch.V0,2)} ÷ √2 = ${sf(ch.V0/Math.SQRT2,2)} V</div><div>one cycle = ${(T/tb).toFixed(1)} div × ${tb} ms/div = ${sf(T,2)} ms</div><div>f = 1 ÷ ${sf(T/1000,2)} s = ${sf(ch.f,2)} Hz</div>`;});
+$("newc").addEventListener("click",newChallenge);
+tabs(t=>{mode=t;if(t==="challenge")newChallenge();else{calc();draw();}});
+["yg","tb","yo","sig","V0","f"].forEach(id=>$(id).addEventListener("input",()=>{if(mode==="explore")calc();draw();}));
+onResize(draw);calc();draw();
+</script>
+</div>
+</body>
+</html>

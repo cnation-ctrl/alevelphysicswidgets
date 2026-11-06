@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Charged Particle Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: whiteboard tool, one wide working panel under a slim header; large type for projection */
+:root{
+  --bg:#EEF3FA; --panel:#FFFFFF; --ink:#14213D; --muted:#56627A; --line:#D3DCE9;
+  --accent:#2F5DCC; --accent-ink:#FFFFFF; --warm:#D9661A; --good:#18915A; --bad:#C2372F; --soft:#E3EBF8;
+  --body:"Atkinson Hyperlegible",Verdana,Arial,sans-serif; --mono:"IBM Plex Mono",Consolas,"Courier New",monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0E1524; --panel:#16213A; --ink:#E9EFF9; --muted:#A0ACC2; --line:#2B3A57;
+  --accent:#86A8FF; --accent-ink:#0E1524; --warm:#F2A05A; --good:#4FCB8F; --bad:#F07B72; --soft:#1F2D4C; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E1524; --panel:#16213A; --ink:#E9EFF9; --muted:#A0ACC2; --line:#2B3A57;
+  --accent:#86A8FF; --accent-ink:#0E1524; --warm:#F2A05A; --good:#4FCB8F; --bad:#F07B72; --soft:#1F2D4C; color-scheme:dark}
+[hidden]{display:none!important}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:18px;line-height:1.45;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:18px 32px}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+header.top{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px 20px}
+header.top h1{font-size:clamp(26px,3.2vw,38px);margin:0;text-wrap:balance;letter-spacing:-.01em}
+header.top .spec{font-family:var(--mono);font-size:15px;color:var(--muted);letter-spacing:.04em}
+.tabs{display:flex;flex-wrap:wrap;gap:8px}
+.tabs button{font:inherit;font-weight:700;border:2px solid var(--line);background:var(--panel);color:var(--ink);padding:10px 18px;border-radius:10px;cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px;min-width:0}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}
+@media (max-width:820px){.grid2{grid-template-columns:minmax(0,1fr)}}
+label{font-weight:700;display:block;margin-bottom:4px}
+.row{display:flex;flex-wrap:wrap;gap:12px;align-items:end}
+input[type=number],input[type=text],select{font:inherit;font-family:var(--mono);font-size:20px;padding:8px 10px;border:2px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);min-width:0}
+input[type=range]{width:100%;accent-color:var(--accent)}
+button.go{font:inherit;font-weight:700;background:var(--accent);color:var(--accent-ink);border:0;border-radius:10px;padding:11px 20px;cursor:pointer}
+button.ghost{font:inherit;font-weight:700;background:transparent;color:var(--accent);border:2px solid var(--accent);border-radius:10px;padding:9px 18px;cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--warm);outline-offset:2px}
+.big{font-family:var(--mono);font-size:clamp(24px,3vw,34px);font-weight:600}
+.mono{font-family:var(--mono)}
+.muted{color:var(--muted)}
+.steps{display:flex;flex-direction:column;gap:6px;font-family:var(--mono);font-size:18px}
+.steps div{padding:6px 10px;background:var(--soft);border-radius:8px;overflow-x:auto}
+.good{color:var(--good)} .bad{color:var(--bad)} .warm{color:var(--warm)}
+.chip{display:inline-block;font-size:15px;font-weight:700;padding:3px 10px;border-radius:999px;background:var(--soft)}
+table{border-collapse:collapse;width:100%;font-size:17px}
+th,td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left}
+th{font-size:14px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.scroll{overflow-x:auto}
+canvas{display:block;width:100%;max-width:100%;touch-action:none}
+sup{font-size:.7em}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+.formula{font-family:var(--mono);font-size:20px;padding:10px 14px;background:var(--soft);border-radius:10px;overflow-x:auto}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:18px}
+.kv b{font-weight:700}
+.note{font-size:16px;color:var(--muted)}
+.callout{border-left:5px solid var(--warm);background:var(--soft);padding:10px 14px;border-radius:8px}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:15px}
+.legend span::before{content:"";display:inline-block;width:14px;height:4px;border-radius:2px;margin-right:6px;vertical-align:middle;background:var(--c)}
+
+.pill{display:inline-flex;gap:6px;flex-wrap:wrap}
+.pill button{font:inherit;font-weight:700;border:2px solid var(--line);background:var(--panel);color:var(--ink);padding:8px 14px;border-radius:10px;cursor:pointer}
+.pill button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+
+</style>
+<script>
+const $=id=>document.getElementById(id);
+const cv=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const EPS0=8.85e-12, K=1/(4*Math.PI*8.85e-12), E_CH=1.60e-19, ME_=9.11e-31, MP=1.673e-27, G=6.67e-11;
+/* number in standard form as HTML, n significant figures */
+function sf(x,n=3){
+  if(x===0)return "0";
+  if(!isFinite(x))return "∞";
+  const neg=x<0;x=Math.abs(x);
+  let e=Math.floor(Math.log10(x));let m=x/Math.pow(10,e);let ms=m.toPrecision(n);
+  if(parseFloat(ms)>=10){e++;ms=(m/10).toPrecision(n);}
+  let s;
+  if(e>=-2&&e<n&&e<=3){s=x.toPrecision(n);if(s.includes("e"))s=ms+" × 10<sup>"+String(e).replace("-","−")+"</sup>";}
+  else s=ms+" × 10<sup>"+String(e).replace("-","−")+"</sup>";
+  return (neg?"−":"")+s;
+}
+/* plain-text version for canvas labels */
+function sft(x,n=3){return sf(x,n).replace(/<sup>/g,"^").replace(/<\/sup>/g,"").replace(" × 10^","e").replace(/e(−?\d+)/,(a,b)=>"×10"+sup(b));}
+function sup(s){const m={"0":"⁰","1":"¹","2":"²","3":"³","4":"⁴","5":"⁵","6":"⁶","7":"⁷","8":"⁸","9":"⁹","−":"⁻","-":"⁻"};return String(s).split("").map(c=>m[c]||c).join("");}
+function setup(c,aspect){
+  const dpr=window.devicePixelRatio||1,w=c.clientWidth||600,h=Math.round(w*aspect);
+  c.width=w*dpr;c.height=h*dpr;c.style.height=h+"px";
+  const g=c.getContext("2d");g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,w,h);
+  return {g,w,h};
+}
+function niceStep(range,target){const raw=range/target;const p=Math.pow(10,Math.floor(Math.log10(raw)));const f=raw/p;return (f<1.5?1:f<3?2:f<7?5:10)*p;}
+/* axes: box {x,y,w,h}; returns mapping functions */
+function axes(g,box,xmin,xmax,ymin,ymax,opt={}){
+  const X=x=>box.x+(x-xmin)/(xmax-xmin)*box.w, Y=y=>box.y+box.h-(y-ymin)/(ymax-ymin)*box.h;
+  const ink=cv("--ink"),line=cv("--line"),muted=cv("--muted");
+  g.save();g.font="14px "+cv("--body");g.lineWidth=1;
+  const xs=opt.xstep||niceStep(xmax-xmin,6), ys=opt.ystep||niceStep(ymax-ymin,5);
+  g.strokeStyle=line;g.fillStyle=muted;g.textAlign="center";g.textBaseline="top";
+  for(let x=Math.ceil(xmin/xs)*xs;x<=xmax+1e-9*xs;x+=xs){g.beginPath();g.moveTo(X(x),box.y);g.lineTo(X(x),box.y+box.h);g.stroke();g.fillText(opt.xfmt?opt.xfmt(x):+x.toPrecision(3),X(x),Math.min(box.y+box.h,Math.max(box.y,Y(0)))+4);}
+  g.textAlign="right";g.textBaseline="middle";
+  for(let y=Math.ceil(ymin/ys)*ys;y<=ymax+1e-9*ys;y+=ys){g.beginPath();g.moveTo(box.x,Y(y));g.lineTo(box.x+box.w,Y(y));g.stroke();g.fillText(opt.yfmt?opt.yfmt(y):+y.toPrecision(3),box.x-6,Y(y));}
+  g.strokeStyle=ink;g.lineWidth=2;g.beginPath();
+  const y0=Math.min(box.y+box.h,Math.max(box.y,Y(0)));g.moveTo(box.x,y0);g.lineTo(box.x+box.w,y0);
+  g.moveTo(box.x,box.y);g.lineTo(box.x,box.y+box.h);g.stroke();
+  g.fillStyle=ink;g.font="bold 15px "+cv("--body");
+  if(opt.xl){g.textAlign="right";g.textBaseline="bottom";g.fillText(opt.xl,box.x+box.w,y0-4);}
+  if(opt.yl){g.textAlign="left";g.textBaseline="top";g.fillText(opt.yl,box.x+6,box.y-2);}
+  g.restore();
+  return {X,Y};
+}
+function arrow(g,x1,y1,x2,y2,col,wid=3,head=10){
+  const a=Math.atan2(y2-y1,x2-x1);g.save();g.strokeStyle=col;g.fillStyle=col;g.lineWidth=wid;
+  g.beginPath();g.moveTo(x1,y1);g.lineTo(x2-Math.cos(a)*head*0.6,y2-Math.sin(a)*head*0.6);g.stroke();
+  g.beginPath();g.moveTo(x2,y2);g.lineTo(x2-head*Math.cos(a-0.4),y2-head*Math.sin(a-0.4));g.lineTo(x2-head*Math.cos(a+0.4),y2-head*Math.sin(a+0.4));g.closePath();g.fill();g.restore();
+}
+function tabs(onchange){
+  document.querySelectorAll(".tabs button").forEach(b=>b.addEventListener("click",()=>{
+    document.querySelectorAll(".tabs button").forEach(x=>x.setAttribute("aria-selected",x===b));
+    document.querySelectorAll("[data-panel]").forEach(p=>p.hidden=p.dataset.panel!==b.dataset.tab);
+    if(onchange)onchange(b.dataset.tab);
+  }));
+}
+function onResize(f){let t;window.addEventListener("resize",()=>{clearTimeout(t);t=setTimeout(f,80);});
+  if(window.matchMedia)window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change",f);}
+</script>
+</head>
+<body>
+<div class="wrap">
+<header class="top"><h1>Charged Particle Tracker</h1><span class="spec">AQA 7408 · 3.7.5.2 F = BQv, circular paths, the cyclotron</span></header>
+<div class="tabs" role="tablist">
+ <button data-tab="path" aria-selected="true">Circular path</button>
+ <button data-tab="cyc" aria-selected="false">Cyclotron</button>
+</div>
+<div class="grid2">
+ <div class="panel"><canvas id="cv" aria-label="Path of a charged particle in a magnetic field"></canvas>
+  <div class="row" style="margin-top:8px"><button class="go" id="fire">Fire particle</button><span class="note" id="scaleNote"></span></div>
+ </div>
+ <div class="panel">
+  <div data-panel="path">
+   <div class="row">
+    <div style="flex:1;min-width:150px"><label for="pt">Particle</label><select id="pt"><option value="e">electron</option><option value="p" selected>proton</option><option value="a">alpha particle</option><option value="d">deuteron</option></select></div>
+    <div style="flex:1;min-width:160px"><label>Field direction</label><div class="pill" id="dirBtns"><button data-v="in" aria-pressed="true">into screen ⊗</button><button data-v="out" aria-pressed="false">out ⊙</button></div></div>
+   </div>
+   <label for="B" style="margin-top:10px">Flux density B: <span class="mono" id="Bv"></span></label><input type="range" id="B" min="1" max="100" value="30">
+   <label for="v">Speed v: <span class="mono" id="vv"></span></label><input type="range" id="v" min="1" max="100" value="40">
+   <div class="steps" id="calc" style="margin-top:10px"></div>
+   <div class="callout" style="margin-top:10px">The magnetic force is always <b>perpendicular to the velocity</b>, so it does no work: the speed and kinetic energy stay constant. It provides the centripetal force: BQv = mv²/r, so <b>r = mv ÷ BQ</b>.</div>
+  </div>
+  <div data-panel="cyc" hidden>
+   <div class="row">
+    <div style="flex:1;min-width:150px"><label for="cpt">Particle</label><select id="cpt"><option value="p" selected>proton</option><option value="d">deuteron</option><option value="a">alpha particle</option></select></div>
+   </div>
+   <label for="cB" style="margin-top:10px">Flux density B: <span class="mono" id="cBv"></span></label><input type="range" id="cB" min="2" max="20" value="10">
+   <label for="cR">Radius of the dees R: <span class="mono" id="cRv"></span></label><input type="range" id="cR" min="10" max="100" value="30">
+   <label for="cV">pd across the gap V: <span class="mono" id="cVv"></span></label><input type="range" id="cV" min="5" max="100" value="20">
+   <div class="steps" id="ccalc" style="margin-top:10px"></div>
+   <div class="callout" style="margin-top:10px">Each time the particle crosses the gap it gains energy QV. Its speed and radius grow, but the <b>time for each half-turn stays the same</b> (T = 2πm ÷ BQ), so a fixed-frequency alternating pd keeps it in step.</div>
+  </div>
+ </div>
+</div>
+<script>
+const P={e:{n:"electron",q:-1.60e-19,m:9.11e-31,vmax:3e7,Bmax:2e-3},p:{n:"proton",q:1.60e-19,m:1.67e-27,vmax:2e7,Bmax:1},a:{n:"alpha",q:3.20e-19,m:6.64e-27,vmax:2e7,Bmax:1},d:{n:"deuteron",q:1.60e-19,m:3.34e-27,vmax:2e7,Bmax:1}};
+let dir="in",mode="path",anim=null,trail=[],scale=1;
+document.querySelectorAll("#dirBtns button").forEach(b=>b.addEventListener("click",()=>{document.querySelectorAll("#dirBtns button").forEach(x=>x.setAttribute("aria-pressed",x===b));dir=b.dataset.v;fire();}));
+function vals(){const p=P[$("pt").value];const B=p.Bmax*(+$("B").value)/100,v=p.vmax*(+$("v").value)/100;return {p,B,v};}
+function setScale(){const p=P[$("pt").value];const r=p.m*(p.vmax*0.4)/(Math.abs(p.q)*p.Bmax*0.3);const h=$("cv").clientWidth*0.7;scale=h*0.22/r;}
+function bg(g,w,h,fx){
+  const ink=cv("--ink"),muted=cv("--muted");g.fillStyle=cv("--soft");g.fillRect(fx,0,w-fx,h);
+  g.strokeStyle=muted;g.fillStyle=muted;g.lineWidth=1.5;
+  for(let x=fx+18;x<w;x+=36)for(let y=18;y<h;y+=36){if(dir==="in"){g.beginPath();g.moveTo(x-4,y-4);g.lineTo(x+4,y+4);g.moveTo(x+4,y-4);g.lineTo(x-4,y+4);g.stroke();}else{g.beginPath();g.arc(x,y,2.5,0,7);g.fill();}}
+  g.font="bold 15px "+cv("--body");g.textAlign="left";g.textBaseline="top";const lab="B "+(dir==="in"?"into":"out of")+" screen";g.fillStyle=cv("--panel");g.fillRect(w-g.measureText(lab).width-16,h-26,g.measureText(lab).width+12,22);g.fillStyle=ink;g.fillText(lab,w-g.measureText(lab).width-10,h-23);
+}
+function drawPath(){
+  const c=$("cv"),{g,w,h}=setup(c,0.7),fx=w*0.25;bg(g,w,h,fx);
+  const col=cv("--warm");g.strokeStyle=col;g.lineWidth=3;g.beginPath();trail.forEach((p,i)=>i?g.lineTo(p[0],p[1]):g.moveTo(p[0],p[1]));g.stroke();
+  if(trail.length&&anim){const p=trail[trail.length-1];g.fillStyle=col;g.beginPath();g.arc(p[0],p[1],7,0,7);g.fill();
+    if(anim.inField){const a=Math.atan2(anim.vy,anim.vx);arrow(g,p[0],p[1],p[0]+38*Math.cos(a),p[1]+38*Math.sin(a),cv("--accent"),3,10);
+      const fa=a+(anim.turn>0?-Math.PI/2:Math.PI/2);arrow(g,p[0],p[1],p[0]+38*Math.cos(fa),p[1]+38*Math.sin(fa),cv("--good"),3,10);}}
+  // scale bar
+  const {v,B,p}=vals();const r=p.m*v/(Math.abs(p.q)*B);const barM=niceStep(100/scale,1);
+  g.strokeStyle=cv("--ink");g.lineWidth=3;g.beginPath();g.moveTo(12,h-16);g.lineTo(12+barM*scale,h-16);g.stroke();
+  g.fillStyle=cv("--ink");g.font="14px "+cv("--body");g.textAlign="left";g.textBaseline="bottom";g.fillText(sft(barM,2)+" m",12,h-20);
+  g.textBaseline="top";g.fillText("v →",12,h/2-26);
+}
+function fire(){
+  if(mode!=="path")return fireC();
+  cancelAnimationFrame(anim&&anim.id);const c=$("cv");const w=c.clientWidth,h=w*0.7,fx=w*0.25;const {p,B,v}=vals();
+  // in screen coords y down. Positive q, B into screen: force up (−y) for v along +x.
+  const sgnQ=Math.sign(p.q),sgnB=dir==="in"?1:-1;const turn=sgnQ*sgnB; // +1 = anticlockwise on screen
+  const r=p.m*v/(Math.abs(p.q)*B)*scale;
+  anim={x:0,y:h/2,vx:1,vy:0,inField:false,turn,r,fx,w,h,id:0};trail=[[0,h/2]];
+  const step=()=>{for(let k=0;k<6;k++){const ds=3;const inF=anim.x>=fx&&anim.x<=w&&anim.y>=0&&anim.y<=h;anim.inField=inF;
+      if(inF){const dth=-turn*ds/r;const c1=Math.cos(dth),s1=Math.sin(dth);const nx=anim.vx*c1-anim.vy*s1,ny=anim.vx*s1+anim.vy*c1;anim.vx=nx;anim.vy=ny;}
+      anim.x+=anim.vx*ds;anim.y+=anim.vy*ds;trail.push([anim.x,anim.y]);}
+    drawPath();if(anim.x>-10&&anim.x<w+10&&anim.y>-10&&anim.y<h+10&&trail.length<6000)anim.id=requestAnimationFrame(step);};
+  step();upd();
+}
+function upd(){
+  const {p,B,v}=vals();$("Bv").innerHTML=sf(B,2)+" T";$("vv").innerHTML=sf(v,2)+" m s⁻¹";
+  const F=B*Math.abs(p.q)*v,r=p.m*v/(Math.abs(p.q)*B),T=2*Math.PI*p.m/(Math.abs(p.q)*B);
+  $("calc").innerHTML=`<div>Q = ${sf(p.q,3)} C, m = ${sf(p.m,3)} kg</div><div>F = BQv = ${sf(F,3)} N</div><div><b>r = mv ÷ BQ = ${sf(r,3)} m</b></div><div>T = 2πm ÷ BQ = ${sf(T,3)} s &nbsp; f = ${sf(1/T,3)} Hz</div><div class="muted">${p.q<0?"Negative charge: it curves the opposite way to a positive one.":"Double v → r doubles. Double B → r halves. T does not depend on v."}</div>`;
+  $("scaleNote").textContent="Scale bar bottom left. The scale resets when you change particle.";
+}
+/* cyclotron */
+let cyc=null;
+function cvals(){const p=P[$("cpt").value];return {p,B:+$("cB").value/10,R:+$("cR").value/100,V:+$("cV").value*1000};}
+function cupd(){const {p,B,R,V}=cvals();$("cBv").textContent=B.toFixed(1)+" T";$("cRv").textContent=R.toFixed(2)+" m";$("cVv").textContent=(V/1000).toFixed(0)+" kV";
+  const Q=Math.abs(p.q),f=Q*B/(2*Math.PI*p.m),vmax=Q*B*R/p.m,Ek=0.5*p.m*vmax*vmax,turns=Ek/(2*Q*V);
+  $("ccalc").innerHTML=`<div>f = BQ ÷ 2πm = ${sf(f,3)} Hz</div><div>v<sub>max</sub> = BQR ÷ m = ${sf(vmax,3)} m s⁻¹</div><div><b>E<sub>k</sub> max = ${sf(Ek,3)} J = ${sf(Ek/1.6e-13,3)} MeV</b></div><div>energy per turn = 2QV, so about ${Math.round(turns)} turns</div><div class="muted">${vmax>3e7?"v is over 10% of c: in a real cyclotron relativistic effects would put it out of step.":"The spiral is drawn with far fewer turns than a real cyclotron."}</div>`;}
+function fireC(){cancelAnimationFrame(cyc&&cyc.id);const {p,B,R,V}=cvals();const Q=Math.abs(p.q),Ek=0.5*p.m*Math.pow(Q*B*R/p.m,2),total=Ek/(Q*V);
+  const nd=Math.max(4,Math.min(28,Math.round(total)));cyc={k:0,phi:0,nd,id:0};const step=()=>{cyc.phi+=0.12;if(cyc.phi>=Math.PI){cyc.phi=0;cyc.k++;}drawC();if(cyc.k<nd)cyc.id=requestAnimationFrame(step);};step();cupd();}
+function drawC(){
+  const c=$("cv"),{g,w,h}=setup(c,0.7);const cx=w/2,cy=h/2,Rp=Math.min(w,h)*0.44,gap=14;
+  g.fillStyle=cv("--soft");g.strokeStyle=cv("--muted");g.lineWidth=2;
+  g.beginPath();g.arc(cx-gap/2,cy,Rp,Math.PI/2,3*Math.PI/2);g.closePath();g.fill();g.stroke();
+  g.beginPath();g.arc(cx+gap/2,cy,Rp,-Math.PI/2,Math.PI/2);g.closePath();g.fill();g.stroke();
+  g.fillStyle=cv("--ink");g.font="15px "+cv("--body");g.textAlign="center";g.fillText("dee",cx-Rp*0.6,cy-Rp*0.75);g.fillText("dee",cx+Rp*0.6,cy-Rp*0.75);g.fillText("B out of screen ⊙ (both dees)",cx,h-10);
+  g.fillText("~ ac supply across the gap",cx,14);
+  if(!cyc)return;const nd=cyc.nd,col=cv("--warm");g.strokeStyle=col;g.lineWidth=2.5;g.beginPath();
+  let y=cy-Rp*0.08;g.moveTo(cx,y);let last=[cx,y];
+  for(let k=0;k<=cyc.k&&k<nd;k++){const r=Rp*Math.sqrt((k+1)/nd),right=k%2===0,end=k<cyc.k?Math.PI:cyc.phi;
+    const yc=right?y+r:y-r,a0=right?-Math.PI/2:Math.PI/2;
+    for(let a=0;a<=end+1e-9;a+=0.04){last=[cx+r*Math.cos(a0+a),yc+r*Math.sin(a0+a)];g.lineTo(last[0],last[1]);}
+    if(k<cyc.k)y=right?y+2*r:y-2*r;}
+  g.stroke();g.fillStyle=col;g.beginPath();g.arc(last[0],last[1],6,0,7);g.fill();
+}
+tabs(t=>{mode=t;cancelAnimationFrame(anim&&anim.id);cancelAnimationFrame(cyc&&cyc.id);if(t==="cyc"){cupd();fireC();$("scaleNote").textContent="The spiral shows far fewer turns than a real cyclotron.";}else{setScale();fire();}});
+$("fire").addEventListener("click",fire);
+$("pt").addEventListener("change",()=>{setScale();fire();});
+["B","v"].forEach(id=>$(id).addEventListener("input",()=>{upd();fire();}));
+["cB","cR","cV","cpt"].forEach(id=>$(id).addEventListener("input",()=>{cupd();fireC();}));
+onResize(()=>{if(mode==="path"){setScale();fire();}else drawC();});
+setScale();upd();fire();
+</script>
+</div>
+</body>
+</html>
