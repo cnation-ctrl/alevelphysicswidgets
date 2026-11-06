@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Orbit Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: whiteboard tool, one wide working panel under a slim header; large type for projection */
+:root{
+  --bg:#EEF3FA; --panel:#FFFFFF; --ink:#14213D; --muted:#56627A; --line:#D3DCE9;
+  --accent:#2F5DCC; --accent-ink:#FFFFFF; --warm:#D9661A; --good:#18915A; --bad:#C2372F; --soft:#E3EBF8;
+  --body:"Atkinson Hyperlegible",Verdana,Arial,sans-serif; --mono:"IBM Plex Mono",Consolas,"Courier New",monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0E1524; --panel:#16213A; --ink:#E9EFF9; --muted:#A0ACC2; --line:#2B3A57;
+  --accent:#86A8FF; --accent-ink:#0E1524; --warm:#F2A05A; --good:#4FCB8F; --bad:#F07B72; --soft:#1F2D4C; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E1524; --panel:#16213A; --ink:#E9EFF9; --muted:#A0ACC2; --line:#2B3A57;
+  --accent:#86A8FF; --accent-ink:#0E1524; --warm:#F2A05A; --good:#4FCB8F; --bad:#F07B72; --soft:#1F2D4C; color-scheme:dark}
+[hidden]{display:none!important}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:18px;line-height:1.45;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:18px 32px}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+header.top{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px 20px}
+header.top h1{font-size:clamp(26px,3.2vw,38px);margin:0;text-wrap:balance;letter-spacing:-.01em}
+header.top .spec{font-family:var(--mono);font-size:15px;color:var(--muted);letter-spacing:.04em}
+.tabs{display:flex;flex-wrap:wrap;gap:8px}
+.tabs button{font:inherit;font-weight:700;border:2px solid var(--line);background:var(--panel);color:var(--ink);padding:10px 18px;border-radius:10px;cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px;min-width:0}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}
+@media (max-width:820px){.grid2{grid-template-columns:minmax(0,1fr)}}
+label{font-weight:700;display:block;margin-bottom:4px}
+.row{display:flex;flex-wrap:wrap;gap:12px;align-items:end}
+input[type=number],input[type=text],select{font:inherit;font-family:var(--mono);font-size:20px;padding:8px 10px;border:2px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);min-width:0}
+input[type=range]{width:100%;accent-color:var(--accent)}
+button.go{font:inherit;font-weight:700;background:var(--accent);color:var(--accent-ink);border:0;border-radius:10px;padding:11px 20px;cursor:pointer}
+button.ghost{font:inherit;font-weight:700;background:transparent;color:var(--accent);border:2px solid var(--accent);border-radius:10px;padding:9px 18px;cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--warm);outline-offset:2px}
+.big{font-family:var(--mono);font-size:clamp(24px,3vw,34px);font-weight:600}
+.mono{font-family:var(--mono)}
+.muted{color:var(--muted)}
+.steps{display:flex;flex-direction:column;gap:6px;font-family:var(--mono);font-size:18px}
+.steps div{padding:6px 10px;background:var(--soft);border-radius:8px;overflow-x:auto}
+.good{color:var(--good)} .bad{color:var(--bad)} .warm{color:var(--warm)}
+.chip{display:inline-block;font-size:15px;font-weight:700;padding:3px 10px;border-radius:999px;background:var(--soft)}
+table{border-collapse:collapse;width:100%;font-size:17px}
+th,td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left}
+th{font-size:14px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.scroll{overflow-x:auto}
+canvas{display:block;width:100%;max-width:100%;touch-action:none}
+sup{font-size:.7em}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+.formula{font-family:var(--mono);font-size:20px;padding:10px 14px;background:var(--soft);border-radius:10px;overflow-x:auto}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:18px}
+.kv b{font-weight:700}
+.note{font-size:16px;color:var(--muted)}
+.callout{border-left:5px solid var(--warm);background:var(--soft);padding:10px 14px;border-radius:8px}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:15px}
+.legend span::before{content:"";display:inline-block;width:14px;height:4px;border-radius:2px;margin-right:6px;vertical-align:middle;background:var(--c)}
+</style>
+<style>body{margin:0}img{max-width:100%}</style>
+<script>
+const $=id=>document.getElementById(id);
+const cv=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const G=6.67e-11;
+const ME=5.97e24, RE=6.37e6, MS=1.99e30, RS=6.96e8;
+/* number in standard form as HTML, n significant figures */
+function sf(x,n=3){
+  if(x===0)return "0";
+  if(!isFinite(x))return "∞";
+  const neg=x<0;x=Math.abs(x);
+  let e=Math.floor(Math.log10(x));let m=x/Math.pow(10,e);let ms=m.toPrecision(n);
+  if(parseFloat(ms)>=10){e++;ms=(m/10).toPrecision(n);}
+  let s;
+  if(e>=-2&&e<n&&e<=3){s=x.toPrecision(n);if(s.includes("e"))s=ms+" × 10<sup>"+String(e).replace("-","−")+"</sup>";}
+  else s=ms+" × 10<sup>"+String(e).replace("-","−")+"</sup>";
+  return (neg?"−":"")+s;
+}
+/* plain-text version for canvas labels */
+function sft(x,n=3){return sf(x,n).replace(/<sup>/g,"^").replace(/<\/sup>/g,"").replace(" × 10^","e").replace(/e(−?\d+)/,(a,b)=>"×10"+sup(b));}
+function sup(s){const m={"0":"⁰","1":"¹","2":"²","3":"³","4":"⁴","5":"⁵","6":"⁶","7":"⁷","8":"⁸","9":"⁹","−":"⁻","-":"⁻"};return String(s).split("").map(c=>m[c]||c).join("");}
+function setup(c,aspect){
+  const dpr=window.devicePixelRatio||1,w=c.clientWidth||600,h=Math.round(w*aspect);
+  c.width=w*dpr;c.height=h*dpr;c.style.height=h+"px";
+  const g=c.getContext("2d");g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,w,h);
+  return {g,w,h};
+}
+function niceStep(range,target){const raw=range/target;const p=Math.pow(10,Math.floor(Math.log10(raw)));const f=raw/p;return (f<1.5?1:f<3?2:f<7?5:10)*p;}
+/* axes: box {x,y,w,h}; returns mapping functions */
+function axes(g,box,xmin,xmax,ymin,ymax,opt={}){
+  const X=x=>box.x+(x-xmin)/(xmax-xmin)*box.w, Y=y=>box.y+box.h-(y-ymin)/(ymax-ymin)*box.h;
+  const ink=cv("--ink"),line=cv("--line"),muted=cv("--muted");
+  g.save();g.font="14px "+cv("--body");g.lineWidth=1;
+  const xs=opt.xstep||niceStep(xmax-xmin,6), ys=opt.ystep||niceStep(ymax-ymin,5);
+  g.strokeStyle=line;g.fillStyle=muted;g.textAlign="center";g.textBaseline="top";
+  for(let x=Math.ceil(xmin/xs)*xs;x<=xmax+1e-9*xs;x+=xs){g.beginPath();g.moveTo(X(x),box.y);g.lineTo(X(x),box.y+box.h);g.stroke();g.fillText(opt.xfmt?opt.xfmt(x):+x.toPrecision(3),X(x),Math.min(box.y+box.h,Math.max(box.y,Y(0)))+4);}
+  g.textAlign="right";g.textBaseline="middle";
+  for(let y=Math.ceil(ymin/ys)*ys;y<=ymax+1e-9*ys;y+=ys){g.beginPath();g.moveTo(box.x,Y(y));g.lineTo(box.x+box.w,Y(y));g.stroke();g.fillText(opt.yfmt?opt.yfmt(y):+y.toPrecision(3),box.x-6,Y(y));}
+  g.strokeStyle=ink;g.lineWidth=2;g.beginPath();
+  const y0=Math.min(box.y+box.h,Math.max(box.y,Y(0)));g.moveTo(box.x,y0);g.lineTo(box.x+box.w,y0);
+  g.moveTo(box.x,box.y);g.lineTo(box.x,box.y+box.h);g.stroke();
+  g.fillStyle=ink;g.font="bold 15px "+cv("--body");
+  if(opt.xl){g.textAlign="right";g.textBaseline="bottom";g.fillText(opt.xl,box.x+box.w,y0-4);}
+  if(opt.yl){g.textAlign="left";g.textBaseline="top";g.fillText(opt.yl,box.x+6,box.y-2);}
+  g.restore();
+  return {X,Y};
+}
+function arrow(g,x1,y1,x2,y2,col,wid=3,head=10){
+  const a=Math.atan2(y2-y1,x2-x1);g.save();g.strokeStyle=col;g.fillStyle=col;g.lineWidth=wid;
+  g.beginPath();g.moveTo(x1,y1);g.lineTo(x2-Math.cos(a)*head*0.6,y2-Math.sin(a)*head*0.6);g.stroke();
+  g.beginPath();g.moveTo(x2,y2);g.lineTo(x2-head*Math.cos(a-0.4),y2-head*Math.sin(a-0.4));g.lineTo(x2-head*Math.cos(a+0.4),y2-head*Math.sin(a+0.4));g.closePath();g.fill();g.restore();
+}
+function tabs(onchange){
+  document.querySelectorAll(".tabs button").forEach(b=>b.addEventListener("click",()=>{
+    document.querySelectorAll(".tabs button").forEach(x=>x.setAttribute("aria-selected",x===b));
+    document.querySelectorAll("[data-panel]").forEach(p=>p.hidden=p.dataset.panel!==b.dataset.tab);
+    if(onchange)onchange(b.dataset.tab);
+  }));
+}
+function onResize(f){let t;window.addEventListener("resize",()=>{clearTimeout(t);t=setTimeout(f,80);});
+  if(window.matchMedia)window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change",f);}
+
+</script>
+</head>
+<body>
+<div class="wrap">
+<header class="top"><h1>Orbit Lab</h1><span class="spec">AQA 7408 · 3.7.2.4 orbital speed, period and T² ∝ r³</span></header>
+<div class="tabs" role="tablist">
+ <button data-tab="orbit" aria-selected="true">Circular orbit</button>
+ <button data-tab="kepler" aria-selected="false">Planets: log–log plot</button>
+</div>
+<div data-panel="orbit" class="grid2">
+ <div class="panel">
+  <label for="h">Height above Earth's surface: <span id="hv" class="mono"></span> km</label>
+  <input id="h" type="range" min="200" max="40000" step="50" value="400">
+  <div class="row" style="margin:8px 0"><button class="ghost" data-h="400">ISS (400 km)</button><button class="ghost" data-h="20200">GPS (20 200 km)</button><button class="ghost" data-h="35800">Geostationary</button></div>
+  <div class="formula">GMm/r<sup>2</sup> = mv<sup>2</sup>/r &nbsp;⇒&nbsp; v = √(GM/r) &nbsp;&nbsp; T = 2πr/v</div>
+  <div class="steps" id="steps" style="margin-top:12px"></div>
+  <div class="kv" style="margin-top:12px"><b>Orbital speed</b><span id="v" class="mono"></span><b>Period</b><span id="T" class="mono"></span><b>T² / r³</b><span id="k" class="mono"></span></div>
+  <p class="note" style="margin-top:10px">T²/r³ stays the same for every orbit around the Earth: it equals 4π²/GM. The mass of the satellite cancels.</p>
+ </div>
+ <div class="panel"><canvas id="anim" aria-label="Satellite orbiting the Earth"></canvas>
+  <div class="row" style="margin-top:10px"><label for="spd" style="margin:0">Animation speed</label><input id="spd" type="range" min="1" max="100" value="30" style="max-width:240px"></div></div>
+</div>
+<div data-panel="kepler" class="grid2" hidden>
+ <div class="panel">
+  <div class="scroll"><table><thead><tr><th>Planet</th><th>r / 10<sup>11</sup> m</th><th>T / years</th><th>lg(r/m)</th><th>lg(T/s)</th></tr></thead><tbody id="tb"></tbody></table></div>
+  <div class="row" style="margin:12px 0"><button class="go" id="axbtn">Switch to log–log axes</button><button class="ghost" id="fit">Show best-fit line</button></div>
+  <div class="steps" id="ksteps" hidden></div>
+ </div>
+ <div class="panel"><canvas id="kplot" aria-label="Graph of planet period against orbital radius"></canvas></div>
+</div>
+<script>
+const GM=G*ME;let t=0,last=performance.now();
+function orbit(){const hk=+$("h").value;$("hv").textContent=hk.toLocaleString("en-GB");const r=RE+hk*1e3;const v=Math.sqrt(GM/r),T=2*Math.PI*r/v;
+  $("steps").innerHTML=`<div>r = R + h = 6.37 × 10<sup>6</sup> + ${sf(hk*1e3)} = ${sf(r)} m</div><div>v = √(${sf(GM)} / ${sf(r)})</div>`;
+  $("v").innerHTML=sf(v)+" m s<sup>−1</sup>";$("T").innerHTML=sf(T)+" s = "+(T/3600).toFixed(2)+" h";$("k").innerHTML=sf(T*T/(r*r*r))+" s<sup>2</sup> m<sup>−3</sup>";
+  return {r,T};}
+function frame(now){const dt=(now-last)/1000;last=now;const {r,T}=orbit();t+=dt*(+$("spd").value)*120/T*2*Math.PI;
+  const c=$("anim");if(!c.offsetParent){requestAnimationFrame(frame);return;}const {g,w,h}=setup(c,0.8);const cx=w/2,cy=h/2;const sc=Math.min(w,h)/2/(RE+40200e3)*0.95;
+  g.fillStyle=cv("--good");g.beginPath();g.arc(cx,cy,RE*sc,0,7);g.fill();
+  g.strokeStyle=cv("--line");g.lineWidth=2;g.beginPath();g.arc(cx,cy,r*sc,0,7);g.stroke();
+  const sx=cx+r*sc*Math.cos(t),sy=cy-r*sc*Math.sin(t);
+  arrow(g,sx,sy,sx-Math.sin(t)*48,sy-Math.cos(t)*48,cv("--accent"),3,10);
+  arrow(g,sx,sy,sx+(cx-sx)/(r*sc)*40,sy+(cy-sy)/(r*sc)*40,cv("--bad"),3,10);
+  g.fillStyle=cv("--warm");g.beginPath();g.arc(sx,sy,7,0,7);g.fill();
+  g.font="14px "+cv("--body");g.fillStyle=cv("--accent");g.fillText("v",sx-Math.sin(t)*56,sy-Math.cos(t)*56);
+  g.fillStyle=cv("--bad");g.fillText("F (gravity, centripetal)",8,h-10);
+  requestAnimationFrame(frame);}
+const PL=[["Mercury",0.579,0.241],["Venus",1.082,0.615],["Earth",1.496,1.000],["Mars",2.279,1.881],["Jupiter",7.786,11.86],["Saturn",14.34,29.46]];
+let logAx=false,showFit=false;
+function kepler(){$("tb").innerHTML=PL.map(p=>`<tr><td>${p[0]}</td><td class="mono">${p[1]}</td><td class="mono">${p[2]}</td><td class="mono">${Math.log10(p[1]*1e11).toFixed(3)}</td><td class="mono">${Math.log10(p[2]*3.156e7).toFixed(3)}</td></tr>`).join("");
+  const c=$("kplot");const {g,w,h}=setup(c,0.8);const box={x:64,y:24,w:w-84,h:h-62};let A;
+  const pts=PL.map(p=>logAx?[Math.log10(p[1]*1e11),Math.log10(p[2]*3.156e7)]:[p[1],p[2]]);
+  if(logAx)A=axes(g,box,10.6,12.3,6.6,9.1,{xl:"lg(r / m)",yl:"lg(T / s)",xstep:0.2,ystep:0.5});else A=axes(g,box,0,15,0,32,{xl:"r / 10¹¹ m",yl:"T / years",xstep:3,ystep:5});
+  if(showFit){g.strokeStyle=cv("--warm");g.lineWidth=2.5;g.beginPath();
+    if(logAx){const n=pts.length,mx=pts.reduce((a,p)=>a+p[0],0)/n,my=pts.reduce((a,p)=>a+p[1],0)/n;let sxy=0,sxx=0;pts.forEach(p=>{sxy+=(p[0]-mx)*(p[1]-my);sxx+=(p[0]-mx)**2;});const m=sxy/sxx,b=my-m*mx;
+      g.moveTo(A.X(10.6),A.Y(m*10.6+b));g.lineTo(A.X(12.3),A.Y(m*12.3+b));
+      const b15=pts.reduce((a,p)=>a+p[1]-1.5*p[0],0)/pts.length;const GMs=4*Math.PI*Math.PI/Math.pow(10,2*b15);
+      $("ksteps").hidden=false;$("ksteps").innerHTML=`<div>T<sup>2</sup> = (4π<sup>2</sup>/GM)r<sup>3</sup> ⇒ lg T = 1.5 lg r + ½ lg(4π<sup>2</sup>/GM)</div><div>gradient = ${m.toFixed(3)} (theory 1.5)</div><div>intercept (with gradient fixed at 1.5) = ${b15.toFixed(3)}</div><div>GM = 4π<sup>2</sup>/10<sup>2 × intercept</sup> = ${sf(GMs)} → M<sub>Sun</sub> = ${sf(GMs/G)} kg</div>`;}
+    else{for(let x=0;x<=15;x+=0.1){const y=Math.pow(x/1.496,1.5);x===0?g.moveTo(A.X(x),A.Y(y)):g.lineTo(A.X(x),A.Y(Math.min(y,32)));}$("ksteps").hidden=false;$("ksteps").innerHTML="<div>A curve: hard to test by eye. Switch to log–log axes.</div>";}
+    g.stroke();}else $("ksteps").hidden=true;
+  pts.forEach((p,i)=>{g.fillStyle=cv("--accent");g.beginPath();g.arc(A.X(p[0]),A.Y(p[1]),6,0,7);g.fill();g.fillStyle=cv("--ink");g.font="13px "+cv("--body");g.fillText(PL[i][0],A.X(p[0])+8,A.Y(p[1])-8);});
+}
+$("h").addEventListener("input",orbit);document.querySelectorAll("[data-h]").forEach(b=>b.addEventListener("click",()=>{$("h").value=b.dataset.h;orbit();}));
+$("axbtn").addEventListener("click",()=>{logAx=!logAx;$("axbtn").textContent=logAx?"Switch to linear axes":"Switch to log–log axes";kepler();});
+$("fit").addEventListener("click",()=>{showFit=!showFit;$("fit").textContent=showFit?"Hide best-fit line":"Show best-fit line";kepler();});
+tabs(t=>{if(t==="kepler")kepler();});onResize(kepler);orbit();kepler();requestAnimationFrame(frame);
+</script>
+
+</div>
+</body>
+</html>
