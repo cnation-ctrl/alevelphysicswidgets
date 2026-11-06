@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Field Compare</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: whiteboard tool, one wide working panel under a slim header; large type for projection */
+:root{
+  --bg:#EEF3FA; --panel:#FFFFFF; --ink:#14213D; --muted:#56627A; --line:#D3DCE9;
+  --accent:#2F5DCC; --accent-ink:#FFFFFF; --warm:#D9661A; --good:#18915A; --bad:#C2372F; --soft:#E3EBF8;
+  --body:"Atkinson Hyperlegible",Verdana,Arial,sans-serif; --mono:"IBM Plex Mono",Consolas,"Courier New",monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0E1524; --panel:#16213A; --ink:#E9EFF9; --muted:#A0ACC2; --line:#2B3A57;
+  --accent:#86A8FF; --accent-ink:#0E1524; --warm:#F2A05A; --good:#4FCB8F; --bad:#F07B72; --soft:#1F2D4C; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E1524; --panel:#16213A; --ink:#E9EFF9; --muted:#A0ACC2; --line:#2B3A57;
+  --accent:#86A8FF; --accent-ink:#0E1524; --warm:#F2A05A; --good:#4FCB8F; --bad:#F07B72; --soft:#1F2D4C; color-scheme:dark}
+[hidden]{display:none!important}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:18px;line-height:1.45;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:18px 32px}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+header.top{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px 20px}
+header.top h1{font-size:clamp(26px,3.2vw,38px);margin:0;text-wrap:balance;letter-spacing:-.01em}
+header.top .spec{font-family:var(--mono);font-size:15px;color:var(--muted);letter-spacing:.04em}
+.tabs{display:flex;flex-wrap:wrap;gap:8px}
+.tabs button{font:inherit;font-weight:700;border:2px solid var(--line);background:var(--panel);color:var(--ink);padding:10px 18px;border-radius:10px;cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px;min-width:0}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}
+@media (max-width:820px){.grid2{grid-template-columns:minmax(0,1fr)}}
+label{font-weight:700;display:block;margin-bottom:4px}
+.row{display:flex;flex-wrap:wrap;gap:12px;align-items:end}
+input[type=number],input[type=text],select{font:inherit;font-family:var(--mono);font-size:20px;padding:8px 10px;border:2px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);min-width:0}
+input[type=range]{width:100%;accent-color:var(--accent)}
+button.go{font:inherit;font-weight:700;background:var(--accent);color:var(--accent-ink);border:0;border-radius:10px;padding:11px 20px;cursor:pointer}
+button.ghost{font:inherit;font-weight:700;background:transparent;color:var(--accent);border:2px solid var(--accent);border-radius:10px;padding:9px 18px;cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--warm);outline-offset:2px}
+.big{font-family:var(--mono);font-size:clamp(24px,3vw,34px);font-weight:600}
+.mono{font-family:var(--mono)}
+.muted{color:var(--muted)}
+.steps{display:flex;flex-direction:column;gap:6px;font-family:var(--mono);font-size:18px}
+.steps div{padding:6px 10px;background:var(--soft);border-radius:8px;overflow-x:auto}
+.good{color:var(--good)} .bad{color:var(--bad)} .warm{color:var(--warm)}
+.chip{display:inline-block;font-size:15px;font-weight:700;padding:3px 10px;border-radius:999px;background:var(--soft)}
+table{border-collapse:collapse;width:100%;font-size:17px}
+th,td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left}
+th{font-size:14px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.scroll{overflow-x:auto}
+canvas{display:block;width:100%;max-width:100%;touch-action:none}
+sup{font-size:.7em}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+.formula{font-family:var(--mono);font-size:20px;padding:10px 14px;background:var(--soft);border-radius:10px;overflow-x:auto}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:18px}
+.kv b{font-weight:700}
+.note{font-size:16px;color:var(--muted)}
+.callout{border-left:5px solid var(--warm);background:var(--soft);padding:10px 14px;border-radius:8px}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:15px}
+.legend span::before{content:"";display:inline-block;width:14px;height:4px;border-radius:2px;margin-right:6px;vertical-align:middle;background:var(--c)}
+</style>
+<style>body{margin:0}img{max-width:100%}</style>
+<script>
+const $=id=>document.getElementById(id);
+const cv=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const EPS0=8.85e-12, K=1/(4*Math.PI*8.85e-12), E_CH=1.60e-19, ME_=9.11e-31, MP=1.673e-27, G=6.67e-11;
+/* number in standard form as HTML, n significant figures */
+function sf(x,n=3){
+  if(x===0)return "0";
+  if(!isFinite(x))return "∞";
+  const neg=x<0;x=Math.abs(x);
+  let e=Math.floor(Math.log10(x));let m=x/Math.pow(10,e);let ms=m.toPrecision(n);
+  if(parseFloat(ms)>=10){e++;ms=(m/10).toPrecision(n);}
+  let s;
+  if(e>=-2&&e<n&&e<=3){s=x.toPrecision(n);if(s.includes("e"))s=ms+" × 10<sup>"+String(e).replace("-","−")+"</sup>";}
+  else s=ms+" × 10<sup>"+String(e).replace("-","−")+"</sup>";
+  return (neg?"−":"")+s;
+}
+/* plain-text version for canvas labels */
+function sft(x,n=3){return sf(x,n).replace(/<sup>/g,"^").replace(/<\/sup>/g,"").replace(" × 10^","e").replace(/e(−?\d+)/,(a,b)=>"×10"+sup(b));}
+function sup(s){const m={"0":"⁰","1":"¹","2":"²","3":"³","4":"⁴","5":"⁵","6":"⁶","7":"⁷","8":"⁸","9":"⁹","−":"⁻","-":"⁻"};return String(s).split("").map(c=>m[c]||c).join("");}
+function setup(c,aspect){
+  const dpr=window.devicePixelRatio||1,w=c.clientWidth||600,h=Math.round(w*aspect);
+  c.width=w*dpr;c.height=h*dpr;c.style.height=h+"px";
+  const g=c.getContext("2d");g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,w,h);
+  return {g,w,h};
+}
+function niceStep(range,target){const raw=range/target;const p=Math.pow(10,Math.floor(Math.log10(raw)));const f=raw/p;return (f<1.5?1:f<3?2:f<7?5:10)*p;}
+/* axes: box {x,y,w,h}; returns mapping functions */
+function axes(g,box,xmin,xmax,ymin,ymax,opt={}){
+  const X=x=>box.x+(x-xmin)/(xmax-xmin)*box.w, Y=y=>box.y+box.h-(y-ymin)/(ymax-ymin)*box.h;
+  const ink=cv("--ink"),line=cv("--line"),muted=cv("--muted");
+  g.save();g.font="14px "+cv("--body");g.lineWidth=1;
+  const xs=opt.xstep||niceStep(xmax-xmin,6), ys=opt.ystep||niceStep(ymax-ymin,5);
+  g.strokeStyle=line;g.fillStyle=muted;g.textAlign="center";g.textBaseline="top";
+  for(let x=Math.ceil(xmin/xs)*xs;x<=xmax+1e-9*xs;x+=xs){g.beginPath();g.moveTo(X(x),box.y);g.lineTo(X(x),box.y+box.h);g.stroke();g.fillText(opt.xfmt?opt.xfmt(x):+x.toPrecision(3),X(x),Math.min(box.y+box.h,Math.max(box.y,Y(0)))+4);}
+  g.textAlign="right";g.textBaseline="middle";
+  for(let y=Math.ceil(ymin/ys)*ys;y<=ymax+1e-9*ys;y+=ys){g.beginPath();g.moveTo(box.x,Y(y));g.lineTo(box.x+box.w,Y(y));g.stroke();g.fillText(opt.yfmt?opt.yfmt(y):+y.toPrecision(3),box.x-6,Y(y));}
+  g.strokeStyle=ink;g.lineWidth=2;g.beginPath();
+  const y0=Math.min(box.y+box.h,Math.max(box.y,Y(0)));g.moveTo(box.x,y0);g.lineTo(box.x+box.w,y0);
+  g.moveTo(box.x,box.y);g.lineTo(box.x,box.y+box.h);g.stroke();
+  g.fillStyle=ink;g.font="bold 15px "+cv("--body");
+  if(opt.xl){g.textAlign="right";g.textBaseline="bottom";g.fillText(opt.xl,box.x+box.w,y0-4);}
+  if(opt.yl){g.textAlign="left";g.textBaseline="top";g.fillText(opt.yl,box.x+6,box.y-2);}
+  g.restore();
+  return {X,Y};
+}
+function arrow(g,x1,y1,x2,y2,col,wid=3,head=10){
+  const a=Math.atan2(y2-y1,x2-x1);g.save();g.strokeStyle=col;g.fillStyle=col;g.lineWidth=wid;
+  g.beginPath();g.moveTo(x1,y1);g.lineTo(x2-Math.cos(a)*head*0.6,y2-Math.sin(a)*head*0.6);g.stroke();
+  g.beginPath();g.moveTo(x2,y2);g.lineTo(x2-head*Math.cos(a-0.4),y2-head*Math.sin(a-0.4));g.lineTo(x2-head*Math.cos(a+0.4),y2-head*Math.sin(a+0.4));g.closePath();g.fill();g.restore();
+}
+function tabs(onchange){
+  document.querySelectorAll(".tabs button").forEach(b=>b.addEventListener("click",()=>{
+    document.querySelectorAll(".tabs button").forEach(x=>x.setAttribute("aria-selected",x===b));
+    document.querySelectorAll("[data-panel]").forEach(p=>p.hidden=p.dataset.panel!==b.dataset.tab);
+    if(onchange)onchange(b.dataset.tab);
+  }));
+}
+function onResize(f){let t;window.addEventListener("resize",()=>{clearTimeout(t);t=setTimeout(f,80);});
+  if(window.matchMedia)window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change",f);}
+
+</script>
+</head>
+<body>
+<div class="wrap">
+<header class="top"><h1>Field Compare: gravity and electric</h1><span class="spec">AQA 7408 · 3.7.1 similarities and differences</span></header>
+<div class="tabs" role="tablist">
+ <button data-tab="side" aria-selected="true">Side by side</button>
+ <button data-tab="sort" aria-selected="false">Sort it: gravity, electric or both?</button>
+</div>
+<div data-panel="side" class="panel">
+ <p class="muted" style="margin-top:0">Reveal one row at a time. Predict the electric version before you click.</p>
+ <div class="scroll"><table id="tbl"><thead><tr><th>Idea</th><th>Gravitational field (3.7.2)</th><th>Electric field (3.7.3)</th></tr></thead><tbody></tbody></table></div>
+ <div class="row" style="margin-top:12px"><button class="go" id="rnext">Reveal next row</button><button class="ghost" id="rall">Reveal all</button><button class="ghost" id="rhide">Hide all</button></div>
+</div>
+<div data-panel="sort" class="panel" hidden>
+ <p class="muted" style="margin-top:0">Does the statement apply to gravitational fields, electric fields, or both? Mini whiteboards: G, E or B.</p>
+ <p class="big" id="st" style="font-size:26px;min-height:2.6em"></p>
+ <div class="row"><button class="go" data-a="G">Gravity only</button><button class="go" data-a="E">Electric only</button><button class="go" data-a="B">Both</button><button class="ghost" id="snext">Next</button></div>
+ <p id="sfb" style="font-weight:700;min-height:1.5em"></p>
+ <p class="note">Score: <span id="ss">0 / 0</span></p>
+</div>
+</div>
+<script>
+const ROWS=[
+["Source of the field","mass","charge"],
+["Force law","F = Gm₁m₂ / r²","F = Q₁Q₂ / 4πε₀r²"],
+["Constant","G = 6.67 × 10⁻¹¹ N m² kg⁻²","1 / 4πε₀ with ε₀ = 8.85 × 10⁻¹² F m⁻¹"],
+["Attract or repel?","always attracts","like charges repel, unlike charges attract"],
+["Field strength definition","g = F / m (N kg⁻¹)","E = F / Q (N C⁻¹ or V m⁻¹)"],
+["Radial field strength","g = GM / r²","E = Q / 4πε₀r²"],
+["Uniform field","near the surface of a planet, g ≈ constant","between parallel plates, E = V / d"],
+["Potential","V = −GM / r (always negative)","V = Q / 4πε₀r (positive for +Q, negative for −Q)"],
+["Zero of potential","at infinity","at infinity"],
+["Work done","ΔW = mΔV","ΔW = QΔV"],
+["Field from potential","g = −ΔV / Δr","E = ΔV / Δr in size (E points towards falling V)"],
+["Equipotentials","no work done moving along one; perpendicular to field lines","no work done moving along one; perpendicular to field lines"],
+["Inverse square?","yes: g ∝ 1/r², V ∝ 1/r","yes: E ∝ 1/r², V ∝ 1/r"],
+["Can it be shielded?","no","yes: a conductor can screen a region"],
+["Relative size","very weak: matters for large masses","about 10³⁹ times stronger between a proton and an electron"]];
+let shown=0;function drawT(){$("tbl").querySelector("tbody").innerHTML=ROWS.map((r,i)=>`<tr><td><b>${r[0]}</b></td><td${i<shown?"":" class='muted'"}>${i<shown?r[1]:"?"}</td><td${i<shown?"":" class='muted'"}>${i<shown?r[2]:"?"}</td></tr>`).join("");}
+$("rnext").onclick=()=>{shown=Math.min(ROWS.length,shown+1);drawT();};$("rall").onclick=()=>{shown=ROWS.length;drawT();};$("rhide").onclick=()=>{shown=0;drawT();};
+const S=[["The force can be repulsive.","E"],["The field strength around a point source is inverse square.","B"],["Potential is zero at infinity.","B"],["Potential is negative everywhere.","G"],
+["Potential can be positive or negative.","E"],["No work is done moving along an equipotential.","B"],["The field lines always point towards the source.","G"],
+["The field strength can be measured in V m⁻¹.","E"],["The field strength can be measured in N kg⁻¹.","G"],["Field lines are perpendicular to equipotentials.","B"],
+["A uniform field can be made with two parallel plates.","E"],["The constant in the force law is G.","G"],["The constant in the force law involves ε₀.","E"],
+["Work done = (quantity) × ΔV.","B"],["The field can be screened by a metal box.","E"],["It is the dominant force between atoms.","E"],["It holds planets in orbit.","G"],
+["A test object of 1 unit is used to define field strength.","B"]];
+let order=[],si=0,sc=0,st=0,ans=false;function shuffle(){order=S.map((_,i)=>i).sort(()=>Math.random()-.5);si=0;}
+function showS(){if(si>=order.length)shuffle();$("st").textContent=S[order[si]][0];$("sfb").textContent="";ans=false;}
+document.querySelectorAll("[data-a]").forEach(b=>b.onclick=()=>{if(ans)return;ans=true;st++;const a=S[order[si]][1];const ok=b.dataset.a===a;if(ok)sc++;
+ $("sfb").innerHTML=ok?"<span class='good'>Correct</span>":"<span class='bad'>No: "+({G:"gravity only",E:"electric only",B:"both"}[a])+"</span>";$("ss").textContent=sc+" / "+st;});
+$("snext").onclick=()=>{si++;showS();};
+tabs();drawT();shuffle();showS();
+</script>
+</body></html>
