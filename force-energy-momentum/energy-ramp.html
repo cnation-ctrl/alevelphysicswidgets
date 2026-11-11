@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Energy Ramp</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: whiteboard tool, one wide working panel under a slim header; large type for projection */
+:root{
+  --bg:#EEF3FA; --panel:#FFFFFF; --ink:#14213D; --muted:#56627A; --line:#D3DCE9;
+  --accent:#2F5DCC; --accent-ink:#FFFFFF; --warm:#D9661A; --good:#18915A; --bad:#C2372F; --soft:#E3EBF8;
+  --body:"Atkinson Hyperlegible",Verdana,Arial,sans-serif; --mono:"IBM Plex Mono",Consolas,"Courier New",monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0E1524; --panel:#16213A; --ink:#E9EFF9; --muted:#A0ACC2; --line:#2B3A57;
+  --accent:#86A8FF; --accent-ink:#0E1524; --warm:#F2A05A; --good:#4FCB8F; --bad:#F07B72; --soft:#1F2D4C; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E1524; --panel:#16213A; --ink:#E9EFF9; --muted:#A0ACC2; --line:#2B3A57;
+  --accent:#86A8FF; --accent-ink:#0E1524; --warm:#F2A05A; --good:#4FCB8F; --bad:#F07B72; --soft:#1F2D4C; color-scheme:dark}
+[hidden]{display:none!important}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:18px;line-height:1.45;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:18px 32px}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+header.top{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px 20px}
+header.top h1{font-size:clamp(26px,3.2vw,38px);margin:0;text-wrap:balance;letter-spacing:-.01em}
+header.top .spec{font-family:var(--mono);font-size:15px;color:var(--muted);letter-spacing:.04em}
+.tabs{display:flex;flex-wrap:wrap;gap:8px}
+.tabs button{font:inherit;font-weight:700;border:2px solid var(--line);background:var(--panel);color:var(--ink);padding:10px 18px;border-radius:10px;cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px;min-width:0}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}
+@media (max-width:820px){.grid2{grid-template-columns:minmax(0,1fr)}}
+label{font-weight:700;display:block;margin-bottom:4px}
+.row{display:flex;flex-wrap:wrap;gap:12px;align-items:end}
+input[type=number],input[type=text],select{font:inherit;font-family:var(--mono);font-size:20px;padding:8px 10px;border:2px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);min-width:0}
+input[type=range]{width:100%;accent-color:var(--accent)}
+button.go{font:inherit;font-weight:700;background:var(--accent);color:var(--accent-ink);border:0;border-radius:10px;padding:11px 20px;cursor:pointer}
+button.ghost{font:inherit;font-weight:700;background:transparent;color:var(--accent);border:2px solid var(--accent);border-radius:10px;padding:9px 18px;cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--warm);outline-offset:2px}
+.big{font-family:var(--mono);font-size:clamp(24px,3vw,34px);font-weight:600}
+.mono{font-family:var(--mono)}
+.muted{color:var(--muted)}
+.steps{display:flex;flex-direction:column;gap:6px;font-family:var(--mono);font-size:18px}
+.steps div{padding:6px 10px;background:var(--soft);border-radius:8px;overflow-x:auto}
+.good{color:var(--good)} .bad{color:var(--bad)} .warm{color:var(--warm)}
+.chip{display:inline-block;font-size:15px;font-weight:700;padding:3px 10px;border-radius:999px;background:var(--soft)}
+table{border-collapse:collapse;width:100%;font-size:17px}
+th,td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left}
+th{font-size:14px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.scroll{overflow-x:auto}
+canvas{display:block;width:100%;max-width:100%;touch-action:none}
+sup{font-size:.7em}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+.formula{font-family:var(--mono);font-size:20px;padding:10px 14px;background:var(--soft);border-radius:10px;overflow-x:auto}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:18px}
+.kv b{font-weight:700}
+.note{font-size:16px;color:var(--muted)}
+.callout{border-left:5px solid var(--warm);background:var(--soft);padding:10px 14px;border-radius:8px}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:15px}
+.legend span::before{content:"";display:inline-block;width:14px;height:4px;border-radius:2px;margin-right:6px;vertical-align:middle;background:var(--c)}
+</style>
+<style>body{margin:0}img{max-width:100%}select{max-width:100%;width:100%}.row>div{min-width:min(100%,150px)!important}</style>
+<script>
+const $=id=>document.getElementById(id);
+const cv=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const EPS0=8.85e-12, K=1/(4*Math.PI*8.85e-12), E_CH=1.60e-19, ME_=9.11e-31, MP=1.673e-27, G=6.67e-11;
+/* number in standard form as HTML, n significant figures */
+function sf(x,n=3){
+  if(x===0)return "0";
+  if(!isFinite(x))return "∞";
+  const neg=x<0;x=Math.abs(x);
+  let e=Math.floor(Math.log10(x));let m=x/Math.pow(10,e);let ms=m.toPrecision(n);
+  if(parseFloat(ms)>=10){e++;ms=(m/10).toPrecision(n);}
+  let s;
+  if(e>=-2&&e<n&&e<=3){s=x.toPrecision(n);if(s.includes("e"))s=ms+" × 10<sup>"+String(e).replace("-","−")+"</sup>";}
+  else s=ms+" × 10<sup>"+String(e).replace("-","−")+"</sup>";
+  return (neg?"−":"")+s;
+}
+/* plain-text version for canvas labels */
+function sft(x,n=3){return sf(x,n).replace(/<sup>/g,"^").replace(/<\/sup>/g,"").replace(" × 10^","e").replace(/e(−?\d+)/,(a,b)=>"×10"+sup(b));}
+function sup(s){const m={"0":"⁰","1":"¹","2":"²","3":"³","4":"⁴","5":"⁵","6":"⁶","7":"⁷","8":"⁸","9":"⁹","−":"⁻","-":"⁻"};return String(s).split("").map(c=>m[c]||c).join("");}
+function setup(c,aspect){
+  const dpr=window.devicePixelRatio||1,w=c.clientWidth||600,h=Math.round(w*aspect);
+  c.width=w*dpr;c.height=h*dpr;c.style.height=h+"px";
+  const g=c.getContext("2d");g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,w,h);
+  return {g,w,h};
+}
+function niceStep(range,target){const raw=range/target;const p=Math.pow(10,Math.floor(Math.log10(raw)));const f=raw/p;return (f<1.5?1:f<3?2:f<7?5:10)*p;}
+/* axes: box {x,y,w,h}; returns mapping functions */
+function axes(g,box,xmin,xmax,ymin,ymax,opt={}){
+  const X=x=>box.x+(x-xmin)/(xmax-xmin)*box.w, Y=y=>box.y+box.h-(y-ymin)/(ymax-ymin)*box.h;
+  const ink=cv("--ink"),line=cv("--line"),muted=cv("--muted");
+  g.save();g.font="14px "+cv("--body");g.lineWidth=1;
+  const xs=opt.xstep||niceStep(xmax-xmin,6), ys=opt.ystep||niceStep(ymax-ymin,5);
+  g.strokeStyle=line;g.fillStyle=muted;g.textAlign="center";g.textBaseline="top";
+  for(let x=Math.ceil(xmin/xs)*xs;x<=xmax+1e-9*xs;x+=xs){g.beginPath();g.moveTo(X(x),box.y);g.lineTo(X(x),box.y+box.h);g.stroke();g.fillText(opt.xfmt?opt.xfmt(x):+x.toPrecision(3),X(x),Math.min(box.y+box.h,Math.max(box.y,Y(0)))+4);}
+  g.textAlign="right";g.textBaseline="middle";
+  for(let y=Math.ceil(ymin/ys)*ys;y<=ymax+1e-9*ys;y+=ys){g.beginPath();g.moveTo(box.x,Y(y));g.lineTo(box.x+box.w,Y(y));g.stroke();g.fillText(opt.yfmt?opt.yfmt(y):+y.toPrecision(3),box.x-6,Y(y));}
+  g.strokeStyle=ink;g.lineWidth=2;g.beginPath();
+  const y0=Math.min(box.y+box.h,Math.max(box.y,Y(0)));g.moveTo(box.x,y0);g.lineTo(box.x+box.w,y0);
+  g.moveTo(box.x,box.y);g.lineTo(box.x,box.y+box.h);g.stroke();
+  g.fillStyle=ink;g.font="bold 15px "+cv("--body");
+  if(opt.xl){g.textAlign="right";g.textBaseline="bottom";g.fillText(opt.xl,box.x+box.w,y0-4);}
+  if(opt.yl){g.textAlign="left";g.textBaseline="top";g.fillText(opt.yl,box.x+6,box.y-2);}
+  g.restore();
+  return {X,Y};
+}
+function arrow(g,x1,y1,x2,y2,col,wid=3,head=10){
+  const a=Math.atan2(y2-y1,x2-x1);g.save();g.strokeStyle=col;g.fillStyle=col;g.lineWidth=wid;
+  g.beginPath();g.moveTo(x1,y1);g.lineTo(x2-Math.cos(a)*head*0.6,y2-Math.sin(a)*head*0.6);g.stroke();
+  g.beginPath();g.moveTo(x2,y2);g.lineTo(x2-head*Math.cos(a-0.4),y2-head*Math.sin(a-0.4));g.lineTo(x2-head*Math.cos(a+0.4),y2-head*Math.sin(a+0.4));g.closePath();g.fill();g.restore();
+}
+function tabs(onchange){
+  document.querySelectorAll(".tabs button").forEach(b=>b.addEventListener("click",()=>{
+    document.querySelectorAll(".tabs button").forEach(x=>x.setAttribute("aria-selected",x===b));
+    document.querySelectorAll("[data-panel]").forEach(p=>p.hidden=p.dataset.panel!==b.dataset.tab);
+    if(onchange)onchange(b.dataset.tab);
+  }));
+}
+function onResize(f){let t;window.addEventListener("resize",()=>{clearTimeout(t);t=setTimeout(f,80);});
+  if(window.matchMedia)window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change",f);}
+
+</script>
+
+</head>
+<body>
+<div class="wrap">
+<header class="top"><h1>Energy Ramp</h1><span class="spec">AQA 7408 · 3.4.1.8 · ΔE<sub>p</sub> = mgΔh, E<sub>k</sub> = ½mv² and work done against friction</span></header>
+<div class="grid2">
+ <div class="panel">
+  <div class="row"><div style="flex:1"><label for="m">Mass: <span id="mv" class="mono"></span></label><input type="range" id="m" min="0.5" max="80" step="0.5" value="60"></div>
+  <div style="flex:1"><label for="h">Start height: <span id="hv" class="mono"></span></label><input type="range" id="h" min="1" max="30" step="0.5" value="12"></div></div>
+  <div class="row"><div style="flex:1"><label for="u">Start speed: <span id="uv" class="mono"></span></label><input type="range" id="u" min="0" max="10" step="0.5" value="0"></div>
+  <div style="flex:1"><label for="f">Resistive force (friction + drag): <span id="fv" class="mono"></span></label><input type="range" id="f" min="0" max="100" step="2" value="20"></div></div>
+  <label for="track" style="margin-top:6px">Track</label><select id="track"><option value="ramp">straight ramp then flat</option><option value="u" selected>U-shaped half-pipe</option><option value="coaster">roller coaster with a hill</option></select>
+  <div class="row" style="margin-top:10px"><button class="go" id="go">Release</button><button class="ghost" id="rs">Reset</button></div>
+  <canvas id="bars" style="margin-top:10px" aria-label="Energy bar chart"></canvas>
+ </div>
+ <div class="panel"><canvas id="cv" aria-label="Track with the moving object"></canvas><div class="steps" id="steps" style="margin-top:10px"></div><div class="callout" style="margin-top:10px" id="msg"></div></div>
+</div>
+</div>
+<script>
+const g0=9.81,r3=x=>(+(+x).toPrecision(3)).toString();let pos=0,v=0,Wf=0,anim=null,path=[];
+function H(x,H0){const t=$("track").value;if(t==="ramp")return x<20?H0*(1-x/20):0;if(t==="u")return H0*Math.pow((x-30)/30,2);return x<15?H0*(1-x/15):x<45?H0*0.5*Math.pow(Math.sin(Math.PI*(x-15)/30),2):0;}
+function build(){const H0=+$("h").value;path=[];let L=0,px=0,py=H(0,H0);for(let x=0;x<=60;x+=0.02){const y=H(x,H0);L+=Math.hypot(x-px,y-py);path.push({x,y,L});px=x;py=y;}}
+function at(L){let i=path.findIndex(p=>p.L>=L);if(i<0)i=path.length-1;return path[i];}
+function reset(){if(anim)cancelAnimationFrame(anim);anim=null;build();pos=0;v=+$("u").value;Wf=0;draw();}
+function draw(){
+  const m=+$("m").value,H0=+$("h").value,f=+$("f").value;["m","h","u","f"].forEach(id=>$(id+"v").textContent=$(id).value+({m:" kg",h:" m",u:" m s⁻¹",f:" N"}[id]));
+  const p=at(pos),Ep=m*g0*p.y,Ek=0.5*m*v*v,E0=m*g0*H0+0.5*m*Math.pow(+$("u").value,2);
+  const S=setup($("cv"),0.6),g=S.g,box={x:20,y:20,w:S.w-40,h:S.h-40},sx=box.w/60,sy=box.h/Math.max(H0*1.1,5);
+  g.fillStyle=cv("--soft");g.beginPath();g.moveTo(box.x,box.y+box.h);path.forEach(q=>g.lineTo(box.x+q.x*sx,box.y+box.h-q.y*sy));g.lineTo(box.x+box.w,box.y+box.h);g.closePath();g.fill();
+  g.strokeStyle=cv("--ink");g.lineWidth=3;g.beginPath();path.forEach((q,i)=>i?g.lineTo(box.x+q.x*sx,box.y+box.h-q.y*sy):g.moveTo(box.x+q.x*sx,box.y+box.h-q.y*sy));g.stroke();
+  g.fillStyle=cv("--accent");g.beginPath();g.arc(box.x+p.x*sx,box.y+box.h-p.y*sy-12,12,0,7);g.fill();
+  const B=setup($("bars"),0.45),b=B.g,bw=B.w/5,top=E0*1.05||1;const bars=[["Eₚ",Ep,"--accent"],["Eₖ",Ek,"--warm"],["work vs friction",Wf,"--bad"],["total",Ep+Ek+Wf,"--good"]];
+  bars.forEach((q,i)=>{const hh=(B.h-40)*q[1]/top;b.fillStyle=cv(q[2]);b.fillRect(bw*(i+0.6),B.h-24-hh,bw*0.7,hh);b.fillStyle=cv("--ink");b.font="13px "+cv("--body");b.fillText(q[0],bw*(i+0.6),B.h-6);b.fillText(r3(q[1])+" J",bw*(i+0.6),B.h-28-hh);});
+  $("steps").innerHTML=`<div>height ${r3(p.y)} m, speed ${r3(v)} m s⁻¹, distance along track ${r3(pos)} m</div><div>E<sub>p</sub> + E<sub>k</sub> + work against resistance = ${r3(Ep)} + ${r3(Ek)} + ${r3(Wf)} = <b>${r3(Ep+Ek+Wf)} J</b></div><div>no friction, speed at the bottom = √(2gh) = ${r3(Math.sqrt(2*g0*H0+Math.pow(+$("u").value,2)))} m s⁻¹ (mass cancels)</div>`;
+  $("msg").innerHTML=f===0?"No resistance: E<sub>p</sub> + E<sub>k</sub> stays constant, so the object returns to its starting height.":"The total stays constant (conservation of energy), but the red bar grows: work done against resistive forces = F × distance travelled, transferred to the thermal store of the surroundings.";
+}
+function step(){const m=+$("m").value,f=+$("f").value,H0=+$("h").value,dt=0.004;
+  for(let k=0;k<6;k++){const p=at(pos),q=at(pos+0.05),slope=(q.y-p.y)/0.05;let a=-g0*slope;if(Math.abs(v)>1e-3)a-=Math.sign(v)*f/m;else if(Math.abs(g0*slope)<f/m){v=0;continue;}
+    const nv=v+a*dt;if(Math.abs(v)>1e-3&&Math.sign(nv)!==Math.sign(v)&&Math.abs(g0*slope)<f/m){v=0;}else v=nv;const dpos=v*dt;pos=Math.max(0,Math.min(path[path.length-1].L,pos+dpos));Wf+=f*Math.abs(dpos);if(pos<=0&&v<0)v=0;}
+  draw();if(pos<path[path.length-1].L-0.01&&(Math.abs(v)>0.01||Math.abs(at(pos).y-at(pos+0.05).y)/0.05*g0>(+$("f").value)/(+$("m").value)))anim=requestAnimationFrame(step);else anim=null;}
+$("go").onclick=()=>{reset();anim=requestAnimationFrame(step);};$("rs").onclick=reset;
+document.querySelectorAll("input,select").forEach(e=>e.addEventListener("input",reset));onResize(draw);reset();
+</script>
+</body></html>

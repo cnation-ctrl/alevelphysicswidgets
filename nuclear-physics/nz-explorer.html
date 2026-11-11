@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>N–Z Stability Explorer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: whiteboard tool, one wide working panel under a slim header; large type for projection */
+:root{
+  --bg:#EEF3FA; --panel:#FFFFFF; --ink:#14213D; --muted:#56627A; --line:#D3DCE9;
+  --accent:#2F5DCC; --accent-ink:#FFFFFF; --warm:#D9661A; --good:#18915A; --bad:#C2372F; --soft:#E3EBF8;
+  --body:"Atkinson Hyperlegible",Verdana,Arial,sans-serif; --mono:"IBM Plex Mono",Consolas,"Courier New",monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0E1524; --panel:#16213A; --ink:#E9EFF9; --muted:#A0ACC2; --line:#2B3A57;
+  --accent:#86A8FF; --accent-ink:#0E1524; --warm:#F2A05A; --good:#4FCB8F; --bad:#F07B72; --soft:#1F2D4C; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E1524; --panel:#16213A; --ink:#E9EFF9; --muted:#A0ACC2; --line:#2B3A57;
+  --accent:#86A8FF; --accent-ink:#0E1524; --warm:#F2A05A; --good:#4FCB8F; --bad:#F07B72; --soft:#1F2D4C; color-scheme:dark}
+[hidden]{display:none!important}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:18px;line-height:1.45;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:18px 32px}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+header.top{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px 20px}
+header.top h1{font-size:clamp(26px,3.2vw,38px);margin:0;text-wrap:balance;letter-spacing:-.01em}
+header.top .spec{font-family:var(--mono);font-size:15px;color:var(--muted);letter-spacing:.04em}
+.tabs{display:flex;flex-wrap:wrap;gap:8px}
+.tabs button{font:inherit;font-weight:700;border:2px solid var(--line);background:var(--panel);color:var(--ink);padding:10px 18px;border-radius:10px;cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px;min-width:0}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}
+@media (max-width:820px){.grid2{grid-template-columns:minmax(0,1fr)}}
+label{font-weight:700;display:block;margin-bottom:4px}
+.row{display:flex;flex-wrap:wrap;gap:12px;align-items:end}
+input[type=number],input[type=text],select{font:inherit;font-family:var(--mono);font-size:20px;padding:8px 10px;border:2px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);min-width:0}
+input[type=range]{width:100%;accent-color:var(--accent)}
+button.go{font:inherit;font-weight:700;background:var(--accent);color:var(--accent-ink);border:0;border-radius:10px;padding:11px 20px;cursor:pointer}
+button.ghost{font:inherit;font-weight:700;background:transparent;color:var(--accent);border:2px solid var(--accent);border-radius:10px;padding:9px 18px;cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--warm);outline-offset:2px}
+.big{font-family:var(--mono);font-size:clamp(24px,3vw,34px);font-weight:600}
+.mono{font-family:var(--mono)}
+.muted{color:var(--muted)}
+.steps{display:flex;flex-direction:column;gap:6px;font-family:var(--mono);font-size:18px}
+.steps div{padding:6px 10px;background:var(--soft);border-radius:8px;overflow-x:auto}
+.good{color:var(--good)} .bad{color:var(--bad)} .warm{color:var(--warm)}
+.chip{display:inline-block;font-size:15px;font-weight:700;padding:3px 10px;border-radius:999px;background:var(--soft)}
+table{border-collapse:collapse;width:100%;font-size:17px}
+th,td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left}
+th{font-size:14px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.scroll{overflow-x:auto}
+canvas{display:block;width:100%;max-width:100%;touch-action:none}
+sup{font-size:.7em}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+.formula{font-family:var(--mono);font-size:20px;padding:10px 14px;background:var(--soft);border-radius:10px;overflow-x:auto}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:18px}
+.kv b{font-weight:700}
+.note{font-size:16px;color:var(--muted)}
+.callout{border-left:5px solid var(--warm);background:var(--soft);padding:10px 14px;border-radius:8px}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:15px}
+.legend span::before{content:"";display:inline-block;width:14px;height:4px;border-radius:2px;margin-right:6px;vertical-align:middle;background:var(--c)}
+</style>
+<style>body{margin:0}img{max-width:100%}select{max-width:100%;width:100%}.row>div{min-width:min(100%,150px)!important}</style>
+<script>
+const $=id=>document.getElementById(id);
+const cv=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const EPS0=8.85e-12, K=1/(4*Math.PI*8.85e-12), E_CH=1.60e-19, ME_=9.11e-31, MP=1.673e-27, G=6.67e-11;
+/* number in standard form as HTML, n significant figures */
+function sf(x,n=3){
+  if(x===0)return "0";
+  if(!isFinite(x))return "∞";
+  const neg=x<0;x=Math.abs(x);
+  let e=Math.floor(Math.log10(x));let m=x/Math.pow(10,e);let ms=m.toPrecision(n);
+  if(parseFloat(ms)>=10){e++;ms=(m/10).toPrecision(n);}
+  let s;
+  if(e>=-2&&e<n&&e<=3){s=x.toPrecision(n);if(s.includes("e"))s=ms+" × 10<sup>"+String(e).replace("-","−")+"</sup>";}
+  else s=ms+" × 10<sup>"+String(e).replace("-","−")+"</sup>";
+  return (neg?"−":"")+s;
+}
+/* plain-text version for canvas labels */
+function sft(x,n=3){return sf(x,n).replace(/<sup>/g,"^").replace(/<\/sup>/g,"").replace(" × 10^","e").replace(/e(−?\d+)/,(a,b)=>"×10"+sup(b));}
+function sup(s){const m={"0":"⁰","1":"¹","2":"²","3":"³","4":"⁴","5":"⁵","6":"⁶","7":"⁷","8":"⁸","9":"⁹","−":"⁻","-":"⁻"};return String(s).split("").map(c=>m[c]||c).join("");}
+function setup(c,aspect){
+  const dpr=window.devicePixelRatio||1,w=c.clientWidth||600,h=Math.round(w*aspect);
+  c.width=w*dpr;c.height=h*dpr;c.style.height=h+"px";
+  const g=c.getContext("2d");g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,w,h);
+  return {g,w,h};
+}
+function niceStep(range,target){const raw=range/target;const p=Math.pow(10,Math.floor(Math.log10(raw)));const f=raw/p;return (f<1.5?1:f<3?2:f<7?5:10)*p;}
+/* axes: box {x,y,w,h}; returns mapping functions */
+function axes(g,box,xmin,xmax,ymin,ymax,opt={}){
+  const X=x=>box.x+(x-xmin)/(xmax-xmin)*box.w, Y=y=>box.y+box.h-(y-ymin)/(ymax-ymin)*box.h;
+  const ink=cv("--ink"),line=cv("--line"),muted=cv("--muted");
+  g.save();g.font="14px "+cv("--body");g.lineWidth=1;
+  const xs=opt.xstep||niceStep(xmax-xmin,6), ys=opt.ystep||niceStep(ymax-ymin,5);
+  g.strokeStyle=line;g.fillStyle=muted;g.textAlign="center";g.textBaseline="top";
+  for(let x=Math.ceil(xmin/xs)*xs;x<=xmax+1e-9*xs;x+=xs){g.beginPath();g.moveTo(X(x),box.y);g.lineTo(X(x),box.y+box.h);g.stroke();g.fillText(opt.xfmt?opt.xfmt(x):+x.toPrecision(3),X(x),Math.min(box.y+box.h,Math.max(box.y,Y(0)))+4);}
+  g.textAlign="right";g.textBaseline="middle";
+  for(let y=Math.ceil(ymin/ys)*ys;y<=ymax+1e-9*ys;y+=ys){g.beginPath();g.moveTo(box.x,Y(y));g.lineTo(box.x+box.w,Y(y));g.stroke();g.fillText(opt.yfmt?opt.yfmt(y):+y.toPrecision(3),box.x-6,Y(y));}
+  g.strokeStyle=ink;g.lineWidth=2;g.beginPath();
+  const y0=Math.min(box.y+box.h,Math.max(box.y,Y(0)));g.moveTo(box.x,y0);g.lineTo(box.x+box.w,y0);
+  g.moveTo(box.x,box.y);g.lineTo(box.x,box.y+box.h);g.stroke();
+  g.fillStyle=ink;g.font="bold 15px "+cv("--body");
+  if(opt.xl){g.textAlign="right";g.textBaseline="bottom";g.fillText(opt.xl,box.x+box.w,y0-4);}
+  if(opt.yl){g.textAlign="left";g.textBaseline="top";g.fillText(opt.yl,box.x+6,box.y-2);}
+  g.restore();
+  return {X,Y};
+}
+function arrow(g,x1,y1,x2,y2,col,wid=3,head=10){
+  const a=Math.atan2(y2-y1,x2-x1);g.save();g.strokeStyle=col;g.fillStyle=col;g.lineWidth=wid;
+  g.beginPath();g.moveTo(x1,y1);g.lineTo(x2-Math.cos(a)*head*0.6,y2-Math.sin(a)*head*0.6);g.stroke();
+  g.beginPath();g.moveTo(x2,y2);g.lineTo(x2-head*Math.cos(a-0.4),y2-head*Math.sin(a-0.4));g.lineTo(x2-head*Math.cos(a+0.4),y2-head*Math.sin(a+0.4));g.closePath();g.fill();g.restore();
+}
+function tabs(onchange){
+  document.querySelectorAll(".tabs button").forEach(b=>b.addEventListener("click",()=>{
+    document.querySelectorAll(".tabs button").forEach(x=>x.setAttribute("aria-selected",x===b));
+    document.querySelectorAll("[data-panel]").forEach(p=>p.hidden=p.dataset.panel!==b.dataset.tab);
+    if(onchange)onchange(b.dataset.tab);
+  }));
+}
+function onResize(f){let t;window.addEventListener("resize",()=>{clearTimeout(t);t=setTimeout(f,80);});
+  if(window.matchMedia)window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change",f);}
+
+</script>
+</head>
+<body>
+<div class="wrap">
+<header class="top"><h1>N–Z Stability Explorer</h1><span class="spec">AQA 7408 · 3.8.1.4 · decay modes and nuclear energy levels</span></header>
+<div class="tabs" role="tablist"><button data-tab="nz" aria-selected="true">N against Z</button><button data-tab="lev" aria-selected="false">Energy levels and γ emission</button></div>
+<div data-panel="nz" class="grid2">
+ <div class="panel">
+  <canvas id="chart" aria-label="Graph of neutron number against proton number with the line of stability"></canvas>
+  <div class="legend" style="margin-top:6px"><span style="--c:var(--muted)">stable nuclei</span><span style="--c:var(--ink)">N = Z</span><span style="--c:var(--warm)">your nucleus</span><span style="--c:var(--accent)">decay step</span></div>
+ </div>
+ <div class="panel">
+  <label for="pick">Choose a nucleus</label>
+  <select id="pick"></select>
+  <div class="row" style="margin-top:10px">
+   <div style="flex:1;min-width:120px"><label for="Z">Z (protons)</label><input type="number" id="Z" min="1" max="100" value="6"></div>
+   <div style="flex:1;min-width:120px"><label for="N">N (neutrons)</label><input type="number" id="N" min="0" max="160" value="8"></div>
+  </div>
+  <div class="row" style="margin-top:12px"><button class="go" id="decay">Decay it</button><button class="ghost" id="chain">Decay to stability</button></div>
+  <div class="steps" id="eqs" style="margin-top:12px"></div>
+  <div class="callout" style="margin-top:12px"><b>Above the line</b> (too many neutrons): β<sup>−</sup>, n → p + e<sup>−</sup> + ν̄. <b>Below the line</b> (too many protons): β<sup>+</sup>, p → n + e<sup>+</sup> + ν, or electron capture, p + e<sup>−</sup> → n + ν. <b>Very heavy</b> (A &gt; 209 or so): α emission.</div>
+ </div>
+</div>
+<div data-panel="lev" class="grid2" hidden>
+ <div class="panel">
+  <label for="lv">Example</label><select id="lv"><option value="tc">technetium-99m (medical tracer)</option><option value="co">cobalt-60 → nickel-60</option><option value="am">americium-241 → neptunium-237</option></select>
+  <canvas id="levels" style="margin-top:12px" aria-label="Nuclear energy level diagram"></canvas>
+ </div>
+ <div class="panel">
+  <label for="gsel">γ photon</label><select id="gsel"></select>
+  <div class="steps" id="gsteps" style="margin-top:12px"></div>
+  <div class="callout" style="margin-top:12px" id="lnote"></div>
+ </div>
+</div>
+</div>
+<script>
+const EL=["n","H","He","Li","Be","B","C","N","O","F","Ne","Na","Mg","Al","Si","P","S","Cl","Ar","K","Ca","Sc","Ti","V","Cr","Mn","Fe","Co","Ni","Cu","Zn","Ga","Ge","As","Se","Br","Kr","Rb","Sr","Y","Zr","Nb","Mo","Tc","Ru","Rh","Pd","Ag","Cd","In","Sn","Sb","Te","I","Xe","Cs","Ba","La","Ce","Pr","Nd","Pm","Sm","Eu","Gd","Tb","Dy","Ho","Er","Tm","Yb","Lu","Hf","Ta","W","Re","Os","Ir","Pt","Au","Hg","Tl","Pb","Bi","Po","At","Rn","Fr","Ra","Ac","Th","Pa","U","Np","Pu","Am","Cm","Bk","Cf","Es","Fm"];
+const PICKS=[["C-14",6,8],["N-13",7,6],["Na-22",11,11],["K-40 (two routes)",19,21],["Co-60",27,33],["Sr-90",38,52],["I-131",53,78],["Cs-137",55,82],["Ra-226",88,138],["U-238",92,146],["Am-241",95,146]];
+$("pick").innerHTML=PICKS.map((p,i)=>`<option value="${i}">${p[0]}</option>`).join("");
+const Zs=A=>A/(1.98+0.0155*Math.pow(A,2/3));
+let path=[];
+function nstable(Z){let best=Z,bd=1e9;for(let A=Z;A<3*Z+10;A++){const d=Math.abs(Zs(A)-Z);if(d<bd){bd=d;best=A-Z;}}return best;}
+function mode(Z,N){const A=Z+N;if(Z<=1&&N<=1)return null;if(A>209&&Z>82)return "a";const ns=nstable(Z);if(N>ns+0.6)return "bm";if(N<ns-0.6)return Z>40?"ec":"bp";return null;}
+function sym(Z,N){return `<sup>${Z+N}</sup><sub>${Z}</sub>${EL[Z]||"?"}`;}
+function stepDecay(Z,N){const m=mode(Z,N);if(!m)return null;
+  if(m==="a")return {Z:Z-2,N:N-2,eq:`${sym(Z,N)} → ${sym(Z-2,N-2)} + <sup>4</sup><sub>2</sub>α`,name:"alpha"};
+  if(m==="bm")return {Z:Z+1,N:N-1,eq:`${sym(Z,N)} → ${sym(Z+1,N-1)} + <sup>0</sup><sub>−1</sub>β + ν̄<sub>e</sub>`,name:"beta minus"};
+  if(m==="bp")return {Z:Z-1,N:N+1,eq:`${sym(Z,N)} → ${sym(Z-1,N+1)} + <sup>0</sup><sub>+1</sub>β + ν<sub>e</sub>`,name:"beta plus"};
+  return {Z:Z-1,N:N+1,eq:`${sym(Z,N)} + <sup>0</sup><sub>−1</sub>e → ${sym(Z-1,N+1)} + ν<sub>e</sub>`,name:"electron capture"};}
+function cur(){return [+$("Z").value,+$("N").value];}
+function drawChart(){
+  const [Z,N]=cur();const full=Z>30;const zmax=full?100:Math.max(20,Z+6),nmax=full?160:Math.max(24,N+6);
+  const S=setup($("chart"),0.9),g=S.g,box={x:52,y:20,w:S.w-70,h:S.h-56};
+  const A=axes(g,box,0,zmax,0,nmax,{xl:"Z",yl:"N"});
+  g.fillStyle=cv("--muted");for(let a=2;a<=209;a++){const z=Math.round(Zs(a));for(let dz=-1;dz<=1;dz++){const zz=z+dz,nn=a-zz;if(zz>0&&nn>=0&&zz<=zmax&&nn<=nmax&&Math.abs(Zs(a)-zz)<(a<40?0.6:1.4)){g.globalAlpha=0.55;g.fillRect(A.X(zz)-2,A.Y(nn)-2,4,4);}}}
+  g.globalAlpha=1;g.strokeStyle=cv("--ink");g.setLineDash([6,5]);g.beginPath();g.moveTo(A.X(0),A.Y(0));g.lineTo(A.X(Math.min(zmax,nmax)),A.Y(Math.min(zmax,nmax)));g.stroke();g.setLineDash([]);
+  path.forEach((p,i)=>{if(i){const q=path[i-1];arrow(g,A.X(q[0]),A.Y(q[1]),A.X(p[0]),A.Y(p[1]),cv("--accent"),2.5,9);}});
+  g.fillStyle=cv("--warm");g.beginPath();g.arc(A.X(Z),A.Y(N),7,0,7);g.fill();
+}
+function show(){const [Z,N]=cur();const m=mode(Z,N);
+  let s=`<div>${sym(Z,N)}: Z = ${Z}, N = ${N}, A = ${Z+N}, N/Z = ${(N/Math.max(Z,1)).toFixed(2)}</div>`;
+  s+=m?`<div>Likely decay: <b>${{a:"alpha",bm:"beta minus",bp:"beta plus",ec:"electron capture (or β⁺)"}[m]}</b></div>`:`<div class="good">On (or very near) the line of stability: stable or very long-lived.</div>`;
+  if(Z===19&&N===21)s+=`<div class="muted">K-40 is a real oddity: 89% β<sup>−</sup> to Ca-40 and 11% electron capture to Ar-40.</div>`;
+  $("eqs").innerHTML=s+path.slice(1).map(p=>`<div>${p[2]}</div>`).join("");drawChart();}
+function doDecay(){const [Z,N]=cur();if(!path.length)path=[[Z,N,""]];const r=stepDecay(Z,N);if(!r){show();return;}path.push([r.Z,r.N,r.eq]);$("Z").value=r.Z;$("N").value=r.N;show();}
+$("pick").addEventListener("input",()=>{const p=PICKS[$("pick").value];$("Z").value=p[1];$("N").value=p[2];path=[];show();});
+["Z","N"].forEach(id=>$(id).addEventListener("input",()=>{path=[];show();}));
+$("decay").onclick=doDecay;$("chain").onclick=()=>{for(let i=0;i<20;i++){const [Z,N]=cur();if(!mode(Z,N))break;doDecay();}};
+// energy levels
+const LV={tc:{title:"Tc-99m → Tc-99",levels:[[0,"Tc-99 ground state"],[0.1405,"140.5 keV"],[0.1427,"142.7 keV (metastable, T½ = 6.0 h)"]],g:[[2,1,0.0022],[1,0,0.1405]],
+  note:"The 'm' means metastable: an excited nuclear state that lasts hours instead of ~10<sup>−12</sup> s. The 140 keV γ escapes the body to a gamma camera; there is no α or β, so the dose is low."},
+ co:{title:"Co-60 β⁻ decay, then γ from Ni-60",levels:[[0,"Ni-60 ground state"],[1.333,"1.333 MeV"],[2.506,"2.506 MeV"],[2.824,"Co-60 (before β⁻ decay)"]],g:[[3,2,0.318,"β⁻"],[2,1,1.173],[1,0,1.333]],
+  note:"The β⁻ decay leaves Ni-60 in an excited state. It drops to the ground state in two steps, emitting two γ photons of 1.17 MeV and 1.33 MeV."},
+ am:{title:"Am-241 α decay, then γ from Np-237",levels:[[0,"Np-237 ground state"],[0.0595,"59.5 keV"],[5.6,"Am-241 (before α decay)"]],g:[[2,1,5.49,"α"],[1,0,0.0595]],
+  note:"Most α particles leave Np-237 in an excited state, which then emits a 59.5 keV γ. That is why a smoke alarm source gives a small γ count even through paper."}};
+function drawLevels(){
+  const L=LV[$("lv").value];const S=setup($("levels"),0.85),g=S.g,w=S.w,h=S.h;const top=Math.max(...L.levels.map(l=>l[0]));
+  const Y=e=>h-30-L.levels.findIndex(l=>l[0]===e)*(h-70)/(L.levels.length-1);
+  g.font="15px "+cv("--body");g.textAlign="left";
+  L.levels.forEach(l=>{const y=Y(l[0]);g.strokeStyle=cv("--ink");g.lineWidth=3;g.beginPath();g.moveTo(40,y);g.lineTo(w*0.62,y);g.stroke();g.fillStyle=cv("--ink");g.fillText(l[1],w*0.64,y+5);});
+  L.g.forEach((t,i)=>{const x=80+i*(w*0.5/L.g.length);const y1=Y(L.levels[t[0]][0]),y2=Y(L.levels[t[1]][0]);const col=t[3]?cv("--muted"):(String(i)===$("gsel").value?cv("--warm"):cv("--accent"));
+    arrow(g,x,y1,x,y2-1,col,3,10);g.fillStyle=col;g.fillText(t[3]?t[3]:"γ",x+8,(y1+y2)/2);});
+  g.fillStyle=cv("--muted");g.fillText(L.title+" (not to scale)",40,22);
+}
+function levelInfo(){const L=LV[$("lv").value];$("lnote").innerHTML=L.note;const gs=L.g.map((t,i)=>[t,i]).filter(x=>!x[0][3]);
+  if(!$("gsel").options.length||$("gsel").dataset.k!==$("lv").value){$("gsel").innerHTML=gs.map(([t,i])=>`<option value="${i}">${t[2]>=0.1?(t[2]).toFixed(3)+" MeV":(t[2]*1000).toFixed(1)+" keV"}</option>`).join("");$("gsel").dataset.k=$("lv").value;}
+  const E=L.g[+$("gsel").value][2]*1e6*1.60e-19,f=E/6.63e-34,lam=3.00e8/f;
+  $("gsteps").innerHTML=`<div>E = ${sf(L.g[+$("gsel").value][2],3)} MeV × 1.60 × 10<sup>−13</sup> J MeV<sup>−1</sup> = ${sf(E,3)} J</div><div>f = E/h = ${sf(f,3)} Hz</div><div>λ = c/f = hc/E = ${sf(lam,3)} m</div>`;drawLevels();}
+$("lv").addEventListener("input",levelInfo);$("gsel").addEventListener("input",levelInfo);
+tabs(t=>{if(t==="lev")levelInfo();else show();});
+onResize(()=>{drawChart();drawLevels();});show();levelInfo();
+</script>
+</body></html>

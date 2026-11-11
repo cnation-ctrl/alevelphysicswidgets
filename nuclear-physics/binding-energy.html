@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Binding Energy Calculator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: whiteboard tool, one wide working panel under a slim header; large type for projection */
+:root{
+  --bg:#EEF3FA; --panel:#FFFFFF; --ink:#14213D; --muted:#56627A; --line:#D3DCE9;
+  --accent:#2F5DCC; --accent-ink:#FFFFFF; --warm:#D9661A; --good:#18915A; --bad:#C2372F; --soft:#E3EBF8;
+  --body:"Atkinson Hyperlegible",Verdana,Arial,sans-serif; --mono:"IBM Plex Mono",Consolas,"Courier New",monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0E1524; --panel:#16213A; --ink:#E9EFF9; --muted:#A0ACC2; --line:#2B3A57;
+  --accent:#86A8FF; --accent-ink:#0E1524; --warm:#F2A05A; --good:#4FCB8F; --bad:#F07B72; --soft:#1F2D4C; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E1524; --panel:#16213A; --ink:#E9EFF9; --muted:#A0ACC2; --line:#2B3A57;
+  --accent:#86A8FF; --accent-ink:#0E1524; --warm:#F2A05A; --good:#4FCB8F; --bad:#F07B72; --soft:#1F2D4C; color-scheme:dark}
+[hidden]{display:none!important}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:18px;line-height:1.45;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:18px 32px}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+header.top{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px 20px}
+header.top h1{font-size:clamp(26px,3.2vw,38px);margin:0;text-wrap:balance;letter-spacing:-.01em}
+header.top .spec{font-family:var(--mono);font-size:15px;color:var(--muted);letter-spacing:.04em}
+.tabs{display:flex;flex-wrap:wrap;gap:8px}
+.tabs button{font:inherit;font-weight:700;border:2px solid var(--line);background:var(--panel);color:var(--ink);padding:10px 18px;border-radius:10px;cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px;min-width:0}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}
+@media (max-width:820px){.grid2{grid-template-columns:minmax(0,1fr)}}
+label{font-weight:700;display:block;margin-bottom:4px}
+.row{display:flex;flex-wrap:wrap;gap:12px;align-items:end}
+input[type=number],input[type=text],select{font:inherit;font-family:var(--mono);font-size:20px;padding:8px 10px;border:2px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);min-width:0}
+input[type=range]{width:100%;accent-color:var(--accent)}
+button.go{font:inherit;font-weight:700;background:var(--accent);color:var(--accent-ink);border:0;border-radius:10px;padding:11px 20px;cursor:pointer}
+button.ghost{font:inherit;font-weight:700;background:transparent;color:var(--accent);border:2px solid var(--accent);border-radius:10px;padding:9px 18px;cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--warm);outline-offset:2px}
+.big{font-family:var(--mono);font-size:clamp(24px,3vw,34px);font-weight:600}
+.mono{font-family:var(--mono)}
+.muted{color:var(--muted)}
+.steps{display:flex;flex-direction:column;gap:6px;font-family:var(--mono);font-size:18px}
+.steps div{padding:6px 10px;background:var(--soft);border-radius:8px;overflow-x:auto}
+.good{color:var(--good)} .bad{color:var(--bad)} .warm{color:var(--warm)}
+.chip{display:inline-block;font-size:15px;font-weight:700;padding:3px 10px;border-radius:999px;background:var(--soft)}
+table{border-collapse:collapse;width:100%;font-size:17px}
+th,td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left}
+th{font-size:14px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.scroll{overflow-x:auto}
+canvas{display:block;width:100%;max-width:100%;touch-action:none}
+sup{font-size:.7em}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+.formula{font-family:var(--mono);font-size:20px;padding:10px 14px;background:var(--soft);border-radius:10px;overflow-x:auto}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:18px}
+.kv b{font-weight:700}
+.note{font-size:16px;color:var(--muted)}
+.callout{border-left:5px solid var(--warm);background:var(--soft);padding:10px 14px;border-radius:8px}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:15px}
+.legend span::before{content:"";display:inline-block;width:14px;height:4px;border-radius:2px;margin-right:6px;vertical-align:middle;background:var(--c)}
+</style>
+<style>body{margin:0}img{max-width:100%}select{max-width:100%;width:100%}.row>div{min-width:min(100%,150px)!important}</style>
+<script>
+const $=id=>document.getElementById(id);
+const cv=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const EPS0=8.85e-12, K=1/(4*Math.PI*8.85e-12), E_CH=1.60e-19, ME_=9.11e-31, MP=1.673e-27, G=6.67e-11;
+/* number in standard form as HTML, n significant figures */
+function sf(x,n=3){
+  if(x===0)return "0";
+  if(!isFinite(x))return "∞";
+  const neg=x<0;x=Math.abs(x);
+  let e=Math.floor(Math.log10(x));let m=x/Math.pow(10,e);let ms=m.toPrecision(n);
+  if(parseFloat(ms)>=10){e++;ms=(m/10).toPrecision(n);}
+  let s;
+  if(e>=-2&&e<n&&e<=3){s=x.toPrecision(n);if(s.includes("e"))s=ms+" × 10<sup>"+String(e).replace("-","−")+"</sup>";}
+  else s=ms+" × 10<sup>"+String(e).replace("-","−")+"</sup>";
+  return (neg?"−":"")+s;
+}
+/* plain-text version for canvas labels */
+function sft(x,n=3){return sf(x,n).replace(/<sup>/g,"^").replace(/<\/sup>/g,"").replace(" × 10^","e").replace(/e(−?\d+)/,(a,b)=>"×10"+sup(b));}
+function sup(s){const m={"0":"⁰","1":"¹","2":"²","3":"³","4":"⁴","5":"⁵","6":"⁶","7":"⁷","8":"⁸","9":"⁹","−":"⁻","-":"⁻"};return String(s).split("").map(c=>m[c]||c).join("");}
+function setup(c,aspect){
+  const dpr=window.devicePixelRatio||1,w=c.clientWidth||600,h=Math.round(w*aspect);
+  c.width=w*dpr;c.height=h*dpr;c.style.height=h+"px";
+  const g=c.getContext("2d");g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,w,h);
+  return {g,w,h};
+}
+function niceStep(range,target){const raw=range/target;const p=Math.pow(10,Math.floor(Math.log10(raw)));const f=raw/p;return (f<1.5?1:f<3?2:f<7?5:10)*p;}
+/* axes: box {x,y,w,h}; returns mapping functions */
+function axes(g,box,xmin,xmax,ymin,ymax,opt={}){
+  const X=x=>box.x+(x-xmin)/(xmax-xmin)*box.w, Y=y=>box.y+box.h-(y-ymin)/(ymax-ymin)*box.h;
+  const ink=cv("--ink"),line=cv("--line"),muted=cv("--muted");
+  g.save();g.font="14px "+cv("--body");g.lineWidth=1;
+  const xs=opt.xstep||niceStep(xmax-xmin,6), ys=opt.ystep||niceStep(ymax-ymin,5);
+  g.strokeStyle=line;g.fillStyle=muted;g.textAlign="center";g.textBaseline="top";
+  for(let x=Math.ceil(xmin/xs)*xs;x<=xmax+1e-9*xs;x+=xs){g.beginPath();g.moveTo(X(x),box.y);g.lineTo(X(x),box.y+box.h);g.stroke();g.fillText(opt.xfmt?opt.xfmt(x):+x.toPrecision(3),X(x),Math.min(box.y+box.h,Math.max(box.y,Y(0)))+4);}
+  g.textAlign="right";g.textBaseline="middle";
+  for(let y=Math.ceil(ymin/ys)*ys;y<=ymax+1e-9*ys;y+=ys){g.beginPath();g.moveTo(box.x,Y(y));g.lineTo(box.x+box.w,Y(y));g.stroke();g.fillText(opt.yfmt?opt.yfmt(y):+y.toPrecision(3),box.x-6,Y(y));}
+  g.strokeStyle=ink;g.lineWidth=2;g.beginPath();
+  const y0=Math.min(box.y+box.h,Math.max(box.y,Y(0)));g.moveTo(box.x,y0);g.lineTo(box.x+box.w,y0);
+  g.moveTo(box.x,box.y);g.lineTo(box.x,box.y+box.h);g.stroke();
+  g.fillStyle=ink;g.font="bold 15px "+cv("--body");
+  if(opt.xl){g.textAlign="right";g.textBaseline="bottom";g.fillText(opt.xl,box.x+box.w,y0-4);}
+  if(opt.yl){g.textAlign="left";g.textBaseline="top";g.fillText(opt.yl,box.x+6,box.y-2);}
+  g.restore();
+  return {X,Y};
+}
+function arrow(g,x1,y1,x2,y2,col,wid=3,head=10){
+  const a=Math.atan2(y2-y1,x2-x1);g.save();g.strokeStyle=col;g.fillStyle=col;g.lineWidth=wid;
+  g.beginPath();g.moveTo(x1,y1);g.lineTo(x2-Math.cos(a)*head*0.6,y2-Math.sin(a)*head*0.6);g.stroke();
+  g.beginPath();g.moveTo(x2,y2);g.lineTo(x2-head*Math.cos(a-0.4),y2-head*Math.sin(a-0.4));g.lineTo(x2-head*Math.cos(a+0.4),y2-head*Math.sin(a+0.4));g.closePath();g.fill();g.restore();
+}
+function tabs(onchange){
+  document.querySelectorAll(".tabs button").forEach(b=>b.addEventListener("click",()=>{
+    document.querySelectorAll(".tabs button").forEach(x=>x.setAttribute("aria-selected",x===b));
+    document.querySelectorAll("[data-panel]").forEach(p=>p.hidden=p.dataset.panel!==b.dataset.tab);
+    if(onchange)onchange(b.dataset.tab);
+  }));
+}
+function onResize(f){let t;window.addEventListener("resize",()=>{clearTimeout(t);t=setTimeout(f,80);});
+  if(window.matchMedia)window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change",f);}
+
+</script>
+</head>
+<body>
+<div class="wrap">
+<header class="top"><h1>Binding Energy Calculator</h1><span class="spec">AQA 7408 · 3.8.1.6 · mass defect, 1 u = 931.5 MeV, fission and fusion</span></header>
+<div class="tabs" role="tablist"><button data-tab="be" aria-selected="true">Binding energy per nucleon</button><button data-tab="rx" aria-selected="false">Energy released in a reaction</button></div>
+<div data-panel="be" class="grid2">
+ <div class="panel">
+  <label for="nuc">Nucleus</label><select id="nuc"></select>
+  <div class="steps" id="beS" style="margin-top:12px"></div>
+  <p class="note">Masses are atomic masses from data tables. The nuclear mass is found by subtracting Z electron masses. Data: m<sub>p</sub> = 1.00728 u, m<sub>n</sub> = 1.00867 u, m<sub>e</sub> = 0.00055 u, 1 u = 931.5 MeV.</p>
+ </div>
+ <div class="panel">
+  <canvas id="curve" aria-label="Average binding energy per nucleon against nucleon number"></canvas>
+  <div class="legend" style="margin-top:6px"><span style="--c:var(--accent)">measured nuclei</span><span style="--c:var(--warm)">selected nucleus</span><span style="--c:var(--good)">fusion releases energy</span><span style="--c:var(--bad)">fission releases energy</span></div>
+ </div>
+</div>
+<div data-panel="rx" class="grid2" hidden>
+ <div class="panel">
+  <label for="rx">Reaction</label><select id="rx"></select>
+  <div class="steps" id="rxS" style="margin-top:12px"></div>
+ </div>
+ <div class="panel">
+  <canvas id="rxC" aria-label="Binding energy of reactants and products"></canvas>
+  <div class="callout" style="margin-top:12px" id="rxN"></div>
+ </div>
+</div>
+</div>
+<script>
+const MPu=1.00728,MNu=1.00867,MEu=0.00055,U=931.5;
+const D=[["H-2",1,2,2.014102],["H-3",1,3,3.016049],["He-3",2,3,3.016029],["He-4",2,4,4.002603],["Li-6",3,6,6.015122],["Li-7",3,7,7.016004],["Be-9",4,9,9.012183],["C-12",6,12,12.000000],["N-14",7,14,14.003074],["O-16",8,16,15.994915],["Ne-20",10,20,19.992440],["Mg-24",12,24,23.985042],["Si-28",14,28,27.976927],["Ca-40",20,40,39.962591],["Fe-56",26,56,55.934936],["Ni-62",28,62,61.928345],["Cu-63",29,63,62.929598],["Kr-92",36,92,91.926173],["Sr-90",38,90,89.907730],["Sr-94",38,94,93.915361],["Zr-90",40,90,89.904698],["Mo-98",42,98,97.905405],["Sn-120",50,120,119.902202],["Cs-137",55,137,136.907090],["Xe-140",54,140,139.921646],["Ba-141",56,141,140.914403],["W-184",74,184,183.950933],["Au-197",79,197,196.966570],["Pb-208",82,208,207.976652],["Rn-222",86,222,222.017578],["Ra-226",88,226,226.025410],["Th-232",90,232,232.038056],["U-235",92,235,235.043930],["U-238",92,238,238.050788],["Pu-239",94,239,239.052163]];
+const byN=Object.fromEntries(D.map(d=>[d[0],d]));byN["n"]=["n",0,1,1.008665];byN["He-4 (α)"]=byN["He-4"];
+function be(d){const [n,Z,A,m]=d;const mn=m-Z*MEu;const dm=Z*MPu+(A-Z)*MNu-mn;return {mn,dm,BE:dm*U,per:dm*U/A};}
+$("nuc").innerHTML=D.map((d,i)=>`<option value="${i}" ${d[0]==="Fe-56"?"selected":""}>${d[0]}</option>`).join("");
+const RX=[{name:"Induced fission: n + U-235 → Ba-141 + Kr-92 + 3n",l:[["n",1],["U-235",1]],r:[["Ba-141",1],["Kr-92",1],["n",3]],type:"fission"},
+ {name:"Induced fission: n + U-235 → Xe-140 + Sr-94 + 2n",l:[["n",1],["U-235",1]],r:[["Xe-140",1],["Sr-94",1],["n",2]],type:"fission"},
+ {name:"Fusion: H-2 + H-3 → He-4 + n",l:[["H-2",1],["H-3",1]],r:[["He-4",1],["n",1]],type:"fusion"},
+ {name:"Fusion: H-2 + H-2 → He-3 + n",l:[["H-2",2]],r:[["He-3",1],["n",1]],type:"fusion"},
+ {name:"Alpha decay: Ra-226 → Rn-222 + α",l:[["Ra-226",1]],r:[["Rn-222",1],["He-4",1]],type:"alpha"}];
+$("rx").innerHTML=RX.map((r,i)=>`<option value="${i}">${r.name}</option>`).join("");
+function showBE(){
+  const d=D[+$("nuc").value],[n,Z,A,m]=d,r=be(d);
+  $("beS").innerHTML=`<div>${n}: Z = ${Z}, N = ${A-Z}, A = ${A}</div><div>nuclear mass = ${m.toFixed(6)} − ${Z} × 0.00055 = ${r.mn.toFixed(5)} u</div><div>mass of separate nucleons = ${Z} × 1.00728 + ${A-Z} × 1.00867 = ${(Z*MPu+(A-Z)*MNu).toFixed(5)} u</div><div>mass defect Δm = ${r.dm.toFixed(5)} u = ${sf(r.dm*1.661e-27,3)} kg</div><div>binding energy = ${r.dm.toFixed(5)} × 931.5 = <b>${r.BE.toFixed(1)} MeV</b></div><div>per nucleon = ${r.BE.toFixed(1)} ÷ ${A} = <b>${r.per.toFixed(2)} MeV</b></div>`;
+  drawCurve(A,r.per);
+}
+function drawCurve(Asel,Bsel){
+  const S=setup($("curve"),0.72),g=S.g,box={x:58,y:22,w:S.w-76,h:S.h-58};
+  const P=axes(g,box,0,250,0,9.5,{xl:"nucleon number A",yl:"BE per nucleon / MeV",xstep:50,ystep:1});
+  g.fillStyle="rgba(24,145,90,0.12)";g.fillRect(P.X(0),box.y,P.X(56)-P.X(0),box.h);g.fillStyle="rgba(194,55,47,0.12)";g.fillRect(P.X(56),box.y,P.X(250)-P.X(56),box.h);
+  const pts=D.map(d=>[d[2],be(d).per]).sort((a,b)=>a[0]-b[0]);
+  g.strokeStyle=cv("--accent");g.lineWidth=1.5;g.beginPath();pts.forEach(([x,y],i)=>i?g.lineTo(P.X(x),P.Y(y)):g.moveTo(P.X(x),P.Y(y)));g.stroke();
+  g.fillStyle=cv("--accent");pts.forEach(([x,y])=>{g.beginPath();g.arc(P.X(x),P.Y(y),3.5,0,7);g.fill();});
+  if(Asel){g.fillStyle=cv("--warm");g.beginPath();g.arc(P.X(Asel),P.Y(Bsel),8,0,7);g.fill();}
+  g.fillStyle=cv("--ink");g.font="13px "+cv("--body");g.fillText("Fe-56 / Ni-62: most stable",P.X(80),P.Y(7.3));
+  g.fillStyle=cv("--good");g.fillText("fusion →",P.X(4),P.Y(1.2));g.fillStyle=cv("--bad");g.textAlign="right";g.fillText("← fission",P.X(246),P.Y(1.2));
+}
+function side(list){return list.reduce((s,[n,k])=>s+k*byN[n][3],0);}
+function showRx(){
+  const R=RX[+$("rx").value],ml=side(R.l),mr=side(R.r),dm=ml-mr,Q=dm*U;
+  const fmt=list=>list.map(([n,k])=>(k>1?k+" × ":"")+n).join(" + ");
+  $("rxS").innerHTML=`<div>mass before = ${R.l.map(([n,k])=>(k>1?k+" × ":"")+byN[n][3].toFixed(6)).join(" + ")} = ${ml.toFixed(6)} u</div><div>mass after = ${R.r.map(([n,k])=>(k>1?k+" × ":"")+byN[n][3].toFixed(6)).join(" + ")} = ${mr.toFixed(6)} u</div><div>mass lost Δm = ${dm.toFixed(6)} u</div><div>energy released = ${dm.toFixed(6)} × 931.5 = <b>${Q.toFixed(1)} MeV</b> = ${sf(Q*1.60e-13,3)} J</div><div>per nucleon involved: ${(Q/R.l.reduce((s,[n,k])=>s+k*byN[n][2],0)).toFixed(2)} MeV</div>`;
+  $("rxN").innerHTML=R.type==="fission"?"Fission: a heavy nucleus splits into two medium nuclei with <b>higher binding energy per nucleon</b>. Total binding energy increases, so mass decreases and energy (mostly kinetic energy of the fragments) is released. About 200 MeV per fission.":R.type==="fusion"?"Fusion: light nuclei join to make a nucleus with <b>higher binding energy per nucleon</b>. Less energy per reaction than fission, but <b>more energy per nucleon</b> (about 3.5 MeV per nucleon for D–T compared with about 0.8 MeV for fission). Needs very high temperatures to overcome the electrostatic repulsion.":"Alpha decay releases energy for the same reason: the products have more binding energy in total than the parent. The energy is shared as kinetic energy (most to the α).";
+  const S=setup($("rxC"),0.6),g=S.g,w=S.w,h=S.h;
+  const bL=R.l.reduce((s,[n,k])=>s+(n==="n"?0:k*be(byN[n]).BE),0),bR=R.r.reduce((s,[n,k])=>s+(n==="n"?0:k*be(byN[n]).BE),0),mx=Math.max(bL,bR)*1.1;
+  const bar=(x,v,lab,col)=>{const bh=(h-60)*v/mx;g.fillStyle=col;g.fillRect(x,h-30-bh,w*0.28,bh);g.fillStyle=cv("--ink");g.font="15px "+cv("--body");g.textAlign="center";g.fillText(lab,x+w*0.14,h-10);g.fillText(v.toFixed(1)+" MeV",x+w*0.14,h-36-bh);};
+  bar(w*0.12,bL,"total BE before",cv("--muted"));bar(w*0.58,bR,"total BE after",cv("--accent"));
+  g.fillStyle=cv("--warm");g.textAlign="center";g.font="bold 15px "+cv("--body");g.fillText("difference = "+(bR-bL).toFixed(1)+" MeV released",w/2,20);
+}
+tabs(t=>{if(t==="rx")showRx();else showBE();});
+$("nuc").addEventListener("input",showBE);$("rx").addEventListener("input",showRx);
+onResize(()=>{showBE();showRx();});showBE();showRx();
+</script>
+</body></html>

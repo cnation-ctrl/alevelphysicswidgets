@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nuclear Radius Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: whiteboard tool, one wide working panel under a slim header; large type for projection */
+:root{
+  --bg:#EEF3FA; --panel:#FFFFFF; --ink:#14213D; --muted:#56627A; --line:#D3DCE9;
+  --accent:#2F5DCC; --accent-ink:#FFFFFF; --warm:#D9661A; --good:#18915A; --bad:#C2372F; --soft:#E3EBF8;
+  --body:"Atkinson Hyperlegible",Verdana,Arial,sans-serif; --mono:"IBM Plex Mono",Consolas,"Courier New",monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0E1524; --panel:#16213A; --ink:#E9EFF9; --muted:#A0ACC2; --line:#2B3A57;
+  --accent:#86A8FF; --accent-ink:#0E1524; --warm:#F2A05A; --good:#4FCB8F; --bad:#F07B72; --soft:#1F2D4C; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E1524; --panel:#16213A; --ink:#E9EFF9; --muted:#A0ACC2; --line:#2B3A57;
+  --accent:#86A8FF; --accent-ink:#0E1524; --warm:#F2A05A; --good:#4FCB8F; --bad:#F07B72; --soft:#1F2D4C; color-scheme:dark}
+[hidden]{display:none!important}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:18px;line-height:1.45;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:18px 32px}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+header.top{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px 20px}
+header.top h1{font-size:clamp(26px,3.2vw,38px);margin:0;text-wrap:balance;letter-spacing:-.01em}
+header.top .spec{font-family:var(--mono);font-size:15px;color:var(--muted);letter-spacing:.04em}
+.tabs{display:flex;flex-wrap:wrap;gap:8px}
+.tabs button{font:inherit;font-weight:700;border:2px solid var(--line);background:var(--panel);color:var(--ink);padding:10px 18px;border-radius:10px;cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px;min-width:0}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}
+@media (max-width:820px){.grid2{grid-template-columns:minmax(0,1fr)}}
+label{font-weight:700;display:block;margin-bottom:4px}
+.row{display:flex;flex-wrap:wrap;gap:12px;align-items:end}
+input[type=number],input[type=text],select{font:inherit;font-family:var(--mono);font-size:20px;padding:8px 10px;border:2px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);min-width:0}
+input[type=range]{width:100%;accent-color:var(--accent)}
+button.go{font:inherit;font-weight:700;background:var(--accent);color:var(--accent-ink);border:0;border-radius:10px;padding:11px 20px;cursor:pointer}
+button.ghost{font:inherit;font-weight:700;background:transparent;color:var(--accent);border:2px solid var(--accent);border-radius:10px;padding:9px 18px;cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--warm);outline-offset:2px}
+.big{font-family:var(--mono);font-size:clamp(24px,3vw,34px);font-weight:600}
+.mono{font-family:var(--mono)}
+.muted{color:var(--muted)}
+.steps{display:flex;flex-direction:column;gap:6px;font-family:var(--mono);font-size:18px}
+.steps div{padding:6px 10px;background:var(--soft);border-radius:8px;overflow-x:auto}
+.good{color:var(--good)} .bad{color:var(--bad)} .warm{color:var(--warm)}
+.chip{display:inline-block;font-size:15px;font-weight:700;padding:3px 10px;border-radius:999px;background:var(--soft)}
+table{border-collapse:collapse;width:100%;font-size:17px}
+th,td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left}
+th{font-size:14px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.scroll{overflow-x:auto}
+canvas{display:block;width:100%;max-width:100%;touch-action:none}
+sup{font-size:.7em}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+.formula{font-family:var(--mono);font-size:20px;padding:10px 14px;background:var(--soft);border-radius:10px;overflow-x:auto}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:18px}
+.kv b{font-weight:700}
+.note{font-size:16px;color:var(--muted)}
+.callout{border-left:5px solid var(--warm);background:var(--soft);padding:10px 14px;border-radius:8px}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:15px}
+.legend span::before{content:"";display:inline-block;width:14px;height:4px;border-radius:2px;margin-right:6px;vertical-align:middle;background:var(--c)}
+</style>
+<style>body{margin:0}img{max-width:100%}select{max-width:100%;width:100%}.row>div{min-width:min(100%,150px)!important}</style>
+<script>
+const $=id=>document.getElementById(id);
+const cv=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const EPS0=8.85e-12, K=1/(4*Math.PI*8.85e-12), E_CH=1.60e-19, ME_=9.11e-31, MP=1.673e-27, G=6.67e-11;
+/* number in standard form as HTML, n significant figures */
+function sf(x,n=3){
+  if(x===0)return "0";
+  if(!isFinite(x))return "∞";
+  const neg=x<0;x=Math.abs(x);
+  let e=Math.floor(Math.log10(x));let m=x/Math.pow(10,e);let ms=m.toPrecision(n);
+  if(parseFloat(ms)>=10){e++;ms=(m/10).toPrecision(n);}
+  let s;
+  if(e>=-2&&e<n&&e<=3){s=x.toPrecision(n);if(s.includes("e"))s=ms+" × 10<sup>"+String(e).replace("-","−")+"</sup>";}
+  else s=ms+" × 10<sup>"+String(e).replace("-","−")+"</sup>";
+  return (neg?"−":"")+s;
+}
+/* plain-text version for canvas labels */
+function sft(x,n=3){return sf(x,n).replace(/<sup>/g,"^").replace(/<\/sup>/g,"").replace(" × 10^","e").replace(/e(−?\d+)/,(a,b)=>"×10"+sup(b));}
+function sup(s){const m={"0":"⁰","1":"¹","2":"²","3":"³","4":"⁴","5":"⁵","6":"⁶","7":"⁷","8":"⁸","9":"⁹","−":"⁻","-":"⁻"};return String(s).split("").map(c=>m[c]||c).join("");}
+function setup(c,aspect){
+  const dpr=window.devicePixelRatio||1,w=c.clientWidth||600,h=Math.round(w*aspect);
+  c.width=w*dpr;c.height=h*dpr;c.style.height=h+"px";
+  const g=c.getContext("2d");g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,w,h);
+  return {g,w,h};
+}
+function niceStep(range,target){const raw=range/target;const p=Math.pow(10,Math.floor(Math.log10(raw)));const f=raw/p;return (f<1.5?1:f<3?2:f<7?5:10)*p;}
+/* axes: box {x,y,w,h}; returns mapping functions */
+function axes(g,box,xmin,xmax,ymin,ymax,opt={}){
+  const X=x=>box.x+(x-xmin)/(xmax-xmin)*box.w, Y=y=>box.y+box.h-(y-ymin)/(ymax-ymin)*box.h;
+  const ink=cv("--ink"),line=cv("--line"),muted=cv("--muted");
+  g.save();g.font="14px "+cv("--body");g.lineWidth=1;
+  const xs=opt.xstep||niceStep(xmax-xmin,6), ys=opt.ystep||niceStep(ymax-ymin,5);
+  g.strokeStyle=line;g.fillStyle=muted;g.textAlign="center";g.textBaseline="top";
+  for(let x=Math.ceil(xmin/xs)*xs;x<=xmax+1e-9*xs;x+=xs){g.beginPath();g.moveTo(X(x),box.y);g.lineTo(X(x),box.y+box.h);g.stroke();g.fillText(opt.xfmt?opt.xfmt(x):+x.toPrecision(3),X(x),Math.min(box.y+box.h,Math.max(box.y,Y(0)))+4);}
+  g.textAlign="right";g.textBaseline="middle";
+  for(let y=Math.ceil(ymin/ys)*ys;y<=ymax+1e-9*ys;y+=ys){g.beginPath();g.moveTo(box.x,Y(y));g.lineTo(box.x+box.w,Y(y));g.stroke();g.fillText(opt.yfmt?opt.yfmt(y):+y.toPrecision(3),box.x-6,Y(y));}
+  g.strokeStyle=ink;g.lineWidth=2;g.beginPath();
+  const y0=Math.min(box.y+box.h,Math.max(box.y,Y(0)));g.moveTo(box.x,y0);g.lineTo(box.x+box.w,y0);
+  g.moveTo(box.x,box.y);g.lineTo(box.x,box.y+box.h);g.stroke();
+  g.fillStyle=ink;g.font="bold 15px "+cv("--body");
+  if(opt.xl){g.textAlign="right";g.textBaseline="bottom";g.fillText(opt.xl,box.x+box.w,y0-4);}
+  if(opt.yl){g.textAlign="left";g.textBaseline="top";g.fillText(opt.yl,box.x+6,box.y-2);}
+  g.restore();
+  return {X,Y};
+}
+function arrow(g,x1,y1,x2,y2,col,wid=3,head=10){
+  const a=Math.atan2(y2-y1,x2-x1);g.save();g.strokeStyle=col;g.fillStyle=col;g.lineWidth=wid;
+  g.beginPath();g.moveTo(x1,y1);g.lineTo(x2-Math.cos(a)*head*0.6,y2-Math.sin(a)*head*0.6);g.stroke();
+  g.beginPath();g.moveTo(x2,y2);g.lineTo(x2-head*Math.cos(a-0.4),y2-head*Math.sin(a-0.4));g.lineTo(x2-head*Math.cos(a+0.4),y2-head*Math.sin(a+0.4));g.closePath();g.fill();g.restore();
+}
+function tabs(onchange){
+  document.querySelectorAll(".tabs button").forEach(b=>b.addEventListener("click",()=>{
+    document.querySelectorAll(".tabs button").forEach(x=>x.setAttribute("aria-selected",x===b));
+    document.querySelectorAll("[data-panel]").forEach(p=>p.hidden=p.dataset.panel!==b.dataset.tab);
+    if(onchange)onchange(b.dataset.tab);
+  }));
+}
+function onResize(f){let t;window.addEventListener("resize",()=>{clearTimeout(t);t=setTimeout(f,80);});
+  if(window.matchMedia)window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change",f);}
+
+</script>
+</head>
+<body>
+<div class="wrap">
+<header class="top"><h1>Nuclear Radius Lab</h1><span class="spec">AQA 7408 · 3.8.1.5 · closest approach, electron diffraction, R = R₀A<sup>1/3</sup></span></header>
+<div class="tabs" role="tablist"><button data-tab="ca" aria-selected="true">Closest approach</button><button data-tab="ed" aria-selected="false">Electron diffraction</button><button data-tab="ra" aria-selected="false">R against A and density</button></div>
+<div data-panel="ca" class="grid2">
+ <div class="panel">
+  <label for="caZ">Target nucleus</label><select id="caZ"><option value="79,197" selected>gold-197 (Z = 79)</option><option value="47,107">silver-107 (Z = 47)</option><option value="29,63">copper-63 (Z = 29)</option><option value="13,27">aluminium-27 (Z = 13)</option></select>
+  <label for="caE" style="margin-top:10px">Alpha kinetic energy: <span id="caEv" class="mono"></span></label><input type="range" id="caE" min="1" max="40" step="0.5" value="5">
+  <div class="steps" id="caS" style="margin-top:12px"></div>
+  <div class="callout" style="margin-top:12px">Head-on, all the alpha's kinetic energy becomes electric potential energy at the closest approach: <b>E<sub>k</sub> = Qq/(4πε₀d)</b>, with Q = Ze and q = 2e. This gives an <b>upper limit</b> for the radius: the alpha never touches the nucleus.</div>
+ </div>
+ <div class="panel"><canvas id="caC" aria-label="Electric potential energy against distance with the alpha's kinetic energy"></canvas></div>
+</div>
+<div data-panel="ed" class="grid2" hidden>
+ <div class="panel">
+  <label for="edA">Target nucleus</label><select id="edA"><option value="12">carbon-12</option><option value="16" selected>oxygen-16</option><option value="40">calcium-40</option><option value="208">lead-208</option></select>
+  <label for="edE" style="margin-top:10px">Electron energy: <span id="edEv" class="mono"></span></label><input type="range" id="edE" min="200" max="1000" step="10" value="420">
+  <label for="edY" style="margin-top:10px">Intensity axis</label><select id="edY"><option value="log" selected>log scale</option><option value="lin">linear scale</option></select>
+  <div class="steps" id="edS" style="margin-top:12px"></div>
+  <div class="callout" style="margin-top:12px">Electrons are leptons, so they feel no strong force: they probe the charge (protons) only. At these energies they are relativistic, so <b>λ ≈ hc/E</b>. The first minimum is at <b>sin θ ≈ 0.61λ/R</b>.</div>
+ </div>
+ <div class="panel"><canvas id="edC" aria-label="Relative intensity against diffraction angle"></canvas></div>
+</div>
+<div data-panel="ra" class="grid2" hidden>
+ <div class="panel">
+  <canvas id="raC" aria-label="Nuclear radius against A to the power one third"></canvas>
+  <div class="row" style="margin-top:10px"><div style="flex:1"><label for="raX">x-axis</label><select id="raX"><option value="A">A</option><option value="A3" selected>A<sup>1/3</sup></option></select></div></div>
+ </div>
+ <div class="panel">
+  <label for="raR0">R₀: <span id="raR0v" class="mono"></span></label><input type="range" id="raR0" min="1.0" max="1.5" step="0.01" value="1.2">
+  <label for="raN" style="margin-top:10px">Nucleus for the density calculation</label><select id="raN"><option value="12">C-12</option><option value="56">Fe-56</option><option value="197" selected>Au-197</option><option value="238">U-238</option></select>
+  <div class="steps" id="raS" style="margin-top:12px"></div>
+  <div class="callout" style="margin-top:12px">R ∝ A<sup>1/3</sup> means R³ ∝ A, so volume ∝ number of nucleons. Each nucleon takes up the same volume: <b>nuclear density is the same for all nuclei</b>, about 10<sup>17</sup> kg m<sup>−3</sup>.</div>
+ </div>
+</div>
+</div>
+<script>
+const RD=[["C-12",12,3.04],["O-16",16,3.41],["Ca-40",40,4.54],["Fe-56",56,4.84],["Sn-120",120,6.0],["Au-197",197,7.0],["Pb-208",208,7.11],["U-238",238,7.45]];
+function ca(){
+  const [Z,A]=$("caZ").value.split(",").map(Number),E=+$("caE").value;$("caEv").textContent=E.toFixed(1)+" MeV";
+  const Ej=E*1.60e-13,d=(Z*1.60e-19)*(2*1.60e-19)/(4*Math.PI*8.85e-12*Ej),R=1.2e-15*Math.cbrt(A+4);
+  $("caS").innerHTML=`<div>E<sub>k</sub> = ${E.toFixed(1)} × 1.60 × 10<sup>−13</sup> = ${sf(Ej,3)} J</div><div>d = (${Z} × 1.60 × 10<sup>−19</sup>)(2 × 1.60 × 10<sup>−19</sup>) / (4π × 8.85 × 10<sup>−12</sup> × ${sf(Ej,3)})</div><div><b>d = ${sf(d,3)} m</b> = ${(d*1e15).toFixed(1)} fm</div><div>alpha and nucleus touch at about ${(R*1e15).toFixed(1)} fm ${d<R?'<span class="warm">: d is now less than this, so the strong force acts and the simple Coulomb model fails (Rutherford\'s formula breaks down)</span>':''}</div>`;
+  const S=setup($("caC"),0.72),g=S.g,box={x:70,y:22,w:S.w-88,h:S.h-58},rmax=Math.max(60,d*1e15*2.5),emax=Math.max(10,E*2);
+  const P=axes(g,box,0,rmax,0,emax,{xl:"r / fm",yl:"E / MeV"});
+  g.strokeStyle=cv("--accent");g.lineWidth=2.5;g.beginPath();let st=false;for(let i=1;i<=300;i++){const r=rmax*i/300;const U=1.44*2*Z/r;if(U>emax*1.2)continue;st?g.lineTo(P.X(r),P.Y(Math.min(U,emax))):g.moveTo(P.X(r),P.Y(Math.min(U,emax)));st=true;}g.stroke();
+  g.strokeStyle=cv("--warm");g.setLineDash([6,5]);g.beginPath();g.moveTo(P.X(0),P.Y(E));g.lineTo(P.X(rmax),P.Y(E));g.stroke();g.setLineDash([]);
+  g.fillStyle=cv("--warm");g.beginPath();g.arc(P.X(d*1e15),P.Y(E),6,0,7);g.fill();g.font="14px "+cv("--body");g.fillText("closest approach",P.X(d*1e15)+10,P.Y(E)-10);
+  g.fillStyle="rgba(127,127,127,0.2)";g.fillRect(P.X(0),box.y,P.X(R*1e15)-P.X(0),box.h);
+}
+function J1(x){let s=0;const n=200;for(let i=0;i<n;i++){const t=Math.PI*(i+0.5)/n;s+=Math.cos(t-x*Math.sin(t));}return s/n;}
+function ed(){
+  const A=+$("edA").value,E=+$("edE").value;$("edEv").textContent=E+" MeV";
+  const R=1.2*Math.cbrt(A)*1.15,lam=1240/E,s1=0.61*lam/R;
+  const S=setup($("edC"),0.72),g=S.g,box={x:70,y:22,w:S.w-88,h:S.h-58},log=$("edY").value==="log";
+  const I=th=>{const x=2*Math.PI*R*Math.sin(th*Math.PI/180)/lam;const a=x<1e-6?1:Math.pow(2*J1(x)/x,2);return (a+0.002)/Math.pow(Math.sin(Math.max(th,6)*Math.PI/360),4)*Math.pow(Math.sin(3*Math.PI/180),4);};
+  const ymin=log?-6:0,ymax=log?0.2:1.05;
+  const P=axes(g,box,0,90,ymin,ymax,{xl:"θ / °",yl:log?"relative intensity (log)":"relative intensity",xstep:15,ystep:log?1:0.2,yfmt:log?(y=>"10"+sup(String(y))):undefined});
+  const I0=I(6);g.strokeStyle=cv("--accent");g.lineWidth=2.5;g.beginPath();let st=false;
+  for(let i=0;i<=360;i++){const th=6+84*i/360;let y=I(th)/I0;y=log?Math.log10(Math.max(y,1e-7)):y;if(y<ymin)y=ymin;st?g.lineTo(P.X(th),P.Y(y)):g.moveTo(P.X(th),P.Y(y));st=true;}g.stroke();
+  if(s1<1){const th1=Math.asin(s1)*180/Math.PI;g.setLineDash([5,5]);g.strokeStyle=cv("--warm");g.beginPath();g.moveTo(P.X(th1),box.y);g.lineTo(P.X(th1),box.y+box.h);g.stroke();g.setLineDash([]);}
+  $("edS").innerHTML=`<div>λ = hc/E = (6.63 × 10<sup>−34</sup> × 3.00 × 10<sup>8</sup>) / (${E} × 1.60 × 10<sup>−13</sup>) = ${sf(lam*1e-15,3)} m</div><div>R (this nucleus) ≈ ${R.toFixed(2)} fm</div><div>first minimum: sin θ = 0.61λ/R = ${s1<1?s1.toFixed(3)+" → θ = "+(Math.asin(s1)*180/Math.PI).toFixed(1)+"°":"> 1: no minimum (raise E)"}</div><div class="muted">Measure θ of the minimum, then R = 0.61λ / sin θ.</div>`;
+}
+function ra(){
+  const R0=+$("raR0").value;$("raR0v").textContent=R0.toFixed(2)+" fm";const xA=$("raX").value==="A";
+  const S=setup($("raC"),0.75),g=S.g,box={x:58,y:22,w:S.w-76,h:S.h-58};
+  const P=axes(g,box,0,xA?250:6.5,0,8.5,{xl:xA?"A":"A^1/3",yl:"R / fm"});
+  g.strokeStyle=cv("--warm");g.lineWidth=2.5;g.beginPath();for(let i=0;i<=100;i++){const A=250*i/100;const x=xA?A:Math.cbrt(A);i?g.lineTo(P.X(x),P.Y(R0*Math.cbrt(A))):g.moveTo(P.X(x),P.Y(0));}g.stroke();
+  g.font="13px "+cv("--body");RD.forEach(([n,A,R])=>{const x=xA?A:Math.cbrt(A);g.fillStyle=cv("--accent");g.beginPath();g.arc(P.X(x),P.Y(R),5,0,7);g.fill();g.fillStyle=cv("--ink");g.fillText(n,P.X(x)+7,P.Y(R)+4);});
+  const A=+$("raN").value,R=R0*1e-15*Math.cbrt(A),m=A*1.661e-27,V=4/3*Math.PI*R**3;
+  $("raS").innerHTML=`<div>R = R₀A<sup>1/3</sup> = ${R0.toFixed(2)} × 10<sup>−15</sup> × ${A}<sup>1/3</sup> = ${sf(R,3)} m</div><div>m ≈ A × u = ${A} × 1.661 × 10<sup>−27</sup> = ${sf(m,3)} kg</div><div>V = 4/3 πR³ = ${sf(V,3)} m³</div><div><b>ρ = m/V = ${sf(m/V,3)} kg m<sup>−3</sup></b></div><div class="muted">A cancels: ρ = 3u / (4πR₀³) for every nucleus.</div>`;
+}
+tabs(t=>{if(t==="ca")ca();if(t==="ed")ed();if(t==="ra")ra();});
+["caZ","caE"].forEach(id=>$(id).addEventListener("input",ca));["edA","edE","edY"].forEach(id=>$(id).addEventListener("input",ed));["raR0","raN","raX"].forEach(id=>$(id).addEventListener("input",ra));
+onResize(()=>{ca();ed();ra();});ca();ed();ra();
+</script>
+</body></html>

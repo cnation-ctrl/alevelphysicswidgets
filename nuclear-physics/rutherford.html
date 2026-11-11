@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rutherford Scattering Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: whiteboard tool, one wide working panel under a slim header; large type for projection */
+:root{
+  --bg:#EEF3FA; --panel:#FFFFFF; --ink:#14213D; --muted:#56627A; --line:#D3DCE9;
+  --accent:#2F5DCC; --accent-ink:#FFFFFF; --warm:#D9661A; --good:#18915A; --bad:#C2372F; --soft:#E3EBF8;
+  --body:"Atkinson Hyperlegible",Verdana,Arial,sans-serif; --mono:"IBM Plex Mono",Consolas,"Courier New",monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0E1524; --panel:#16213A; --ink:#E9EFF9; --muted:#A0ACC2; --line:#2B3A57;
+  --accent:#86A8FF; --accent-ink:#0E1524; --warm:#F2A05A; --good:#4FCB8F; --bad:#F07B72; --soft:#1F2D4C; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E1524; --panel:#16213A; --ink:#E9EFF9; --muted:#A0ACC2; --line:#2B3A57;
+  --accent:#86A8FF; --accent-ink:#0E1524; --warm:#F2A05A; --good:#4FCB8F; --bad:#F07B72; --soft:#1F2D4C; color-scheme:dark}
+[hidden]{display:none!important}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:18px;line-height:1.45;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:18px 32px}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+header.top{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px 20px}
+header.top h1{font-size:clamp(26px,3.2vw,38px);margin:0;text-wrap:balance;letter-spacing:-.01em}
+header.top .spec{font-family:var(--mono);font-size:15px;color:var(--muted);letter-spacing:.04em}
+.tabs{display:flex;flex-wrap:wrap;gap:8px}
+.tabs button{font:inherit;font-weight:700;border:2px solid var(--line);background:var(--panel);color:var(--ink);padding:10px 18px;border-radius:10px;cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px;min-width:0}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}
+@media (max-width:820px){.grid2{grid-template-columns:minmax(0,1fr)}}
+label{font-weight:700;display:block;margin-bottom:4px}
+.row{display:flex;flex-wrap:wrap;gap:12px;align-items:end}
+input[type=number],input[type=text],select{font:inherit;font-family:var(--mono);font-size:20px;padding:8px 10px;border:2px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);min-width:0}
+input[type=range]{width:100%;accent-color:var(--accent)}
+button.go{font:inherit;font-weight:700;background:var(--accent);color:var(--accent-ink);border:0;border-radius:10px;padding:11px 20px;cursor:pointer}
+button.ghost{font:inherit;font-weight:700;background:transparent;color:var(--accent);border:2px solid var(--accent);border-radius:10px;padding:9px 18px;cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--warm);outline-offset:2px}
+.big{font-family:var(--mono);font-size:clamp(24px,3vw,34px);font-weight:600}
+.mono{font-family:var(--mono)}
+.muted{color:var(--muted)}
+.steps{display:flex;flex-direction:column;gap:6px;font-family:var(--mono);font-size:18px}
+.steps div{padding:6px 10px;background:var(--soft);border-radius:8px;overflow-x:auto}
+.good{color:var(--good)} .bad{color:var(--bad)} .warm{color:var(--warm)}
+.chip{display:inline-block;font-size:15px;font-weight:700;padding:3px 10px;border-radius:999px;background:var(--soft)}
+table{border-collapse:collapse;width:100%;font-size:17px}
+th,td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left}
+th{font-size:14px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.scroll{overflow-x:auto}
+canvas{display:block;width:100%;max-width:100%;touch-action:none}
+sup{font-size:.7em}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+.formula{font-family:var(--mono);font-size:20px;padding:10px 14px;background:var(--soft);border-radius:10px;overflow-x:auto}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:18px}
+.kv b{font-weight:700}
+.note{font-size:16px;color:var(--muted)}
+.callout{border-left:5px solid var(--warm);background:var(--soft);padding:10px 14px;border-radius:8px}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:15px}
+.legend span::before{content:"";display:inline-block;width:14px;height:4px;border-radius:2px;margin-right:6px;vertical-align:middle;background:var(--c)}
+</style>
+<style>body{margin:0}img{max-width:100%}select{max-width:100%;width:100%}.row>div{min-width:min(100%,150px)!important}</style>
+<script>
+const $=id=>document.getElementById(id);
+const cv=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const EPS0=8.85e-12, K=1/(4*Math.PI*8.85e-12), E_CH=1.60e-19, ME_=9.11e-31, MP=1.673e-27, G=6.67e-11;
+/* number in standard form as HTML, n significant figures */
+function sf(x,n=3){
+  if(x===0)return "0";
+  if(!isFinite(x))return "∞";
+  const neg=x<0;x=Math.abs(x);
+  let e=Math.floor(Math.log10(x));let m=x/Math.pow(10,e);let ms=m.toPrecision(n);
+  if(parseFloat(ms)>=10){e++;ms=(m/10).toPrecision(n);}
+  let s;
+  if(e>=-2&&e<n&&e<=3){s=x.toPrecision(n);if(s.includes("e"))s=ms+" × 10<sup>"+String(e).replace("-","−")+"</sup>";}
+  else s=ms+" × 10<sup>"+String(e).replace("-","−")+"</sup>";
+  return (neg?"−":"")+s;
+}
+/* plain-text version for canvas labels */
+function sft(x,n=3){return sf(x,n).replace(/<sup>/g,"^").replace(/<\/sup>/g,"").replace(" × 10^","e").replace(/e(−?\d+)/,(a,b)=>"×10"+sup(b));}
+function sup(s){const m={"0":"⁰","1":"¹","2":"²","3":"³","4":"⁴","5":"⁵","6":"⁶","7":"⁷","8":"⁸","9":"⁹","−":"⁻","-":"⁻"};return String(s).split("").map(c=>m[c]||c).join("");}
+function setup(c,aspect){
+  const dpr=window.devicePixelRatio||1,w=c.clientWidth||600,h=Math.round(w*aspect);
+  c.width=w*dpr;c.height=h*dpr;c.style.height=h+"px";
+  const g=c.getContext("2d");g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,w,h);
+  return {g,w,h};
+}
+function niceStep(range,target){const raw=range/target;const p=Math.pow(10,Math.floor(Math.log10(raw)));const f=raw/p;return (f<1.5?1:f<3?2:f<7?5:10)*p;}
+/* axes: box {x,y,w,h}; returns mapping functions */
+function axes(g,box,xmin,xmax,ymin,ymax,opt={}){
+  const X=x=>box.x+(x-xmin)/(xmax-xmin)*box.w, Y=y=>box.y+box.h-(y-ymin)/(ymax-ymin)*box.h;
+  const ink=cv("--ink"),line=cv("--line"),muted=cv("--muted");
+  g.save();g.font="14px "+cv("--body");g.lineWidth=1;
+  const xs=opt.xstep||niceStep(xmax-xmin,6), ys=opt.ystep||niceStep(ymax-ymin,5);
+  g.strokeStyle=line;g.fillStyle=muted;g.textAlign="center";g.textBaseline="top";
+  for(let x=Math.ceil(xmin/xs)*xs;x<=xmax+1e-9*xs;x+=xs){g.beginPath();g.moveTo(X(x),box.y);g.lineTo(X(x),box.y+box.h);g.stroke();g.fillText(opt.xfmt?opt.xfmt(x):+x.toPrecision(3),X(x),Math.min(box.y+box.h,Math.max(box.y,Y(0)))+4);}
+  g.textAlign="right";g.textBaseline="middle";
+  for(let y=Math.ceil(ymin/ys)*ys;y<=ymax+1e-9*ys;y+=ys){g.beginPath();g.moveTo(box.x,Y(y));g.lineTo(box.x+box.w,Y(y));g.stroke();g.fillText(opt.yfmt?opt.yfmt(y):+y.toPrecision(3),box.x-6,Y(y));}
+  g.strokeStyle=ink;g.lineWidth=2;g.beginPath();
+  const y0=Math.min(box.y+box.h,Math.max(box.y,Y(0)));g.moveTo(box.x,y0);g.lineTo(box.x+box.w,y0);
+  g.moveTo(box.x,box.y);g.lineTo(box.x,box.y+box.h);g.stroke();
+  g.fillStyle=ink;g.font="bold 15px "+cv("--body");
+  if(opt.xl){g.textAlign="right";g.textBaseline="bottom";g.fillText(opt.xl,box.x+box.w,y0-4);}
+  if(opt.yl){g.textAlign="left";g.textBaseline="top";g.fillText(opt.yl,box.x+6,box.y-2);}
+  g.restore();
+  return {X,Y};
+}
+function arrow(g,x1,y1,x2,y2,col,wid=3,head=10){
+  const a=Math.atan2(y2-y1,x2-x1);g.save();g.strokeStyle=col;g.fillStyle=col;g.lineWidth=wid;
+  g.beginPath();g.moveTo(x1,y1);g.lineTo(x2-Math.cos(a)*head*0.6,y2-Math.sin(a)*head*0.6);g.stroke();
+  g.beginPath();g.moveTo(x2,y2);g.lineTo(x2-head*Math.cos(a-0.4),y2-head*Math.sin(a-0.4));g.lineTo(x2-head*Math.cos(a+0.4),y2-head*Math.sin(a+0.4));g.closePath();g.fill();g.restore();
+}
+function tabs(onchange){
+  document.querySelectorAll(".tabs button").forEach(b=>b.addEventListener("click",()=>{
+    document.querySelectorAll(".tabs button").forEach(x=>x.setAttribute("aria-selected",x===b));
+    document.querySelectorAll("[data-panel]").forEach(p=>p.hidden=p.dataset.panel!==b.dataset.tab);
+    if(onchange)onchange(b.dataset.tab);
+  }));
+}
+function onResize(f){let t;window.addEventListener("resize",()=>{clearTimeout(t);t=setTimeout(f,80);});
+  if(window.matchMedia)window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change",f);}
+
+</script>
+</head>
+<body>
+<div class="wrap">
+<header class="top"><h1>Rutherford Scattering Lab</h1><span class="spec">AQA 7408 · 3.8.1.1 · alpha particles and a gold nucleus</span></header>
+<div class="tabs" role="tablist"><button data-tab="one" aria-selected="true">One alpha at a time</button><button data-tab="beam" aria-selected="false">Fire a beam</button><button data-tab="model" aria-selected="false">Plum pudding vs nuclear model</button></div>
+<div class="grid2">
+ <div class="panel">
+  <canvas id="sim" aria-label="Alpha particle paths past a gold nucleus"></canvas>
+  <div class="legend" style="margin-top:8px"><span style="--c:var(--warm)">alpha path</span><span style="--c:var(--accent)">nucleus (to scale)</span><span style="--c:var(--muted)">distance of closest approach (head-on)</span></div>
+ </div>
+ <div class="panel">
+  <div data-panel="one">
+   <label for="b">Impact parameter b: <span id="bv" class="mono"></span></label>
+   <input type="range" id="b" min="0" max="120" step="1" value="30">
+   <label for="ek" style="margin-top:10px">Alpha kinetic energy: <span id="ekv" class="mono"></span></label>
+   <input type="range" id="ek" min="2" max="10" step="0.5" value="5">
+   <label for="Z" style="margin-top:10px">Target nucleus</label>
+   <select id="Z"><option value="79" selected>gold, Z = 79</option><option value="47">silver, Z = 47</option><option value="29">copper, Z = 29</option><option value="13">aluminium, Z = 13</option></select>
+   <div class="row" style="margin-top:12px"><button class="go" id="fire">Fire alpha</button><button class="ghost" id="clear">Clear paths</button></div>
+   <div class="steps" id="out" style="margin-top:12px"></div>
+   <p class="note">b is the perpendicular distance between the alpha's starting line and the centre of the nucleus. 1 fm = 10<sup>−15</sup> m.</p>
+  </div>
+  <div data-panel="beam" hidden>
+   <p class="muted" style="margin-top:0">Fire alphas at random positions across the foil. Most miss the nucleus by a long way.</p>
+   <div class="row"><button class="go" id="b100">Fire 100</button><button class="go" id="b1000">Fire 1000</button><button class="ghost" id="breset">Reset counts</button></div>
+   <canvas id="hist" style="margin-top:12px" aria-label="Number of alphas against scattering angle, log scale"></canvas>
+   <div class="kv" id="tally" style="margin-top:10px"></div>
+  </div>
+  <div data-panel="model" hidden>
+   <div class="row"><div style="flex:1"><label for="mdl">Model of the atom</label><select id="mdl"><option value="nuc" selected>nuclear model (Rutherford)</option><option value="pud">plum pudding (Thomson)</option></select></div></div>
+   <div class="row" style="margin-top:10px"><button class="go" id="mfire">Fire 50 alphas</button></div>
+   <div class="callout" style="margin-top:12px" id="mtxt"></div>
+   <table style="margin-top:12px"><thead><tr><th>Observation</th><th>Conclusion</th></tr></thead><tbody>
+    <tr><td>Most alphas pass straight through</td><td>The atom is mostly empty space</td></tr>
+    <tr><td>Some are deflected through small angles</td><td>The nucleus is charged (same sign as alpha: positive)</td></tr>
+    <tr><td>A very few (about 1 in 10 000) bounce back, θ &gt; 90°</td><td>Positive charge and most of the mass are concentrated in a tiny nucleus</td></tr>
+   </tbody></table>
+  </div>
+ </div>
+</div>
+</div>
+<script>
+const KE2=1.44; // e^2/(4 pi eps0) in MeV fm
+let paths=[],tab="one",counts=new Array(18).fill(0),fired=0;
+function d0(){return KE2*2*(+$("Z").value)/(+$("ek").value);}
+function Rnuc(){const A={79:197,47:107,29:63,13:27}[$("Z").value];return 1.2*Math.cbrt(A);}
+function trace(b,dd,model){ // units fm, v0=1
+  const K=dd/2;let x=-160,y=b,vx=1,vy=0,pts=[[x,y]],t=0;
+  for(let i=0;i<20000;i++){
+    const r=Math.hypot(x,y);let ax=0,ay=0;
+    if(model==="pud"){ax=0;ay=0;}else{const r3=r*r*r;ax=K*x/r3;ay=K*y/r3;}
+    const dt=Math.max(0.02,Math.min(1.5,r/40));
+    vx+=ax*dt;vy+=ay*dt;x+=vx*dt;y+=vy*dt;
+    if(i%2===0)pts.push([x,y]);
+    if(Math.abs(x)>175||Math.abs(y)>175){pts.push([x,y]);break;}
+  }
+  if(model==="pud"){const th=(Math.random()-0.5)*0.004;pts=[[-160,b],[175,b+335*Math.tan(th)]];return {pts,theta:Math.abs(th)};}
+  return {pts,theta:Math.atan2(Math.abs(vy),vx)*(vy>=0?1:1)};
+}
+function angle(b,dd){return 2*Math.atan(dd/(2*Math.max(Math.abs(b),1e-9)));}
+function drawSim(){
+  const S=setup($("sim"),0.82),g=S.g,w=S.w,h=S.h,sc=Math.min(w,h)/350,cx=w/2,cy=h/2;
+  const X=x=>cx+x*sc,Y=y=>cy-y*sc;
+  g.fillStyle=cv("--soft");g.fillRect(0,0,w,h);
+  g.strokeStyle=cv("--line");g.lineWidth=1;g.beginPath();g.moveTo(0,cy);g.lineTo(w,cy);g.stroke();
+  if(tab!=="model"||$("mdl").value==="nuc"){
+    const dd=d0();g.setLineDash([5,5]);g.strokeStyle=cv("--muted");g.beginPath();g.arc(cx,cy,dd*sc,0,7);g.stroke();g.setLineDash([]);
+    g.fillStyle=cv("--accent");g.beginPath();g.arc(cx,cy,Math.max(2.5,Rnuc()*sc),0,7);g.fill();
+  } else {g.fillStyle="rgba(217,102,26,0.12)";g.fillRect(0,0,w,h);g.fillStyle=cv("--muted");g.font="15px "+cv("--body");g.textAlign="center";g.fillText("positive charge spread through the whole atom (radius ≈ 10⁵ fm)",cx,24);
+    g.fillStyle=cv("--accent");for(let i=0;i<14;i++){g.beginPath();g.arc(w*(0.1+0.8*((i*37)%14)/14),h*(0.15+0.7*((i*53)%14)/14),4,0,7);g.fill();}}
+  paths.forEach((p,i)=>{g.strokeStyle=cv("--warm");g.globalAlpha=i===paths.length-1?1:0.45;g.lineWidth=i===paths.length-1?3:1.5;g.beginPath();p.pts.forEach(([x,y],j)=>j?g.lineTo(X(x),Y(y)):g.moveTo(X(x),Y(y)));g.stroke();});
+  g.globalAlpha=1;
+  g.fillStyle=cv("--ink");g.font="14px "+cv("--mono");g.textAlign="left";g.fillText("scale: 100 fm",12,h-12);g.fillRect(12,h-32,100*sc,3);
+}
+function fireOne(){
+  const b=+$("b").value,dd=d0();const r=trace(b,dd,"nuc");paths.push(r);if(paths.length>25)paths.shift();
+  const th=angle(b,dd)*180/Math.PI;
+  $("out").innerHTML=`<div>head-on closest approach d = 2Ze²/(4πε₀E<sub>k</sub>) = ${dd.toFixed(1)} fm</div><div>nuclear radius R ≈ 1.2 A<sup>1/3</sup> = ${Rnuc().toFixed(1)} fm</div><div>scattering angle θ = <b>${th.toFixed(1)}°</b> ${th>90?'<span class="bad">(bounced back)</span>':''}</div>`;
+  drawSim();
+}
+function upd(){$("bv").textContent=$("b").value+" fm";$("ekv").textContent=(+$("ek").value).toFixed(1)+" MeV";}
+function fireBeam(n){
+  const dd=d0(),bmax=1500; // fm: spread of impact parameters in the foil
+  for(let i=0;i<n;i++){const b=bmax*Math.sqrt(Math.random());const th=angle(b,dd)*180/Math.PI;counts[Math.min(17,Math.floor(th/10))]++;fired++;
+    if(b<160&&paths.length<60)paths.push(trace(Math.random()<0.5?b:-b,dd,"nuc"));}
+  // add a few visible near misses for the picture
+  for(let i=0;i<6;i++){paths.push(trace((Math.random()*2-1)*150,dd,"nuc"));}
+  while(paths.length>40)paths.shift();
+  drawSim();drawHist();
+}
+function drawHist(){
+  const S=setup($("hist"),0.6),g=S.g,box={x:58,y:20,w:S.w-76,h:S.h-56};
+  const lg=counts.map(c=>c>0?Math.log10(c):-0.3);const top=Math.max(2,Math.ceil(Math.max(...lg)));
+  const A=axes(g,box,0,180,0,top,{xstep:30,ystep:1,xl:"θ / °",yl:"number (log scale)",yfmt:y=>"10"+sup(String(y))});
+  g.fillStyle=cv("--accent");counts.forEach((c,i)=>{if(c>0){const y=Math.log10(c)+0.0001;g.fillRect(A.X(i*10)+2,A.Y(Math.max(y,0.02)),A.X(10)-A.X(0)-4,A.Y(0)-A.Y(Math.max(y,0.02)));}});
+  const back=counts.slice(9).reduce((a,b)=>a+b,0),small=counts[0];
+  $("tally").innerHTML=`<b>Fired</b><span class="mono">${fired}</span><b>θ &lt; 10°</b><span class="mono">${small} (${fired?(100*small/fired).toFixed(2):0}%)</span><b>θ &gt; 90°</b><span class="mono">${back} (${fired?(100*back/fired).toFixed(3):0}%)</span>`;
+}
+function modelFire(){
+  const m=$("mdl").value,dd=d0();paths=[];
+  for(let i=0;i<50;i++){const b=(Math.random()*2-1)*170;paths.push(trace(m==="nuc"?(i<3?(Math.random()*2-1)*20:b):b,dd,m));}
+  $("mtxt").innerHTML=m==="nuc"?"<b>Nuclear model:</b> almost all alphas go straight through, but the few that pass close to the tiny, dense, positive nucleus are deflected strongly, some by more than 90°. This matches Geiger and Marsden's results.":"<b>Plum pudding:</b> the positive charge is spread thinly, so the electric field inside the atom is weak everywhere. Every alpha is deflected by a tiny fraction of a degree. Back-scattering is impossible, so the model cannot explain the results.";
+  drawSim();
+}
+tabs(t=>{tab=t;paths=[];if(t==="beam")drawHist();if(t==="model")modelFire();drawSim();});
+$("fire").onclick=fireOne;$("clear").onclick=()=>{paths=[];drawSim();};
+["b","ek","Z"].forEach(id=>$(id).addEventListener("input",()=>{upd();if(id!=="b"){paths=[];}fireOne();}));
+$("b100").onclick=()=>fireBeam(100);$("b1000").onclick=()=>fireBeam(1000);$("breset").onclick=()=>{counts.fill(0);fired=0;paths=[];drawHist();drawSim();};
+$("mfire").onclick=modelFire;$("mdl").addEventListener("input",modelFire);
+onResize(()=>{drawSim();if(tab==="beam")drawHist();});upd();fireOne();
+</script>
+</body></html>
