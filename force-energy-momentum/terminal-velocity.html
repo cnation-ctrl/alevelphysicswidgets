@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Terminal Velocity Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: whiteboard tool, one wide working panel under a slim header; large type for projection */
+:root{
+  --bg:#EEF3FA; --panel:#FFFFFF; --ink:#14213D; --muted:#56627A; --line:#D3DCE9;
+  --accent:#2F5DCC; --accent-ink:#FFFFFF; --warm:#D9661A; --good:#18915A; --bad:#C2372F; --soft:#E3EBF8;
+  --body:"Atkinson Hyperlegible",Verdana,Arial,sans-serif; --mono:"IBM Plex Mono",Consolas,"Courier New",monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0E1524; --panel:#16213A; --ink:#E9EFF9; --muted:#A0ACC2; --line:#2B3A57;
+  --accent:#86A8FF; --accent-ink:#0E1524; --warm:#F2A05A; --good:#4FCB8F; --bad:#F07B72; --soft:#1F2D4C; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E1524; --panel:#16213A; --ink:#E9EFF9; --muted:#A0ACC2; --line:#2B3A57;
+  --accent:#86A8FF; --accent-ink:#0E1524; --warm:#F2A05A; --good:#4FCB8F; --bad:#F07B72; --soft:#1F2D4C; color-scheme:dark}
+[hidden]{display:none!important}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:18px;line-height:1.45;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:18px 32px}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+header.top{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px 20px}
+header.top h1{font-size:clamp(26px,3.2vw,38px);margin:0;text-wrap:balance;letter-spacing:-.01em}
+header.top .spec{font-family:var(--mono);font-size:15px;color:var(--muted);letter-spacing:.04em}
+.tabs{display:flex;flex-wrap:wrap;gap:8px}
+.tabs button{font:inherit;font-weight:700;border:2px solid var(--line);background:var(--panel);color:var(--ink);padding:10px 18px;border-radius:10px;cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px;min-width:0}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}
+@media (max-width:820px){.grid2{grid-template-columns:minmax(0,1fr)}}
+label{font-weight:700;display:block;margin-bottom:4px}
+.row{display:flex;flex-wrap:wrap;gap:12px;align-items:end}
+input[type=number],input[type=text],select{font:inherit;font-family:var(--mono);font-size:20px;padding:8px 10px;border:2px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);min-width:0}
+input[type=range]{width:100%;accent-color:var(--accent)}
+button.go{font:inherit;font-weight:700;background:var(--accent);color:var(--accent-ink);border:0;border-radius:10px;padding:11px 20px;cursor:pointer}
+button.ghost{font:inherit;font-weight:700;background:transparent;color:var(--accent);border:2px solid var(--accent);border-radius:10px;padding:9px 18px;cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--warm);outline-offset:2px}
+.big{font-family:var(--mono);font-size:clamp(24px,3vw,34px);font-weight:600}
+.mono{font-family:var(--mono)}
+.muted{color:var(--muted)}
+.steps{display:flex;flex-direction:column;gap:6px;font-family:var(--mono);font-size:18px}
+.steps div{padding:6px 10px;background:var(--soft);border-radius:8px;overflow-x:auto}
+.good{color:var(--good)} .bad{color:var(--bad)} .warm{color:var(--warm)}
+.chip{display:inline-block;font-size:15px;font-weight:700;padding:3px 10px;border-radius:999px;background:var(--soft)}
+table{border-collapse:collapse;width:100%;font-size:17px}
+th,td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left}
+th{font-size:14px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.scroll{overflow-x:auto}
+canvas{display:block;width:100%;max-width:100%;touch-action:none}
+sup{font-size:.7em}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+.formula{font-family:var(--mono);font-size:20px;padding:10px 14px;background:var(--soft);border-radius:10px;overflow-x:auto}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:18px}
+.kv b{font-weight:700}
+.note{font-size:16px;color:var(--muted)}
+.callout{border-left:5px solid var(--warm);background:var(--soft);padding:10px 14px;border-radius:8px}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:15px}
+.legend span::before{content:"";display:inline-block;width:14px;height:4px;border-radius:2px;margin-right:6px;vertical-align:middle;background:var(--c)}
+</style>
+<style>body{margin:0}img{max-width:100%}select{max-width:100%;width:100%}.row>div{min-width:min(100%,150px)!important}</style>
+<script>
+const $=id=>document.getElementById(id);
+const cv=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const EPS0=8.85e-12, K=1/(4*Math.PI*8.85e-12), E_CH=1.60e-19, ME_=9.11e-31, MP=1.673e-27, G=6.67e-11;
+/* number in standard form as HTML, n significant figures */
+function sf(x,n=3){
+  if(x===0)return "0";
+  if(!isFinite(x))return "∞";
+  const neg=x<0;x=Math.abs(x);
+  let e=Math.floor(Math.log10(x));let m=x/Math.pow(10,e);let ms=m.toPrecision(n);
+  if(parseFloat(ms)>=10){e++;ms=(m/10).toPrecision(n);}
+  let s;
+  if(e>=-2&&e<n&&e<=3){s=x.toPrecision(n);if(s.includes("e"))s=ms+" × 10<sup>"+String(e).replace("-","−")+"</sup>";}
+  else s=ms+" × 10<sup>"+String(e).replace("-","−")+"</sup>";
+  return (neg?"−":"")+s;
+}
+/* plain-text version for canvas labels */
+function sft(x,n=3){return sf(x,n).replace(/<sup>/g,"^").replace(/<\/sup>/g,"").replace(" × 10^","e").replace(/e(−?\d+)/,(a,b)=>"×10"+sup(b));}
+function sup(s){const m={"0":"⁰","1":"¹","2":"²","3":"³","4":"⁴","5":"⁵","6":"⁶","7":"⁷","8":"⁸","9":"⁹","−":"⁻","-":"⁻"};return String(s).split("").map(c=>m[c]||c).join("");}
+function setup(c,aspect){
+  const dpr=window.devicePixelRatio||1,w=c.clientWidth||600,h=Math.round(w*aspect);
+  c.width=w*dpr;c.height=h*dpr;c.style.height=h+"px";
+  const g=c.getContext("2d");g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,w,h);
+  return {g,w,h};
+}
+function niceStep(range,target){const raw=range/target;const p=Math.pow(10,Math.floor(Math.log10(raw)));const f=raw/p;return (f<1.5?1:f<3?2:f<7?5:10)*p;}
+/* axes: box {x,y,w,h}; returns mapping functions */
+function axes(g,box,xmin,xmax,ymin,ymax,opt={}){
+  const X=x=>box.x+(x-xmin)/(xmax-xmin)*box.w, Y=y=>box.y+box.h-(y-ymin)/(ymax-ymin)*box.h;
+  const ink=cv("--ink"),line=cv("--line"),muted=cv("--muted");
+  g.save();g.font="14px "+cv("--body");g.lineWidth=1;
+  const xs=opt.xstep||niceStep(xmax-xmin,6), ys=opt.ystep||niceStep(ymax-ymin,5);
+  g.strokeStyle=line;g.fillStyle=muted;g.textAlign="center";g.textBaseline="top";
+  for(let x=Math.ceil(xmin/xs)*xs;x<=xmax+1e-9*xs;x+=xs){g.beginPath();g.moveTo(X(x),box.y);g.lineTo(X(x),box.y+box.h);g.stroke();g.fillText(opt.xfmt?opt.xfmt(x):+x.toPrecision(3),X(x),Math.min(box.y+box.h,Math.max(box.y,Y(0)))+4);}
+  g.textAlign="right";g.textBaseline="middle";
+  for(let y=Math.ceil(ymin/ys)*ys;y<=ymax+1e-9*ys;y+=ys){g.beginPath();g.moveTo(box.x,Y(y));g.lineTo(box.x+box.w,Y(y));g.stroke();g.fillText(opt.yfmt?opt.yfmt(y):+y.toPrecision(3),box.x-6,Y(y));}
+  g.strokeStyle=ink;g.lineWidth=2;g.beginPath();
+  const y0=Math.min(box.y+box.h,Math.max(box.y,Y(0)));g.moveTo(box.x,y0);g.lineTo(box.x+box.w,y0);
+  g.moveTo(box.x,box.y);g.lineTo(box.x,box.y+box.h);g.stroke();
+  g.fillStyle=ink;g.font="bold 15px "+cv("--body");
+  if(opt.xl){g.textAlign="right";g.textBaseline="bottom";g.fillText(opt.xl,box.x+box.w,y0-4);}
+  if(opt.yl){g.textAlign="left";g.textBaseline="top";g.fillText(opt.yl,box.x+6,box.y-2);}
+  g.restore();
+  return {X,Y};
+}
+function arrow(g,x1,y1,x2,y2,col,wid=3,head=10){
+  const a=Math.atan2(y2-y1,x2-x1);g.save();g.strokeStyle=col;g.fillStyle=col;g.lineWidth=wid;
+  g.beginPath();g.moveTo(x1,y1);g.lineTo(x2-Math.cos(a)*head*0.6,y2-Math.sin(a)*head*0.6);g.stroke();
+  g.beginPath();g.moveTo(x2,y2);g.lineTo(x2-head*Math.cos(a-0.4),y2-head*Math.sin(a-0.4));g.lineTo(x2-head*Math.cos(a+0.4),y2-head*Math.sin(a+0.4));g.closePath();g.fill();g.restore();
+}
+function tabs(onchange){
+  document.querySelectorAll(".tabs button").forEach(b=>b.addEventListener("click",()=>{
+    document.querySelectorAll(".tabs button").forEach(x=>x.setAttribute("aria-selected",x===b));
+    document.querySelectorAll("[data-panel]").forEach(p=>p.hidden=p.dataset.panel!==b.dataset.tab);
+    if(onchange)onchange(b.dataset.tab);
+  }));
+}
+function onResize(f){let t;window.addEventListener("resize",()=>{clearTimeout(t);t=setTimeout(f,80);});
+  if(window.matchMedia)window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change",f);}
+
+</script>
+
+</head>
+<body>
+<div class="wrap">
+<header class="top"><h1>Terminal Velocity Lab</h1><span class="spec">AQA 7408 · 3.4.1.4 · drag, terminal speed and the skydiver</span></header>
+<div class="grid2">
+ <div class="panel">
+  <div class="row"><div style="flex:1"><label for="m">Mass: <span id="mv" class="mono"></span></label><input type="range" id="m" min="40" max="120" step="5" value="80"></div>
+  <div style="flex:1"><label for="k">Drag constant k (body): <span id="kv" class="mono"></span></label><input type="range" id="k" min="0.1" max="0.5" step="0.02" value="0.24"></div></div>
+  <label for="kp" style="margin-top:8px">Drag constant with parachute: <span id="kpv" class="mono"></span></label><input type="range" id="kp" min="10" max="60" step="1" value="30">
+  <div class="row" style="margin-top:10px"><button class="go" id="run">Jump</button><button class="go" id="chute" disabled>Open parachute</button><button class="ghost" id="reset">Reset</button></div>
+  <canvas id="fb" style="margin-top:10px" aria-label="Free-body diagram"></canvas>
+  <div class="kv" id="kvals"></div>
+ </div>
+ <div class="panel"><canvas id="cv" aria-label="Velocity-time graph"></canvas>
+  <div class="callout" style="margin-top:10px" id="msg">Drag (air resistance) increases with speed. Here drag = kv². The skydiver speeds up until drag equals weight.</div></div>
+</div>
+</div>
+<script>
+const g0=9.81,r3=x=>(+x.toPrecision(3)).toString();let H=[],v=0,t=0,open=false,tOpen=null,timer=null;
+function reset(){H=[{t:0,v:0,a:g0}];v=0;t=0;open=false;tOpen=null;if(timer)clearInterval(timer);timer=null;$("chute").disabled=true;$("run").textContent="Jump";draw();}
+function step(){const m=+$("m").value,k=open?+$("kp").value:+$("k").value,dt=0.005;for(let i=0;i<10;i++){const D=k*v*v,a=(m*g0-D)/m;v+=a*dt;t+=dt;H.push({t,v,a});}if(t>=60){clearInterval(timer);timer=null;$("run").textContent="Jump";}draw();}
+function draw(){
+  const m=+$("m").value,k=+$("k").value,kp=+$("kp").value;$("mv").textContent=m+" kg";$("kv").textContent=k+" kg m⁻¹";$("kpv").textContent=kp+" kg m⁻¹";
+  const kk=open?kp:k,W=m*g0,D=kk*v*v,a=(W-D)/m,vt=Math.sqrt(W/k),vtp=Math.sqrt(W/kp);
+  const S=setup($("cv"),0.75),g=S.g,box={x:52,y:20,w:S.w-70,h:S.h-56};
+  const A=axes(g,box,0,60,-20,Math.max(70,vt*1.15),{xl:"t / s",yl:"v / m s⁻¹",ystep:10});
+  g.setLineDash([6,5]);g.strokeStyle=cv("--muted");g.lineWidth=1.5;g.beginPath();g.moveTo(A.X(0),A.Y(vt));g.lineTo(A.X(60),A.Y(vt));g.moveTo(A.X(0),A.Y(vtp));g.lineTo(A.X(60),A.Y(vtp));g.stroke();g.setLineDash([]);
+  g.fillStyle=cv("--muted");g.font="13px "+cv("--body");g.fillText("terminal speed "+r3(vt)+" m s⁻¹",A.X(1),A.Y(vt)-6);g.fillText("with parachute "+r3(vtp)+" m s⁻¹",A.X(1),A.Y(vtp)-6);
+  g.strokeStyle=cv("--accent");g.lineWidth=3;g.beginPath();H.forEach((p,i)=>i?g.lineTo(A.X(p.t),A.Y(p.v)):g.moveTo(A.X(p.t),A.Y(p.v)));g.stroke();
+  if(tOpen!==null){g.strokeStyle=cv("--warm");g.beginPath();g.moveTo(A.X(tOpen),A.Y(-20));g.lineTo(A.X(tOpen),A.Y(70));g.stroke();g.fillStyle=cv("--warm");g.fillText("parachute opens",A.X(tOpen)+4,A.Y(-14));}
+  const F=setup($("fb"),0.42),f=F.g,cx=F.w/2,cy=F.h/2,sc=F.h*0.4/W;
+  f.fillStyle=cv("--accent");f.beginPath();f.arc(cx,cy,14,0,7);f.fill();
+  arrow(f,cx,cy+14,cx,cy+14+W*sc,cv("--ink"),4);if(D>1)arrow(f,cx,cy-14,cx,cy-14-Math.min(D,3*W)*sc,cv("--bad"),4);
+  f.font="bold 15px "+cv("--body");f.fillStyle=cv("--ink");f.fillText("weight "+r3(W)+" N",cx+12,cy+F.h*0.38);f.fillStyle=cv("--bad");f.fillText("drag "+r3(D)+" N",cx+12,cy-F.h*0.3);
+  $("kvals").innerHTML=`<b>t</b><span class="mono">${t.toFixed(1)} s</span><b>v</b><span class="mono">${r3(v)} m s⁻¹</span><b>resultant</b><span class="mono">${r3(W-D)} N ${W-D<-0.5?"(upwards: slowing down)":""}</span><b>a</b><span class="mono">${r3(a)} m s⁻²</span>`;
+  if(open&&v>vtp*1.05)$("msg").innerHTML="Parachute open: drag is now <b>bigger</b> than weight, so the resultant force is upwards and the skydiver <b>decelerates</b>. They still move downwards. Drag falls as they slow, until a new, lower terminal speed.";
+  else if(Math.abs(a)<0.1&&t>1)$("msg").innerHTML="<b>Terminal speed</b>: drag = weight, resultant force zero, so a = 0 (Newton's first law). The gradient of the v–t graph is zero.";
+  else if(t>0)$("msg").innerHTML="Speeding up: drag grows with speed, so the resultant force and the acceleration fall. The v–t gradient gets less steep. At t = 0, a = g.";
+}
+$("run").onclick=()=>{if(timer){clearInterval(timer);timer=null;$("run").textContent="Jump";return;}$("chute").disabled=open;$("run").textContent="Pause";timer=setInterval(step,50);};
+$("chute").onclick=()=>{open=true;tOpen=t;$("chute").disabled=true;};$("reset").onclick=reset;
+["m","k","kp"].forEach(id=>$(id).addEventListener("input",reset));onResize(draw);reset();
+</script>
+</body></html>
