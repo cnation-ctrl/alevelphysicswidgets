@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Conservation Law Checker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: whiteboard tool, one wide working panel under a slim header; large type for projection */
+:root{
+  --bg:#EEF3FA; --panel:#FFFFFF; --ink:#14213D; --muted:#56627A; --line:#D3DCE9;
+  --accent:#2F5DCC; --accent-ink:#FFFFFF; --warm:#D9661A; --good:#18915A; --bad:#C2372F; --soft:#E3EBF8;
+  --body:"Atkinson Hyperlegible",Verdana,Arial,sans-serif; --mono:"IBM Plex Mono",Consolas,"Courier New",monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0E1524; --panel:#16213A; --ink:#E9EFF9; --muted:#A0ACC2; --line:#2B3A57;
+  --accent:#86A8FF; --accent-ink:#0E1524; --warm:#F2A05A; --good:#4FCB8F; --bad:#F07B72; --soft:#1F2D4C; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E1524; --panel:#16213A; --ink:#E9EFF9; --muted:#A0ACC2; --line:#2B3A57;
+  --accent:#86A8FF; --accent-ink:#0E1524; --warm:#F2A05A; --good:#4FCB8F; --bad:#F07B72; --soft:#1F2D4C; color-scheme:dark}
+[hidden]{display:none!important}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:18px;line-height:1.45;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:18px 32px}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+header.top{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px 20px}
+header.top h1{font-size:clamp(26px,3.2vw,38px);margin:0;text-wrap:balance;letter-spacing:-.01em}
+header.top .spec{font-family:var(--mono);font-size:15px;color:var(--muted);letter-spacing:.04em}
+.tabs{display:flex;flex-wrap:wrap;gap:8px}
+.tabs button{font:inherit;font-weight:700;border:2px solid var(--line);background:var(--panel);color:var(--ink);padding:10px 18px;border-radius:10px;cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px;min-width:0}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}
+@media (max-width:820px){.grid2{grid-template-columns:minmax(0,1fr)}}
+label{font-weight:700;display:block;margin-bottom:4px}
+.row{display:flex;flex-wrap:wrap;gap:12px;align-items:end}
+input[type=number],input[type=text],select{font:inherit;font-family:var(--mono);font-size:20px;padding:8px 10px;border:2px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);min-width:0}
+input[type=range]{width:100%;accent-color:var(--accent)}
+button.go{font:inherit;font-weight:700;background:var(--accent);color:var(--accent-ink);border:0;border-radius:10px;padding:11px 20px;cursor:pointer}
+button.ghost{font:inherit;font-weight:700;background:transparent;color:var(--accent);border:2px solid var(--accent);border-radius:10px;padding:9px 18px;cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--warm);outline-offset:2px}
+.big{font-family:var(--mono);font-size:clamp(24px,3vw,34px);font-weight:600}
+.mono{font-family:var(--mono)}
+.muted{color:var(--muted)}
+.steps{display:flex;flex-direction:column;gap:6px;font-family:var(--mono);font-size:18px}
+.steps div{padding:6px 10px;background:var(--soft);border-radius:8px;overflow-x:auto}
+.good{color:var(--good)} .bad{color:var(--bad)} .warm{color:var(--warm)}
+.chip{display:inline-block;font-size:15px;font-weight:700;padding:3px 10px;border-radius:999px;background:var(--soft)}
+table{border-collapse:collapse;width:100%;font-size:17px}
+th,td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left}
+th{font-size:14px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.scroll{overflow-x:auto}
+canvas{display:block;width:100%;max-width:100%;touch-action:none}
+sup{font-size:.7em}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+.formula{font-family:var(--mono);font-size:20px;padding:10px 14px;background:var(--soft);border-radius:10px;overflow-x:auto}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:18px}
+.kv b{font-weight:700}
+.note{font-size:16px;color:var(--muted)}
+.callout{border-left:5px solid var(--warm);background:var(--soft);padding:10px 14px;border-radius:8px}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:15px}
+.legend span::before{content:"";display:inline-block;width:14px;height:4px;border-radius:2px;margin-right:6px;vertical-align:middle;background:var(--c)}
+</style>
+<style>body{margin:0}img{max-width:100%}select{max-width:100%;width:100%}.row>div{min-width:min(100%,150px)!important}</style>
+<script>
+const $=id=>document.getElementById(id);
+const cv=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const EPS0=8.85e-12, K=1/(4*Math.PI*8.85e-12), E_CH=1.60e-19, ME_=9.11e-31, MP=1.673e-27, G=6.67e-11;
+/* number in standard form as HTML, n significant figures */
+function sf(x,n=3){
+  if(x===0)return "0";
+  if(!isFinite(x))return "∞";
+  const neg=x<0;x=Math.abs(x);
+  let e=Math.floor(Math.log10(x));let m=x/Math.pow(10,e);let ms=m.toPrecision(n);
+  if(parseFloat(ms)>=10){e++;ms=(m/10).toPrecision(n);}
+  let s;
+  if(e>=-2&&e<n&&e<=3){s=x.toPrecision(n);if(s.includes("e"))s=ms+" × 10<sup>"+String(e).replace("-","−")+"</sup>";}
+  else s=ms+" × 10<sup>"+String(e).replace("-","−")+"</sup>";
+  return (neg?"−":"")+s;
+}
+/* plain-text version for canvas labels */
+function sft(x,n=3){return sf(x,n).replace(/<sup>/g,"^").replace(/<\/sup>/g,"").replace(" × 10^","e").replace(/e(−?\d+)/,(a,b)=>"×10"+sup(b));}
+function sup(s){const m={"0":"⁰","1":"¹","2":"²","3":"³","4":"⁴","5":"⁵","6":"⁶","7":"⁷","8":"⁸","9":"⁹","−":"⁻","-":"⁻"};return String(s).split("").map(c=>m[c]||c).join("");}
+function setup(c,aspect){
+  const dpr=window.devicePixelRatio||1,w=c.clientWidth||600,h=Math.round(w*aspect);
+  c.width=w*dpr;c.height=h*dpr;c.style.height=h+"px";
+  const g=c.getContext("2d");g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,w,h);
+  return {g,w,h};
+}
+function niceStep(range,target){const raw=range/target;const p=Math.pow(10,Math.floor(Math.log10(raw)));const f=raw/p;return (f<1.5?1:f<3?2:f<7?5:10)*p;}
+/* axes: box {x,y,w,h}; returns mapping functions */
+function axes(g,box,xmin,xmax,ymin,ymax,opt={}){
+  const X=x=>box.x+(x-xmin)/(xmax-xmin)*box.w, Y=y=>box.y+box.h-(y-ymin)/(ymax-ymin)*box.h;
+  const ink=cv("--ink"),line=cv("--line"),muted=cv("--muted");
+  g.save();g.font="14px "+cv("--body");g.lineWidth=1;
+  const xs=opt.xstep||niceStep(xmax-xmin,6), ys=opt.ystep||niceStep(ymax-ymin,5);
+  g.strokeStyle=line;g.fillStyle=muted;g.textAlign="center";g.textBaseline="top";
+  for(let x=Math.ceil(xmin/xs)*xs;x<=xmax+1e-9*xs;x+=xs){g.beginPath();g.moveTo(X(x),box.y);g.lineTo(X(x),box.y+box.h);g.stroke();g.fillText(opt.xfmt?opt.xfmt(x):+x.toPrecision(3),X(x),Math.min(box.y+box.h,Math.max(box.y,Y(0)))+4);}
+  g.textAlign="right";g.textBaseline="middle";
+  for(let y=Math.ceil(ymin/ys)*ys;y<=ymax+1e-9*ys;y+=ys){g.beginPath();g.moveTo(box.x,Y(y));g.lineTo(box.x+box.w,Y(y));g.stroke();g.fillText(opt.yfmt?opt.yfmt(y):+y.toPrecision(3),box.x-6,Y(y));}
+  g.strokeStyle=ink;g.lineWidth=2;g.beginPath();
+  const y0=Math.min(box.y+box.h,Math.max(box.y,Y(0)));g.moveTo(box.x,y0);g.lineTo(box.x+box.w,y0);
+  g.moveTo(box.x,box.y);g.lineTo(box.x,box.y+box.h);g.stroke();
+  g.fillStyle=ink;g.font="bold 15px "+cv("--body");
+  if(opt.xl){g.textAlign="right";g.textBaseline="bottom";g.fillText(opt.xl,box.x+box.w,y0-4);}
+  if(opt.yl){g.textAlign="left";g.textBaseline="top";g.fillText(opt.yl,box.x+6,box.y-2);}
+  g.restore();
+  return {X,Y};
+}
+function arrow(g,x1,y1,x2,y2,col,wid=3,head=10){
+  const a=Math.atan2(y2-y1,x2-x1);g.save();g.strokeStyle=col;g.fillStyle=col;g.lineWidth=wid;
+  g.beginPath();g.moveTo(x1,y1);g.lineTo(x2-Math.cos(a)*head*0.6,y2-Math.sin(a)*head*0.6);g.stroke();
+  g.beginPath();g.moveTo(x2,y2);g.lineTo(x2-head*Math.cos(a-0.4),y2-head*Math.sin(a-0.4));g.lineTo(x2-head*Math.cos(a+0.4),y2-head*Math.sin(a+0.4));g.closePath();g.fill();g.restore();
+}
+function tabs(onchange){
+  document.querySelectorAll(".tabs button").forEach(b=>b.addEventListener("click",()=>{
+    document.querySelectorAll(".tabs button").forEach(x=>x.setAttribute("aria-selected",x===b));
+    document.querySelectorAll("[data-panel]").forEach(p=>p.hidden=p.dataset.panel!==b.dataset.tab);
+    if(onchange)onchange(b.dataset.tab);
+  }));
+}
+function onResize(f){let t;window.addEventListener("resize",()=>{clearTimeout(t);t=setTimeout(f,80);});
+  if(window.matchMedia)window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change",f);}
+
+</script>
+</head>
+<body>
+<div class="wrap">
+<header class="top"><h1>Conservation Law Checker</h1><span class="spec">AQA 7408 · 3.2.1.5 to 3.2.1.7 · applying conservation laws</span></header>
+<div class="tabs" role="tablist"><button data-tab="chk" aria-selected="true">Check a reaction</button><button data-tab="quiz" aria-selected="false">Quiz: allowed or not?</button></div>
+<div data-panel="chk" class="panel">
+ <div class="row">
+  <div style="flex:1;min-width:260px"><label>Before</label><div class="row" id="lhs"></div></div>
+  <div style="flex:1;min-width:260px"><label>After</label><div class="row" id="rhs"></div></div>
+ </div>
+ <div class="row" style="margin-top:10px"><label for="ex" style="margin:0">Or load an example:</label><select id="ex" style="width:auto;flex:1"></select></div>
+ <div class="big" id="eqn" style="margin:16px 0 8px;font-size:30px;overflow-x:auto"></div>
+ <div class="scroll"><table id="tab"></table></div>
+ <div class="callout" id="verdict" style="margin-top:12px"></div>
+</div>
+<div data-panel="quiz" class="grid2" hidden>
+ <div class="panel"><div class="big" id="qeq" style="font-size:30px;overflow-x:auto"></div>
+  <div class="row" style="margin-top:14px"><button class="ghost" data-a="ok">Allowed</button><button class="ghost" data-a="Q">Breaks charge</button><button class="ghost" data-a="B">Breaks baryon number</button><button class="ghost" data-a="L">Breaks lepton number</button></div>
+  <div class="row" style="margin-top:12px"><button class="go" id="qn">Next reaction</button><span class="chip" id="qs">Score 0 / 0</span></div></div>
+ <div class="panel"><div class="callout" id="qfb">Decide, then check the table.</div><div class="scroll" style="margin-top:10px"><table id="qtab"></table></div></div>
+</div>
+</div>
+<script>
+/* sym, name, class, Q, B, Le, Lmu, S, rest energy MeV, quarks */
+const P={
+ "p":["p","proton","baryon",1,1,0,0,0,938.257,"uud"],
+ "n":["n","neutron","baryon",0,1,0,0,0,939.551,"udd"],
+ "pbar":["p̄","antiproton","antibaryon",-1,-1,0,0,0,938.257,"ūūd̄"],
+ "nbar":["n̄","antineutron","antibaryon",0,-1,0,0,0,939.551,"ūd̄d̄"],
+ "L0":["Λ⁰","lambda","baryon",0,1,0,0,-1,1115.7,"uds"],
+ "Sp":["Σ⁺","sigma-plus","baryon",1,1,0,0,-1,1189.4,"uus"],
+ "Sm":["Σ⁻","sigma-minus","baryon",-1,1,0,0,-1,1197.4,"dds"],
+ "Om":["Ω⁻","omega-minus","baryon",-1,1,0,0,-3,1672.5,"sss"],
+ "pip":["π⁺","pion","meson",1,0,0,0,0,139.576,"ud̄"],
+ "pim":["π⁻","pion","meson",-1,0,0,0,0,139.576,"dū"],
+ "pi0":["π⁰","pion","meson",0,0,0,0,0,134.972,"uū or dd̄"],
+ "Kp":["K⁺","kaon","meson",1,0,0,0,1,493.821,"us̄"],
+ "Km":["K⁻","kaon","meson",-1,0,0,0,-1,493.821,"sū"],
+ "K0":["K⁰","kaon","meson",0,0,0,0,1,497.762,"ds̄"],
+ "K0bar":["K̄⁰","anti-kaon","meson",0,0,0,0,-1,497.762,"sd̄"],
+ "em":["e⁻","electron","lepton",-1,0,1,0,0,0.510999,""],
+ "ep":["e⁺","positron","antilepton",1,0,-1,0,0,0.510999,""],
+ "ve":["νₑ","electron neutrino","lepton",0,0,1,0,0,0,""],
+ "vebar":["ν̄ₑ","electron antineutrino","antilepton",0,0,-1,0,0,0,""],
+ "mum":["μ⁻","muon","lepton",-1,0,0,1,0,105.659,""],
+ "mup":["μ⁺","antimuon","antilepton",1,0,0,-1,0,105.659,""],
+ "vm":["ν_μ","muon neutrino","lepton",0,0,0,1,0,0,""],
+ "vmbar":["ν̄_μ","muon antineutrino","antilepton",0,0,0,-1,0,0,""],
+ "g":["γ","photon","photon",0,0,0,0,0,0,""]};
+P.vm[0]="ν<sub>μ</sub>";P.vmbar[0]="ν̄<sub>μ</sub>";P.ve[0]="ν<sub>e</sub>";P.vebar[0]="ν̄<sub>e</sub>";
+const plainSym=k=>P[k][0].replace(/<sub>(.*?)<\/sub>/g,"$1");
+const frac=x=>{const t=Math.round(x*3);if(t%3===0)return String(t/3).replace("-","−");return (t<0?"−":"+")+Math.abs(t)+"/3";};
+const sgn=x=>x>0?"+"+x:String(x).replace("-","−");
+
+const OPT=["","p","n","pbar","nbar","L0","Sp","Sm","Om","pip","pim","pi0","Kp","Km","K0","K0bar","em","ep","ve","vebar","mum","mup","vm","vmbar","g"];
+const EX=[["n → p + e⁻ + ν̄e",["n"],["p","em","vebar"]],["p → n + e⁺ + νe (in a nucleus)",["p"],["n","ep","ve"]],["μ⁻ → e⁻ + ν̄e + νμ",["mum"],["em","vebar","vm"]],["p + p → p + p + π⁰",["p","p"],["p","p","pi0"]],["π⁻ + p → K⁰ + Λ⁰",["pim","p"],["K0","L0"]],["Λ⁰ → p + π⁻",["L0"],["p","pim"]],["K⁺ → π⁺ + π⁰",["Kp"],["pip","pi0"]],["K⁺ → μ⁺ + νμ",["Kp"],["mup","vm"]],["p + e⁻ → n + νe",["p","em"],["n","ve"]],["p + p → p + p + p + p̄",["p","p"],["p","p","p","pbar"]],
+ ["✗ p → e⁺ + γ",["p"],["ep","g"]],["✗ μ⁻ → e⁻ + γ",["mum"],["em","g"]],["✗ n → p + e⁻",["n"],["p","em"]],["✗ p + p → p + n + π⁰",["p","p"],["p","n","pi0"]]];
+function selects(id,vals){$(id).innerHTML=[0,1,2,3].map(i=>`<select data-s="${id}" style="width:auto;min-width:90px;flex:1">${OPT.map(k=>`<option value="${k}" ${vals[i]===k?"selected":""}>${k?plainSym(k):"–"}</option>`).join("")}</select>`).join("");
+ document.querySelectorAll(`[data-s="${id}"]`).forEach(s=>s.addEventListener("input",run));}
+$("ex").innerHTML=EX.map((e,i)=>`<option value="${i}">${e[0].replace("✗ ","")}</option>`).join("");
+function load(i){selects("lhs",EX[i][1]);selects("rhs",EX[i][2]);run();}
+$("ex").addEventListener("input",()=>load(+$("ex").value));
+function tot(arr,j){return arr.reduce((a,k)=>a+P[k][j],0);}
+function analyse(L,R){const rows=[["Charge Q",3],["Baryon number B",4],["Electron lepton number Lₑ",5],["Muon lepton number L_μ",6],["Strangeness S",7]].map(([n,j])=>[n,tot(L,j),tot(R,j)]);
+ const fails=rows.slice(0,4).filter(r=>Math.abs(r[1]-r[2])>1e-9).map(r=>r[0]);const dS=rows[4][2]-rows[4][1];
+ const El=L.reduce((a,k)=>a+P[k][8],0),Er=R.reduce((a,k)=>a+P[k][8],0);
+ const leptons=[...L,...R].some(k=>P[k][2].includes("lepton")),neutrino=[...L,...R].some(k=>/^v/.test(k));
+ let v;
+ if(!L.length||!R.length)v="Choose particles on both sides.";
+ else if(fails.length)v=`<b class="bad">Not allowed:</b> ${fails.join(" and ")} not conserved.`;
+ else{
+  if(Math.abs(dS)>1)v=`<b class="bad">Not allowed:</b> strangeness changes by ${Math.abs(dS)}; it can change by at most 1 (weak interaction only).`;
+  else v=`<b class="good">Allowed</b> by charge, baryon number and lepton number.${dS!==0?` Strangeness changes by ${sgn(dS)}, so it must be a <b>weak</b> interaction.`:` Strangeness is conserved${!leptons?", so it could go by the strong interaction":""}.`}${neutrino?" Neutrinos are involved, so it is a <b>weak</b> interaction.":""}`;
+  if(L.length===1&&Er>El+1e-6)v+=` <span class="bad">But energy: a single particle of ${El.toFixed(1)} MeV cannot decay into particles with ${Er.toFixed(1)} MeV of rest energy.</span>`;
+  else if(L.length===1)v+=` Energy: ${El.toFixed(1)} MeV → ${Er.toFixed(1)} MeV of rest energy; the difference becomes kinetic energy.`;}
+ return [rows,v];}
+function tableHTML(rows){return `<thead><tr><th>Quantity</th><th>Before</th><th>After</th><th>Conserved?</th></tr></thead><tbody>`+rows.map((r,i)=>{const ok=Math.abs(r[1]-r[2])<1e-9;return `<tr><td>${r[0].replace("Lₑ","L<sub>e</sub>").replace("L_μ","L<sub>μ</sub>")}</td><td class="mono">${sgn(r[1])}</td><td class="mono">${sgn(r[2])}</td><td class="${ok?"good":i===4?"warm":"bad"}" style="font-weight:700">${ok?"yes":i===4?"no (weak only)":"NO"}</td></tr>`;}).join("")+"</tbody>";}
+function eqHTML(L,R){return (L.map(k=>P[k][0]).join(" + ")||"?")+" → "+(R.map(k=>P[k][0]).join(" + ")||"?");}
+function run(){const L=[...document.querySelectorAll('[data-s="lhs"]')].map(s=>s.value).filter(Boolean),R=[...document.querySelectorAll('[data-s="rhs"]')].map(s=>s.value).filter(Boolean);
+ $("eqn").innerHTML=eqHTML(L,R);const [rows,v]=analyse(L,R);$("tab").innerHTML=tableHTML(rows);$("verdict").innerHTML=v;}
+let qi=0,qs=0,qt=0,qd=false;
+function quiz(){qi=Math.floor(Math.random()*EX.length);qd=false;const e=EX[qi];$("qeq").innerHTML=eqHTML(e[1],e[2]);$("qfb").textContent="Decide, then check the table.";$("qtab").innerHTML="";}
+document.querySelectorAll("[data-a]").forEach(b=>b.onclick=()=>{if(qd)return;qd=true;qt++;const e=EX[qi];const [rows,v]=analyse(e[1],e[2]);
+ const bad=rows.slice(0,4).filter(r=>Math.abs(r[1]-r[2])>1e-9).map(r=>r[0][0]==="C"?"Q":r[0][0]==="B"?"B":"L");const ok=(b.dataset.a==="ok"&&!bad.length&&!e[0].startsWith("✗"))||bad.includes(b.dataset.a);if(ok)qs++;
+ $("qs").textContent=`Score ${qs} / ${qt}`;$("qfb").innerHTML=(ok?'<b class="good">Correct.</b> ':'<b class="bad">Not quite.</b> ')+v;$("qtab").innerHTML=tableHTML(rows);});
+$("qn").onclick=quiz;
+tabs(t=>{if(t==="quiz")quiz();});load(4);
+</script>
+</body></html>
