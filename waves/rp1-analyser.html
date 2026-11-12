@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RP1 Virtual Practical: Stationary Waves on a String</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: whiteboard tool, one wide working panel under a slim header; large type for projection */
+:root{
+  --bg:#EEF3FA; --panel:#FFFFFF; --ink:#14213D; --muted:#56627A; --line:#D3DCE9;
+  --accent:#2F5DCC; --accent-ink:#FFFFFF; --warm:#D9661A; --good:#18915A; --bad:#C2372F; --soft:#E3EBF8;
+  --body:"Atkinson Hyperlegible",Verdana,Arial,sans-serif; --mono:"IBM Plex Mono",Consolas,"Courier New",monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0E1524; --panel:#16213A; --ink:#E9EFF9; --muted:#A0ACC2; --line:#2B3A57;
+  --accent:#86A8FF; --accent-ink:#0E1524; --warm:#F2A05A; --good:#4FCB8F; --bad:#F07B72; --soft:#1F2D4C; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E1524; --panel:#16213A; --ink:#E9EFF9; --muted:#A0ACC2; --line:#2B3A57;
+  --accent:#86A8FF; --accent-ink:#0E1524; --warm:#F2A05A; --good:#4FCB8F; --bad:#F07B72; --soft:#1F2D4C; color-scheme:dark}
+[hidden]{display:none!important}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:18px;line-height:1.45;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:18px 32px}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+header.top{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px 20px}
+header.top h1{font-size:clamp(26px,3.2vw,38px);margin:0;text-wrap:balance;letter-spacing:-.01em}
+header.top .spec{font-family:var(--mono);font-size:15px;color:var(--muted);letter-spacing:.04em}
+.tabs{display:flex;flex-wrap:wrap;gap:8px}
+.tabs button{font:inherit;font-weight:700;border:2px solid var(--line);background:var(--panel);color:var(--ink);padding:10px 18px;border-radius:10px;cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px;min-width:0}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}
+@media (max-width:820px){.grid2{grid-template-columns:minmax(0,1fr)}}
+label{font-weight:700;display:block;margin-bottom:4px}
+.row{display:flex;flex-wrap:wrap;gap:12px;align-items:end}
+input[type=number],input[type=text],select{font:inherit;font-family:var(--mono);font-size:20px;padding:8px 10px;border:2px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);min-width:0}
+input[type=range]{width:100%;accent-color:var(--accent)}
+button.go{font:inherit;font-weight:700;background:var(--accent);color:var(--accent-ink);border:0;border-radius:10px;padding:11px 20px;cursor:pointer}
+button.ghost{font:inherit;font-weight:700;background:transparent;color:var(--accent);border:2px solid var(--accent);border-radius:10px;padding:9px 18px;cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--warm);outline-offset:2px}
+.big{font-family:var(--mono);font-size:clamp(24px,3vw,34px);font-weight:600}
+.mono{font-family:var(--mono)}
+.muted{color:var(--muted)}
+.steps{display:flex;flex-direction:column;gap:6px;font-family:var(--mono);font-size:18px}
+.steps div{padding:6px 10px;background:var(--soft);border-radius:8px;overflow-x:auto}
+.good{color:var(--good)} .bad{color:var(--bad)} .warm{color:var(--warm)}
+.chip{display:inline-block;font-size:15px;font-weight:700;padding:3px 10px;border-radius:999px;background:var(--soft)}
+table{border-collapse:collapse;width:100%;font-size:17px}
+th,td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left}
+th{font-size:14px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.scroll{overflow-x:auto}
+canvas{display:block;width:100%;max-width:100%;touch-action:none}
+sup{font-size:.7em}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+.formula{font-family:var(--mono);font-size:20px;padding:10px 14px;background:var(--soft);border-radius:10px;overflow-x:auto}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:18px}
+.kv b{font-weight:700}
+.note{font-size:16px;color:var(--muted)}
+.callout{border-left:5px solid var(--warm);background:var(--soft);padding:10px 14px;border-radius:8px}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:15px}
+.legend span::before{content:"";display:inline-block;width:14px;height:4px;border-radius:2px;margin-right:6px;vertical-align:middle;background:var(--c)}
+</style>
+<style>body{margin:0}img{max-width:100%}select{max-width:100%;width:100%}.row>div{min-width:min(100%,150px)!important}</style>
+<script>
+const $=id=>document.getElementById(id);
+const cv=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const EPS0=8.85e-12, K=1/(4*Math.PI*8.85e-12), E_CH=1.60e-19, ME_=9.11e-31, MP=1.673e-27, G=6.67e-11;
+/* number in standard form as HTML, n significant figures */
+function sf(x,n=3){
+  if(x===0)return "0";
+  if(!isFinite(x))return "∞";
+  const neg=x<0;x=Math.abs(x);
+  let e=Math.floor(Math.log10(x));let m=x/Math.pow(10,e);let ms=m.toPrecision(n);
+  if(parseFloat(ms)>=10){e++;ms=(m/10).toPrecision(n);}
+  let s;
+  if(e>=-2&&e<n&&e<=3){s=x.toPrecision(n);if(s.includes("e"))s=ms+" × 10<sup>"+String(e).replace("-","−")+"</sup>";}
+  else s=ms+" × 10<sup>"+String(e).replace("-","−")+"</sup>";
+  return (neg?"−":"")+s;
+}
+/* plain-text version for canvas labels */
+function sft(x,n=3){return sf(x,n).replace(/<sup>/g,"^").replace(/<\/sup>/g,"").replace(" × 10^","e").replace(/e(−?\d+)/,(a,b)=>"×10"+sup(b));}
+function sup(s){const m={"0":"⁰","1":"¹","2":"²","3":"³","4":"⁴","5":"⁵","6":"⁶","7":"⁷","8":"⁸","9":"⁹","−":"⁻","-":"⁻"};return String(s).split("").map(c=>m[c]||c).join("");}
+function setup(c,aspect){
+  const dpr=window.devicePixelRatio||1,w=c.clientWidth||600,h=Math.round(w*aspect);
+  c.width=w*dpr;c.height=h*dpr;c.style.height=h+"px";
+  const g=c.getContext("2d");g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,w,h);
+  return {g,w,h};
+}
+function niceStep(range,target){const raw=range/target;const p=Math.pow(10,Math.floor(Math.log10(raw)));const f=raw/p;return (f<1.5?1:f<3?2:f<7?5:10)*p;}
+/* axes: box {x,y,w,h}; returns mapping functions */
+function axes(g,box,xmin,xmax,ymin,ymax,opt={}){
+  const X=x=>box.x+(x-xmin)/(xmax-xmin)*box.w, Y=y=>box.y+box.h-(y-ymin)/(ymax-ymin)*box.h;
+  const ink=cv("--ink"),line=cv("--line"),muted=cv("--muted");
+  g.save();g.font="14px "+cv("--body");g.lineWidth=1;
+  const xs=opt.xstep||niceStep(xmax-xmin,6), ys=opt.ystep||niceStep(ymax-ymin,5);
+  g.strokeStyle=line;g.fillStyle=muted;g.textAlign="center";g.textBaseline="top";
+  for(let x=Math.ceil(xmin/xs)*xs;x<=xmax+1e-9*xs;x+=xs){g.beginPath();g.moveTo(X(x),box.y);g.lineTo(X(x),box.y+box.h);g.stroke();g.fillText(opt.xfmt?opt.xfmt(x):+x.toPrecision(3),X(x),Math.min(box.y+box.h,Math.max(box.y,Y(0)))+4);}
+  g.textAlign="right";g.textBaseline="middle";
+  for(let y=Math.ceil(ymin/ys)*ys;y<=ymax+1e-9*ys;y+=ys){g.beginPath();g.moveTo(box.x,Y(y));g.lineTo(box.x+box.w,Y(y));g.stroke();g.fillText(opt.yfmt?opt.yfmt(y):+y.toPrecision(3),box.x-6,Y(y));}
+  g.strokeStyle=ink;g.lineWidth=2;g.beginPath();
+  const y0=Math.min(box.y+box.h,Math.max(box.y,Y(0)));g.moveTo(box.x,y0);g.lineTo(box.x+box.w,y0);
+  g.moveTo(box.x,box.y);g.lineTo(box.x,box.y+box.h);g.stroke();
+  g.fillStyle=ink;g.font="bold 15px "+cv("--body");
+  if(opt.xl){g.textAlign="right";g.textBaseline="bottom";g.fillText(opt.xl,box.x+box.w,y0-4);}
+  if(opt.yl){g.textAlign="left";g.textBaseline="top";g.fillText(opt.yl,box.x+6,box.y-2);}
+  g.restore();
+  return {X,Y};
+}
+function arrow(g,x1,y1,x2,y2,col,wid=3,head=10){
+  const a=Math.atan2(y2-y1,x2-x1);g.save();g.strokeStyle=col;g.fillStyle=col;g.lineWidth=wid;
+  g.beginPath();g.moveTo(x1,y1);g.lineTo(x2-Math.cos(a)*head*0.6,y2-Math.sin(a)*head*0.6);g.stroke();
+  g.beginPath();g.moveTo(x2,y2);g.lineTo(x2-head*Math.cos(a-0.4),y2-head*Math.sin(a-0.4));g.lineTo(x2-head*Math.cos(a+0.4),y2-head*Math.sin(a+0.4));g.closePath();g.fill();g.restore();
+}
+function tabs(onchange){
+  document.querySelectorAll(".tabs button").forEach(b=>b.addEventListener("click",()=>{
+    document.querySelectorAll(".tabs button").forEach(x=>x.setAttribute("aria-selected",x===b));
+    document.querySelectorAll("[data-panel]").forEach(p=>p.hidden=p.dataset.panel!==b.dataset.tab);
+    if(onchange)onchange(b.dataset.tab);
+  }));
+}
+function onResize(f){let t;window.addEventListener("resize",()=>{clearTimeout(t);t=setTimeout(f,80);});
+  if(window.matchMedia)window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change",f);}
+
+</script>
+</head>
+<body>
+<div class="wrap">
+<header class="top"><h1>RP1 Virtual Practical: Stationary Waves on a String</h1><span class="spec">AQA 7408 · Required practical 1</span></header>
+<div class="tabs" role="tablist"><button data-tab="lab" aria-selected="true">Take readings</button><button data-tab="graph" aria-selected="false">Graph and analysis</button></div>
+<div data-panel="lab" class="grid2">
+ <div class="panel"><canvas id="sc" aria-label="String over a pulley with masses, driven by a vibration generator"></canvas>
+  <div class="big" id="amp" style="margin-top:8px"></div></div>
+ <div class="panel">
+  <label for="iv">Independent variable</label><select id="iv"><option value="l">length l (constant T and μ)</option><option value="T">tension T = mg (constant l and μ)</option><option value="mu">mass per unit length μ (constant l and T)</option></select>
+  <div id="ivbox" style="margin-top:10px"></div>
+  <label for="fd" style="margin-top:10px">Signal generator frequency: <span id="fdv" class="mono"></span> Hz</label><input type="range" id="fd" min="10" max="150" step="0.2" value="40">
+  <div class="row" style="margin-top:6px"><button class="ghost" id="fm">− 0.2 Hz</button><button class="ghost" id="fp">+ 0.2 Hz</button><button class="go" id="rec">Record first harmonic</button><button class="ghost" id="clr">Clear table</button></div>
+  <div class="scroll" style="margin-top:12px"><table id="tab"></table></div>
+  <p class="note">Tip: adjust the frequency until the single loop has the largest amplitude (watch the reading). Repeat each reading and average. Real readings have random error from judging the maximum.</p>
+ </div>
+</div>
+<div data-panel="graph" class="grid2" hidden>
+ <div class="panel"><canvas id="gc" aria-label="Graph of the results with a line of best fit"></canvas></div>
+ <div class="panel"><div class="steps" id="an"></div>
+  <div class="callout" style="margin-top:12px">Why plot these axes? From f = (1/2l)√(T/μ): f ∝ 1/l, f ∝ √T and f ∝ 1/√μ. Each graph should be a <b>straight line through the origin</b>, and its gradient gives the unknown.</div></div>
+</div>
+</div>
+<script>
+const g9=9.81;const STR=[["thin nylon",0.42e-3],["fishing line",0.65e-3],["thin steel",1.05e-3],["thick nylon",1.60e-3],["thick steel",2.40e-3]];
+let data={l:[],T:[],mu:[]},t=0,last=0;
+function setIV(){const iv=$("iv").value;let h="";
+ if(iv==="l")h=`<label for="x">Length l: <span id="xv" class="mono"></span> m</label><input type="range" id="x" min="0.40" max="1.20" step="0.05" value="0.80"><p class="note">T = 0.300 kg × 9.81 = 2.94 N; string: fishing line</p>`;
+ if(iv==="T")h=`<label for="x">Hanging mass: <span id="xv" class="mono"></span> g</label><input type="range" id="x" min="100" max="500" step="50" value="200"><p class="note">l = 1.00 m; string: fishing line</p>`;
+ if(iv==="mu")h=`<label for="x">String</label><select id="x">${STR.map((s,i)=>`<option value="${i}">${s[0]}</option>`).join("")}</select><p class="note">l = 1.00 m, T = 0.300 kg × 9.81 = 2.94 N. μ found by weighing a measured length of each string.</p>`;
+ $("ivbox").innerHTML=h;$("x").addEventListener("input",upd);upd();table();}
+function cur(){const iv=$("iv").value,x=$("x").value;let l=1,T=0.3*g9,mu=0.65e-3,xd,label;
+ if(iv==="l"){l=+x;xd=l;label=l.toFixed(2)+" m";}
+ if(iv==="T"){T=+x/1000*g9;xd=T;label=x+" g → T = "+T.toFixed(2)+" N";}
+ if(iv==="mu"){mu=STR[+x][1];xd=mu;label=STR[+x][0]+" (μ = "+(mu*1e3).toFixed(2)+" × 10⁻³ kg m⁻¹)";}
+ return {iv,l,T,mu,xd,label,f1:Math.sqrt(T/mu)/(2*l)};}
+function ampFor(f,f1){let a=0.04;for(let k=1;k<=4;k++){const w=f1*k*0.025;a+=1/(1+Math.pow((f-k*f1)/w,2))/k;}return Math.min(1,a);}
+function upd(){const c=cur();const xv=$("xv");if(xv)xv.textContent=c.iv==="l"?c.l.toFixed(2):$("x").value;$("fdv").textContent=(+$("fd").value).toFixed(1);
+ const a=ampFor(+$("fd").value,c.f1);$("amp").textContent="amplitude reading: "+(a*100).toFixed(0);}
+function draw(){const c=cur(),f=+$("fd").value,a=ampFor(f,c.f1),nn=f/c.f1;const S=setup($("sc"),0.45),g=S.g,w=S.w,h=S.h;
+ const x0=70,x1=x0+(w-140)*(c.iv==="l"?c.l/1.2:1/1.2),mid=h*0.45;
+ g.fillStyle=cv("--muted");g.fillRect(x0-44,mid-26,40,52);g.fillStyle=cv("--ink");g.font="12px "+cv("--body");g.textAlign="center";g.fillText("vibration",x0-24,mid+42);g.fillText("generator",x0-24,mid+56);
+ g.strokeStyle=cv("--muted");g.lineWidth=3;g.beginPath();g.arc(x1+12,mid,12,0,7);g.stroke();g.beginPath();g.moveTo(x1+24,mid);g.lineTo(x1+24,h*0.75);g.stroke();
+ const mh=c.iv==="T"?10+(c.T/g9)*60:28;g.fillStyle=cv("--muted");g.fillRect(x1+10,h*0.75,28,mh);
+ g.lineWidth=c.iv==="mu"?1.5+c.mu*1500:2.5;g.strokeStyle=cv("--warm");g.beginPath();for(let i=0;i<=200;i++){const x=i/200;const Y=mid-a*h*0.28*Math.sin(nn*Math.PI*x)*Math.cos(t*14);i?g.lineTo(x0+(x1-x0)*x,Y):g.moveTo(x0+(x1-x0)*x,Y);}g.stroke();
+ g.strokeStyle=cv("--ink");g.lineWidth=1.5;arrow(g,x0,h*0.92,x1,h*0.92,cv("--ink"),1.5,8);arrow(g,x1,h*0.92,x0,h*0.92,cv("--ink"),1.5,8);g.fillStyle=cv("--ink");g.fillText("l = "+c.l.toFixed(2)+" m (measured with a metre ruler)",(x0+x1)/2,h*0.92-8);}
+function loop(ts){const dt=Math.min(0.05,(ts-last)/1000||0);last=ts;t+=dt;if(!$("sc").closest("[data-panel]").hidden)draw();requestAnimationFrame(loop);}
+function rec(){const c=cur(),f=+$("fd").value;const a=ampFor(f,c.f1);
+ if(a<0.6){$("amp").innerHTML=`<span class="bad">No clear single loop yet. Find the first harmonic before recording.</span>`;return;}
+ if(Math.abs(f/c.f1-1)>0.3){$("amp").innerHTML=`<span class="bad">That is a higher harmonic (${Math.round(f/c.f1)} loops). Record the first harmonic (one loop).</span>`;return;}
+ const reads=[0,1,2].map(()=>+(f+(Math.random()-0.5)*0.03*c.f1).toFixed(1));
+ data[c.iv]=data[c.iv].filter(r=>Math.abs(r.x-c.xd)>1e-12);data[c.iv].push({x:c.xd,label:c.label,r:reads});data[c.iv].sort((p,q)=>p.x-q.x);table();graph();}
+function tr(iv,x){return iv==="l"?1/x:iv==="T"?Math.sqrt(x):1/Math.sqrt(x);}
+function table(){const iv=$("iv").value;const hd=iv==="l"?"<th>l / m</th><th>1/l / m⁻¹</th>":iv==="T"?"<th>T / N</th><th>√T / N^½</th>":"<th>μ / 10⁻³ kg m⁻¹</th><th>1/√μ</th>";
+ $("tab").innerHTML=`<tr>${hd}<th>f₁ / Hz (three readings)</th><th>mean f / Hz</th></tr>`+data[iv].map(r=>{const m=r.r.reduce((a,b)=>a+b)/3;return `<tr><td>${iv==="mu"?(r.x*1e3).toFixed(2):iv==="l"?r.x.toFixed(2):r.x.toFixed(2)}</td><td>${tr(iv,r.x).toFixed(iv==="mu"?1:3)}</td><td>${r.r.join(", ")}</td><td>${m.toFixed(1)}</td></tr>`;}).join("");}
+function graph(){const iv=$("iv").value,d=data[iv];const S=setup($("gc"),0.7),g=S.g;
+ const pts=d.map(r=>[tr(iv,r.x),r.r.reduce((a,b)=>a+b)/3,(Math.max(...r.r)-Math.min(...r.r))/2]);
+ const xl=iv==="l"?"1/l / m⁻¹":iv==="T"?"√T / N^½":"1/√μ / (kg m⁻¹)^−½",xmax=pts.length?Math.max(...pts.map(p=>p[0]))*1.15:1,ymax=pts.length?Math.max(...pts.map(p=>p[1]))*1.15:100;
+ const ax=axes(g,{x:56,y:16,w:S.w-72,h:S.h-48},0,xmax,0,ymax,{xl,yl:"f / Hz"});
+ pts.forEach(p=>{g.fillStyle=cv("--accent");g.beginPath();g.arc(ax.X(p[0]),ax.Y(p[1]),5,0,7);g.fill();g.strokeStyle=cv("--accent");g.lineWidth=1.5;g.beginPath();g.moveTo(ax.X(p[0]),ax.Y(p[1]-p[2]));g.lineTo(ax.X(p[0]),ax.Y(p[1]+p[2]));g.stroke();});
+ if(pts.length<3){$("an").innerHTML=`<div>Record at least 5 different values (you have ${pts.length}). Then the line of best fit and the analysis appear here.</div>`;return;}
+ const n=pts.length,sx=pts.reduce((a,p)=>a+p[0],0),sy=pts.reduce((a,p)=>a+p[1],0),sxx=pts.reduce((a,p)=>a+p[0]*p[0],0),sxy=pts.reduce((a,p)=>a+p[0]*p[1],0);
+ const m=(n*sxy-sx*sy)/(n*sxx-sx*sx),c=(sy-m*sx)/n;
+ g.strokeStyle=cv("--warm");g.lineWidth=2.5;g.beginPath();g.moveTo(ax.X(0),ax.Y(c));g.lineTo(ax.X(xmax),ax.Y(c+m*xmax));g.stroke();
+ let res="";if(iv==="l"){const mu=0.3*g9/Math.pow(2*m,2);res=`<div>gradient = (1/2)√(T/μ), so μ = T/(4 × gradient²)</div><div>μ = 2.94 ÷ (4 × ${m.toFixed(2)}²) = <b>${sf(mu,3)} kg m<sup>−1</sup></b> (true value 6.50 × 10<sup>−4</sup>)</div>`;}
+ if(iv==="T"){const mu=1/Math.pow(2*1*m,2);res=`<div>gradient = 1/(2l√μ), so μ = 1/(4l² × gradient²)</div><div>μ = 1 ÷ (4 × 1.00² × ${m.toFixed(2)}²) = <b>${sf(mu,3)} kg m<sup>−1</sup></b> (true value 6.50 × 10<sup>−4</sup>)</div>`;}
+ if(iv==="mu"){const T=Math.pow(2*1*m,2);res=`<div>gradient = √T/(2l), so T = (2l × gradient)²</div><div>T = (2 × 1.00 × ${m.toFixed(3)})² = <b>${T.toFixed(2)} N</b> (true value 2.94 N)</div>`;}
+ $("an").innerHTML=`<div>line of best fit: gradient = ${m.toFixed(iv==="mu"?3:2)}, y-intercept = ${(Math.abs(c)<0.05?0:c).toFixed(1)} Hz</div><div>${Math.abs(c)<0.05*ymax?"intercept close to zero: f is proportional, as predicted":"intercept not zero: check for a systematic error (e.g. measuring l from the wrong points)"}</div>`+res+`<div class="muted">Percentage difference: compare with the true value; discuss random error in judging the maximum and uncertainty in l (±1 mm).</div>`;}
+$("iv").addEventListener("input",()=>{setIV();graph();});$("fd").addEventListener("input",upd);
+$("fm").onclick=()=>{$("fd").value=+$("fd").value-0.2;upd();};$("fp").onclick=()=>{$("fd").value=+$("fd").value+0.2;upd();};
+$("rec").onclick=rec;$("clr").onclick=()=>{data[$("iv").value]=[];table();graph();};
+tabs(tb=>{if(tb==="graph")graph();});onResize(graph);setIV();graph();requestAnimationFrame(loop);
+</script>
+</body></html>

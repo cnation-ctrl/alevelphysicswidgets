@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Transverse, Longitudinal and Polarisation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: whiteboard tool, one wide working panel under a slim header; large type for projection */
+:root{
+  --bg:#EEF3FA; --panel:#FFFFFF; --ink:#14213D; --muted:#56627A; --line:#D3DCE9;
+  --accent:#2F5DCC; --accent-ink:#FFFFFF; --warm:#D9661A; --good:#18915A; --bad:#C2372F; --soft:#E3EBF8;
+  --body:"Atkinson Hyperlegible",Verdana,Arial,sans-serif; --mono:"IBM Plex Mono",Consolas,"Courier New",monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0E1524; --panel:#16213A; --ink:#E9EFF9; --muted:#A0ACC2; --line:#2B3A57;
+  --accent:#86A8FF; --accent-ink:#0E1524; --warm:#F2A05A; --good:#4FCB8F; --bad:#F07B72; --soft:#1F2D4C; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E1524; --panel:#16213A; --ink:#E9EFF9; --muted:#A0ACC2; --line:#2B3A57;
+  --accent:#86A8FF; --accent-ink:#0E1524; --warm:#F2A05A; --good:#4FCB8F; --bad:#F07B72; --soft:#1F2D4C; color-scheme:dark}
+[hidden]{display:none!important}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:18px;line-height:1.45;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:18px 32px}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+header.top{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px 20px}
+header.top h1{font-size:clamp(26px,3.2vw,38px);margin:0;text-wrap:balance;letter-spacing:-.01em}
+header.top .spec{font-family:var(--mono);font-size:15px;color:var(--muted);letter-spacing:.04em}
+.tabs{display:flex;flex-wrap:wrap;gap:8px}
+.tabs button{font:inherit;font-weight:700;border:2px solid var(--line);background:var(--panel);color:var(--ink);padding:10px 18px;border-radius:10px;cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px;min-width:0}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}
+@media (max-width:820px){.grid2{grid-template-columns:minmax(0,1fr)}}
+label{font-weight:700;display:block;margin-bottom:4px}
+.row{display:flex;flex-wrap:wrap;gap:12px;align-items:end}
+input[type=number],input[type=text],select{font:inherit;font-family:var(--mono);font-size:20px;padding:8px 10px;border:2px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);min-width:0}
+input[type=range]{width:100%;accent-color:var(--accent)}
+button.go{font:inherit;font-weight:700;background:var(--accent);color:var(--accent-ink);border:0;border-radius:10px;padding:11px 20px;cursor:pointer}
+button.ghost{font:inherit;font-weight:700;background:transparent;color:var(--accent);border:2px solid var(--accent);border-radius:10px;padding:9px 18px;cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--warm);outline-offset:2px}
+.big{font-family:var(--mono);font-size:clamp(24px,3vw,34px);font-weight:600}
+.mono{font-family:var(--mono)}
+.muted{color:var(--muted)}
+.steps{display:flex;flex-direction:column;gap:6px;font-family:var(--mono);font-size:18px}
+.steps div{padding:6px 10px;background:var(--soft);border-radius:8px;overflow-x:auto}
+.good{color:var(--good)} .bad{color:var(--bad)} .warm{color:var(--warm)}
+.chip{display:inline-block;font-size:15px;font-weight:700;padding:3px 10px;border-radius:999px;background:var(--soft)}
+table{border-collapse:collapse;width:100%;font-size:17px}
+th,td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left}
+th{font-size:14px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.scroll{overflow-x:auto}
+canvas{display:block;width:100%;max-width:100%;touch-action:none}
+sup{font-size:.7em}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+.formula{font-family:var(--mono);font-size:20px;padding:10px 14px;background:var(--soft);border-radius:10px;overflow-x:auto}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:18px}
+.kv b{font-weight:700}
+.note{font-size:16px;color:var(--muted)}
+.callout{border-left:5px solid var(--warm);background:var(--soft);padding:10px 14px;border-radius:8px}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:15px}
+.legend span::before{content:"";display:inline-block;width:14px;height:4px;border-radius:2px;margin-right:6px;vertical-align:middle;background:var(--c)}
+</style>
+<style>body{margin:0}img{max-width:100%}select{max-width:100%;width:100%}.row>div{min-width:min(100%,150px)!important}</style>
+<script>
+const $=id=>document.getElementById(id);
+const cv=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const EPS0=8.85e-12, K=1/(4*Math.PI*8.85e-12), E_CH=1.60e-19, ME_=9.11e-31, MP=1.673e-27, G=6.67e-11;
+/* number in standard form as HTML, n significant figures */
+function sf(x,n=3){
+  if(x===0)return "0";
+  if(!isFinite(x))return "∞";
+  const neg=x<0;x=Math.abs(x);
+  let e=Math.floor(Math.log10(x));let m=x/Math.pow(10,e);let ms=m.toPrecision(n);
+  if(parseFloat(ms)>=10){e++;ms=(m/10).toPrecision(n);}
+  let s;
+  if(e>=-2&&e<n&&e<=3){s=x.toPrecision(n);if(s.includes("e"))s=ms+" × 10<sup>"+String(e).replace("-","−")+"</sup>";}
+  else s=ms+" × 10<sup>"+String(e).replace("-","−")+"</sup>";
+  return (neg?"−":"")+s;
+}
+/* plain-text version for canvas labels */
+function sft(x,n=3){return sf(x,n).replace(/<sup>/g,"^").replace(/<\/sup>/g,"").replace(" × 10^","e").replace(/e(−?\d+)/,(a,b)=>"×10"+sup(b));}
+function sup(s){const m={"0":"⁰","1":"¹","2":"²","3":"³","4":"⁴","5":"⁵","6":"⁶","7":"⁷","8":"⁸","9":"⁹","−":"⁻","-":"⁻"};return String(s).split("").map(c=>m[c]||c).join("");}
+function setup(c,aspect){
+  const dpr=window.devicePixelRatio||1,w=c.clientWidth||600,h=Math.round(w*aspect);
+  c.width=w*dpr;c.height=h*dpr;c.style.height=h+"px";
+  const g=c.getContext("2d");g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,w,h);
+  return {g,w,h};
+}
+function niceStep(range,target){const raw=range/target;const p=Math.pow(10,Math.floor(Math.log10(raw)));const f=raw/p;return (f<1.5?1:f<3?2:f<7?5:10)*p;}
+/* axes: box {x,y,w,h}; returns mapping functions */
+function axes(g,box,xmin,xmax,ymin,ymax,opt={}){
+  const X=x=>box.x+(x-xmin)/(xmax-xmin)*box.w, Y=y=>box.y+box.h-(y-ymin)/(ymax-ymin)*box.h;
+  const ink=cv("--ink"),line=cv("--line"),muted=cv("--muted");
+  g.save();g.font="14px "+cv("--body");g.lineWidth=1;
+  const xs=opt.xstep||niceStep(xmax-xmin,6), ys=opt.ystep||niceStep(ymax-ymin,5);
+  g.strokeStyle=line;g.fillStyle=muted;g.textAlign="center";g.textBaseline="top";
+  for(let x=Math.ceil(xmin/xs)*xs;x<=xmax+1e-9*xs;x+=xs){g.beginPath();g.moveTo(X(x),box.y);g.lineTo(X(x),box.y+box.h);g.stroke();g.fillText(opt.xfmt?opt.xfmt(x):+x.toPrecision(3),X(x),Math.min(box.y+box.h,Math.max(box.y,Y(0)))+4);}
+  g.textAlign="right";g.textBaseline="middle";
+  for(let y=Math.ceil(ymin/ys)*ys;y<=ymax+1e-9*ys;y+=ys){g.beginPath();g.moveTo(box.x,Y(y));g.lineTo(box.x+box.w,Y(y));g.stroke();g.fillText(opt.yfmt?opt.yfmt(y):+y.toPrecision(3),box.x-6,Y(y));}
+  g.strokeStyle=ink;g.lineWidth=2;g.beginPath();
+  const y0=Math.min(box.y+box.h,Math.max(box.y,Y(0)));g.moveTo(box.x,y0);g.lineTo(box.x+box.w,y0);
+  g.moveTo(box.x,box.y);g.lineTo(box.x,box.y+box.h);g.stroke();
+  g.fillStyle=ink;g.font="bold 15px "+cv("--body");
+  if(opt.xl){g.textAlign="right";g.textBaseline="bottom";g.fillText(opt.xl,box.x+box.w,y0-4);}
+  if(opt.yl){g.textAlign="left";g.textBaseline="top";g.fillText(opt.yl,box.x+6,box.y-2);}
+  g.restore();
+  return {X,Y};
+}
+function arrow(g,x1,y1,x2,y2,col,wid=3,head=10){
+  const a=Math.atan2(y2-y1,x2-x1);g.save();g.strokeStyle=col;g.fillStyle=col;g.lineWidth=wid;
+  g.beginPath();g.moveTo(x1,y1);g.lineTo(x2-Math.cos(a)*head*0.6,y2-Math.sin(a)*head*0.6);g.stroke();
+  g.beginPath();g.moveTo(x2,y2);g.lineTo(x2-head*Math.cos(a-0.4),y2-head*Math.sin(a-0.4));g.lineTo(x2-head*Math.cos(a+0.4),y2-head*Math.sin(a+0.4));g.closePath();g.fill();g.restore();
+}
+function tabs(onchange){
+  document.querySelectorAll(".tabs button").forEach(b=>b.addEventListener("click",()=>{
+    document.querySelectorAll(".tabs button").forEach(x=>x.setAttribute("aria-selected",x===b));
+    document.querySelectorAll("[data-panel]").forEach(p=>p.hidden=p.dataset.panel!==b.dataset.tab);
+    if(onchange)onchange(b.dataset.tab);
+  }));
+}
+function onResize(f){let t;window.addEventListener("resize",()=>{clearTimeout(t);t=setTimeout(f,80);});
+  if(window.matchMedia)window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change",f);}
+
+</script>
+</head>
+<body>
+<div class="wrap">
+<header class="top"><h1>Transverse, Longitudinal and Polarisation</h1><span class="spec">AQA 7408 · 3.3.1.2 · longitudinal and transverse waves</span></header>
+<div class="tabs" role="tablist"><button data-tab="types" aria-selected="true">Transverse vs longitudinal</button><button data-tab="pol" aria-selected="false">Polarising filters</button><button data-tab="aer" aria-selected="false">Aerials</button></div>
+<div data-panel="types" class="grid2">
+ <div class="panel"><h3 style="margin:0 0 6px">Transverse (e.g. wave on a string, EM waves)</h3><canvas id="tc" aria-label="Transverse wave particles moving up and down"></canvas>
+  <h3 style="margin:14px 0 6px">Longitudinal (e.g. sound)</h3><canvas id="lc" aria-label="Longitudinal wave particles moving left and right with compressions and rarefactions"></canvas>
+  <div class="row" style="margin-top:10px"><button class="go" id="pause">Pause</button></div></div>
+ <div class="panel">
+  <table><tr><th></th><th>Transverse</th><th>Longitudinal</th></tr>
+  <tr><td><b>Oscillation</b></td><td>perpendicular to the direction of energy transfer</td><td>parallel to the direction of energy transfer</td></tr>
+  <tr><td><b>Examples</b></td><td>EM waves, waves on a string, S-waves</td><td>sound, P-waves, compression waves on a slinky</td></tr>
+  <tr><td><b>Features</b></td><td>peaks and troughs</td><td>compressions (C) and rarefactions (R)</td></tr>
+  <tr><td><b>Polarised?</b></td><td class="good"><b>yes, can be</b></td><td class="bad"><b>never</b></td></tr></table>
+  <div class="callout" style="margin-top:12px">In an EM wave it is the <b>electric and magnetic fields</b> that oscillate, at right angles to each other and to the direction of travel. All EM waves travel at <b>c = 3.00 × 10<sup>8</sup> m s<sup>−1</sup></b> in a vacuum.</div>
+  <p class="note">The highlighted particles show that each particle only oscillates about a fixed point: the energy moves, the medium does not.</p>
+ </div>
+</div>
+<div data-panel="pol" class="grid2" hidden>
+ <div class="panel"><canvas id="pc" aria-label="Light passing through two polarising filters"></canvas>
+  <div style="margin-top:10px"><b>Brightness reaching the eye</b> <span class="note">(full bar = the lamp)</span><div style="height:26px;border-radius:8px;background:var(--soft);overflow:hidden;margin-top:4px"><div id="bar" style="height:100%;width:50%;background:var(--warm)"></div></div><div id="brt" class="mono" style="margin-top:4px"></div></div></div>
+ <div class="panel">
+  <label for="wtype">Wave</label><select id="wtype"><option value="light">light (transverse, unpolarised)</option><option value="sound">sound (longitudinal)</option></select>
+  <label for="a1" style="margin-top:10px">Filter 1 (polariser) angle: <span id="a1v" class="mono"></span>°</label><input type="range" id="a1" min="0" max="180" step="5" value="0">
+  <label for="a2" style="margin-top:8px">Filter 2 (analyser) angle: <span id="a2v" class="mono"></span>°</label><input type="range" id="a2" min="0" max="180" step="5" value="0">
+  <div class="row" style="margin-top:10px"><button class="ghost" id="rot">Rotate filter 2 slowly</button></div>
+  <div class="callout" id="pmsg" style="margin-top:12px"></div>
+  <p class="note">Unpolarised light oscillates in all planes perpendicular to its direction. A polarising filter only lets through the oscillations in one plane. Crossed filters (90° apart) block the light completely.</p>
+ </div>
+</div>
+<div data-panel="aer" class="grid2" hidden>
+ <div class="panel"><canvas id="ac" aria-label="Transmitter mast and a receiving aerial"></canvas>
+  <div style="margin-top:10px"><b>Signal strength</b><div style="height:26px;border-radius:8px;background:var(--soft);overflow:hidden;margin-top:4px"><div id="abar" style="height:100%;width:50%;background:var(--good)"></div></div></div></div>
+ <div class="panel">
+  <label for="tx">Transmitter polarisation</label><select id="tx"><option value="0">vertical</option><option value="90">horizontal</option></select>
+  <label for="rx" style="margin-top:10px">Receiving aerial angle from vertical: <span id="rxv" class="mono"></span>°</label><input type="range" id="rx" min="0" max="90" step="5" value="0">
+  <div class="callout" id="amsg" style="margin-top:12px"></div>
+  <p class="note">Radio and TV signals are plane polarised by the transmitting aerial. The receiving aerial (its rods) must be aligned with the plane of polarisation for the strongest signal. Neighbouring transmitters can use different polarisations to reduce interference.</p>
+ </div>
+</div>
+</div>
+<script>
+let paused=false,t=0,last=0,rotating=false;
+function types(){let S=setup($("tc"),0.36),g=S.g,w=S.w,h=S.h;const N=32,lam=w/2.2,om=2*Math.PI*0.6,amp=h*0.3;
+ for(let i=0;i<N;i++){const x0=20+i*(w-40)/(N-1),y=h/2-amp*Math.sin(2*Math.PI*x0/lam-om*t);g.fillStyle=i===12?cv("--warm"):cv("--accent");g.beginPath();g.arc(x0,y,i===12?8:5,0,7);g.fill();}
+ const xh=20+12*(w-40)/(N-1);g.strokeStyle=cv("--warm");g.setLineDash([3,4]);g.beginPath();g.moveTo(xh,h/2-amp-10);g.lineTo(xh,h/2+amp+10);g.stroke();g.setLineDash([]);
+ arrow(g,w-90,14,w-20,14,cv("--ink"),2,9);g.fillStyle=cv("--ink");g.font="13px "+cv("--body");g.textAlign="right";g.fillText("energy",w-94,18);
+ S=setup($("lc"),0.36);g=S.g;w=S.w;h=S.h;const M=60,lamL=w/2.6,s=lamL*0.07;
+ const xs=[];for(let i=0;i<M;i++){const x0=20+i*(w-40)/(M-1);xs.push(x0+s*Math.sin(2*Math.PI*x0/lamL-om*t));}
+ for(let i=0;i<M;i++){g.strokeStyle=i===24?cv("--warm"):cv("--accent");g.lineWidth=i===24?4:2;g.beginPath();g.moveTo(xs[i],h*0.22);g.lineTo(xs[i],h*0.78);g.stroke();}
+ g.font="bold 14px "+cv("--body");g.textAlign="center";
+ // label C and R using local spacing minima/maxima
+ const sp=xs.slice(1).map((x,i)=>x-xs[i]);for(let i=2;i<sp.length-2;i++){if(sp[i]<sp[i-1]&&sp[i]<=sp[i+1]&&sp[i]<sp[i-2]&&sp[i]<sp[i+2]){g.fillStyle=cv("--bad");g.fillText("C",(xs[i]+xs[i+1])/2,h*0.18);}
+  if(sp[i]>sp[i-1]&&sp[i]>=sp[i+1]&&sp[i]>sp[i-2]&&sp[i]>sp[i+2]){g.fillStyle=cv("--good");g.fillText("R",(xs[i]+xs[i+1])/2,h*0.96);}}
+ const xh2=20+24*(w-40)/(M-1);arrow(g,xh2-s-6,h*0.86,xh2+s+6,h*0.86,cv("--warm"),2,7);arrow(g,xh2+s+6,h*0.86,xh2-s-6,h*0.86,cv("--warm"),2,7);}
+function pinfo(){const sound=$("wtype").value==="sound";const a1=+$("a1").value,a2=+$("a2").value;$("a1v").textContent=a1;$("a2v").textContent=a2;
+ const d=Math.abs(a2-a1)%180,dd=Math.min(d,180-d);const I=sound?1:0.5*Math.pow(Math.cos(dd*Math.PI/180),2);
+ $("bar").style.width=(I*100)+"%";$("brt").textContent=sound?"sound passes through unchanged (no effect)":(I<0.005?"dark: no light gets through":"relative brightness "+(I*200).toFixed(0)+"% of the light leaving filter 1");
+ $("pmsg").innerHTML=sound?"Sound is <b>longitudinal</b>: its oscillations are along the direction of travel, so there is no plane to select. Longitudinal waves <b>cannot be polarised</b>. This is why polarisation is evidence that a wave is transverse.":
+  dd===0?"Filters aligned: the polarised light from filter 1 passes straight through filter 2.":dd===90?"Filters <b>crossed</b> at 90°: <b>no light</b> passes. Only a transverse wave can be blocked like this.":`Filters ${dd}° apart: only part of the oscillation lines up with filter 2, so the light is <b>dimmer</b>.`;}
+function pol(){const sound=$("wtype").value==="sound";const a1=+$("a1").value*Math.PI/180,a2=+$("a2").value*Math.PI/180;const S=setup($("pc"),0.55),g=S.g,w=S.w,h=S.h;const cy=h/2,R=h*0.22;
+ const xs=[w*0.12,w*0.32,w*0.5,w*0.86];
+ g.strokeStyle=cv("--line");g.lineWidth=2;g.beginPath();g.moveTo(10,cy);g.lineTo(w-10,cy);g.stroke();
+ // filters
+ [[xs[1],a1,"filter 1"],[w*0.68,a2,"filter 2"]].forEach(([x,a,n])=>{g.save();g.translate(x,cy);g.fillStyle=cv("--soft");g.strokeStyle=cv("--muted");g.lineWidth=2;g.beginPath();g.ellipse(0,0,R*0.45,R*1.35,0,0,7);g.fill();g.stroke();
+  g.strokeStyle=cv("--muted");g.lineWidth=1.5;const ux=Math.sin(a)*0.33,uy=Math.cos(a),ox=Math.cos(a)*0.33,oy=-Math.sin(a);for(let k=-3;k<=3;k++){const L=R*Math.sqrt(Math.max(0,1-(k/4)*(k/4)))*1.2;g.beginPath();g.moveTo(k*ox*R*0.3-ux*L,k*oy*R*0.3-uy*L);g.lineTo(k*ox*R*0.3+ux*L,k*oy*R*0.3+uy*L);g.stroke();}
+  g.restore();g.fillStyle=cv("--muted");g.font="13px "+cv("--body");g.textAlign="center";g.fillText(n,x,cy+R*1.5+14);});
+ function star(x,amp,angles,col){g.save();g.translate(x,cy);angles.forEach(a=>{const ux=Math.sin(a)*0.33*amp,uy=Math.cos(a)*amp;arrow(g,0,0,ux*R,-uy*R,col,2.5,8);arrow(g,0,0,-ux*R,uy*R,col,2.5,8);});g.restore();}
+ if(sound){[xs[0],xs[2],xs[3]].forEach(x=>{arrow(g,x-R*0.8,cy,x+R*0.8,cy,cv("--accent"),3,9);arrow(g,x+R*0.8,cy,x-R*0.8,cy,cv("--accent"),3,9);});}
+ else{star(xs[0],1,[0,Math.PI/4,Math.PI/2,3*Math.PI/4],cv("--warm"));
+  star(xs[2],0.75,[a1],cv("--warm"));const amp=Math.abs(Math.cos(a2-a1))*0.75;if(amp>0.02)star(xs[3],amp,[a2],cv("--warm"));}
+ g.fillStyle=cv("--ink");g.font="bold 14px "+cv("--body");g.textAlign="center";g.fillText(sound?"sound":"unpolarised",xs[0],22);g.fillText(sound?"":"plane polarised",xs[2],22);}
+function aer(){const tx=+$("tx").value,rx=+$("rx").value;$("rxv").textContent=rx;const d=Math.abs(tx-rx),s=Math.pow(Math.cos(d*Math.PI/180),2);
+ $("abar").style.width=(s*100)+"%";$("amsg").innerHTML=d===0?"Aerial aligned with the plane of polarisation: <b>maximum signal</b>.":d===90?"Aerial at 90° to the plane of polarisation: <b>almost no signal</b>.":"Partly aligned: weaker signal. Rotate the aerial to match the transmitter.";
+ const S=setup($("ac"),0.55),g=S.g,w=S.w,h=S.h;
+ g.strokeStyle=cv("--ink");g.lineWidth=4;g.beginPath();g.moveTo(w*0.12,h*0.9);g.lineTo(w*0.16,h*0.3);g.lineTo(w*0.2,h*0.9);g.stroke();
+ g.save();g.translate(w*0.16,h*0.25);g.rotate(tx*Math.PI/180);g.lineWidth=6;g.strokeStyle=cv("--accent");g.beginPath();g.moveTo(0,-h*0.12);g.lineTo(0,h*0.12);g.stroke();g.restore();
+ for(let k=1;k<=4;k++){g.save();g.translate(w*0.16+k*w*0.13,h*0.25);g.rotate(tx*Math.PI/180);g.strokeStyle=cv("--warm");g.lineWidth=2.5;arrow(g,0,0,0,-h*0.09,cv("--warm"),2.5,8);arrow(g,0,0,0,h*0.09,cv("--warm"),2.5,8);g.restore();}
+ g.fillStyle=cv("--muted");g.font="14px "+cv("--body");g.textAlign="center";g.fillText("transmitter",w*0.16,h*0.97);g.fillText("plane of oscillation of E-field",w*0.48,h*0.47);
+ g.save();g.translate(w*0.85,h*0.45);g.strokeStyle=cv("--muted");g.lineWidth=3;g.beginPath();g.moveTo(0,0);g.lineTo(0,h*0.45);g.stroke();g.rotate(rx*Math.PI/180);g.strokeStyle=cv("--good");g.lineWidth=6;g.beginPath();g.moveTo(0,-h*0.16);g.lineTo(0,h*0.16);g.stroke();
+ for(let k=-2;k<=2;k++){g.lineWidth=3;g.beginPath();g.moveTo(-w*0.04,k*h*0.06);g.lineTo(w*0.04,k*h*0.06);g.stroke();}g.restore();
+ g.fillText("receiving aerial",w*0.85,h*0.97);}
+function loop(ts){const dt=Math.min(0.05,(ts-last)/1000||0);last=ts;if(!paused)t+=dt;
+ if(rotating){const a=$("a2");a.value=(+a.value+dt*20)%181;pinfo();pol();}
+ if(!$("tc").closest("[data-panel]").hidden)types();requestAnimationFrame(loop);}
+["wtype","a1","a2"].forEach(id=>$(id).addEventListener("input",()=>{pinfo();pol();}));["tx","rx"].forEach(id=>$(id).addEventListener("input",aer));
+$("pause").onclick=()=>{paused=!paused;$("pause").textContent=paused?"Play":"Pause";};
+$("rot").onclick=()=>{rotating=!rotating;$("rot").textContent=rotating?"Stop rotating":"Rotate filter 2 slowly";};
+tabs(tb=>{if(tb==="pol"){pinfo();pol();}if(tb==="aer")aer();});onResize(()=>{pol();aer();});
+pinfo();pol();aer();requestAnimationFrame(loop);
+</script>
+</body></html>

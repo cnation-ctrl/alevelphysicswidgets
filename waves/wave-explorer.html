@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wave Explorer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: whiteboard tool, one wide working panel under a slim header; large type for projection */
+:root{
+  --bg:#EEF3FA; --panel:#FFFFFF; --ink:#14213D; --muted:#56627A; --line:#D3DCE9;
+  --accent:#2F5DCC; --accent-ink:#FFFFFF; --warm:#D9661A; --good:#18915A; --bad:#C2372F; --soft:#E3EBF8;
+  --body:"Atkinson Hyperlegible",Verdana,Arial,sans-serif; --mono:"IBM Plex Mono",Consolas,"Courier New",monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0E1524; --panel:#16213A; --ink:#E9EFF9; --muted:#A0ACC2; --line:#2B3A57;
+  --accent:#86A8FF; --accent-ink:#0E1524; --warm:#F2A05A; --good:#4FCB8F; --bad:#F07B72; --soft:#1F2D4C; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E1524; --panel:#16213A; --ink:#E9EFF9; --muted:#A0ACC2; --line:#2B3A57;
+  --accent:#86A8FF; --accent-ink:#0E1524; --warm:#F2A05A; --good:#4FCB8F; --bad:#F07B72; --soft:#1F2D4C; color-scheme:dark}
+[hidden]{display:none!important}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:18px;line-height:1.45;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:18px 32px}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+header.top{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px 20px}
+header.top h1{font-size:clamp(26px,3.2vw,38px);margin:0;text-wrap:balance;letter-spacing:-.01em}
+header.top .spec{font-family:var(--mono);font-size:15px;color:var(--muted);letter-spacing:.04em}
+.tabs{display:flex;flex-wrap:wrap;gap:8px}
+.tabs button{font:inherit;font-weight:700;border:2px solid var(--line);background:var(--panel);color:var(--ink);padding:10px 18px;border-radius:10px;cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px;min-width:0}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}
+@media (max-width:820px){.grid2{grid-template-columns:minmax(0,1fr)}}
+label{font-weight:700;display:block;margin-bottom:4px}
+.row{display:flex;flex-wrap:wrap;gap:12px;align-items:end}
+input[type=number],input[type=text],select{font:inherit;font-family:var(--mono);font-size:20px;padding:8px 10px;border:2px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);min-width:0}
+input[type=range]{width:100%;accent-color:var(--accent)}
+button.go{font:inherit;font-weight:700;background:var(--accent);color:var(--accent-ink);border:0;border-radius:10px;padding:11px 20px;cursor:pointer}
+button.ghost{font:inherit;font-weight:700;background:transparent;color:var(--accent);border:2px solid var(--accent);border-radius:10px;padding:9px 18px;cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--warm);outline-offset:2px}
+.big{font-family:var(--mono);font-size:clamp(24px,3vw,34px);font-weight:600}
+.mono{font-family:var(--mono)}
+.muted{color:var(--muted)}
+.steps{display:flex;flex-direction:column;gap:6px;font-family:var(--mono);font-size:18px}
+.steps div{padding:6px 10px;background:var(--soft);border-radius:8px;overflow-x:auto}
+.good{color:var(--good)} .bad{color:var(--bad)} .warm{color:var(--warm)}
+.chip{display:inline-block;font-size:15px;font-weight:700;padding:3px 10px;border-radius:999px;background:var(--soft)}
+table{border-collapse:collapse;width:100%;font-size:17px}
+th,td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left}
+th{font-size:14px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.scroll{overflow-x:auto}
+canvas{display:block;width:100%;max-width:100%;touch-action:none}
+sup{font-size:.7em}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+.formula{font-family:var(--mono);font-size:20px;padding:10px 14px;background:var(--soft);border-radius:10px;overflow-x:auto}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:18px}
+.kv b{font-weight:700}
+.note{font-size:16px;color:var(--muted)}
+.callout{border-left:5px solid var(--warm);background:var(--soft);padding:10px 14px;border-radius:8px}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:15px}
+.legend span::before{content:"";display:inline-block;width:14px;height:4px;border-radius:2px;margin-right:6px;vertical-align:middle;background:var(--c)}
+</style>
+<style>body{margin:0}img{max-width:100%}select{max-width:100%;width:100%}.row>div{min-width:min(100%,150px)!important}</style>
+<script>
+const $=id=>document.getElementById(id);
+const cv=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const EPS0=8.85e-12, K=1/(4*Math.PI*8.85e-12), E_CH=1.60e-19, ME_=9.11e-31, MP=1.673e-27, G=6.67e-11;
+/* number in standard form as HTML, n significant figures */
+function sf(x,n=3){
+  if(x===0)return "0";
+  if(!isFinite(x))return "∞";
+  const neg=x<0;x=Math.abs(x);
+  let e=Math.floor(Math.log10(x));let m=x/Math.pow(10,e);let ms=m.toPrecision(n);
+  if(parseFloat(ms)>=10){e++;ms=(m/10).toPrecision(n);}
+  let s;
+  if(e>=-2&&e<n&&e<=3){s=x.toPrecision(n);if(s.includes("e"))s=ms+" × 10<sup>"+String(e).replace("-","−")+"</sup>";}
+  else s=ms+" × 10<sup>"+String(e).replace("-","−")+"</sup>";
+  return (neg?"−":"")+s;
+}
+/* plain-text version for canvas labels */
+function sft(x,n=3){return sf(x,n).replace(/<sup>/g,"^").replace(/<\/sup>/g,"").replace(" × 10^","e").replace(/e(−?\d+)/,(a,b)=>"×10"+sup(b));}
+function sup(s){const m={"0":"⁰","1":"¹","2":"²","3":"³","4":"⁴","5":"⁵","6":"⁶","7":"⁷","8":"⁸","9":"⁹","−":"⁻","-":"⁻"};return String(s).split("").map(c=>m[c]||c).join("");}
+function setup(c,aspect){
+  const dpr=window.devicePixelRatio||1,w=c.clientWidth||600,h=Math.round(w*aspect);
+  c.width=w*dpr;c.height=h*dpr;c.style.height=h+"px";
+  const g=c.getContext("2d");g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,w,h);
+  return {g,w,h};
+}
+function niceStep(range,target){const raw=range/target;const p=Math.pow(10,Math.floor(Math.log10(raw)));const f=raw/p;return (f<1.5?1:f<3?2:f<7?5:10)*p;}
+/* axes: box {x,y,w,h}; returns mapping functions */
+function axes(g,box,xmin,xmax,ymin,ymax,opt={}){
+  const X=x=>box.x+(x-xmin)/(xmax-xmin)*box.w, Y=y=>box.y+box.h-(y-ymin)/(ymax-ymin)*box.h;
+  const ink=cv("--ink"),line=cv("--line"),muted=cv("--muted");
+  g.save();g.font="14px "+cv("--body");g.lineWidth=1;
+  const xs=opt.xstep||niceStep(xmax-xmin,6), ys=opt.ystep||niceStep(ymax-ymin,5);
+  g.strokeStyle=line;g.fillStyle=muted;g.textAlign="center";g.textBaseline="top";
+  for(let x=Math.ceil(xmin/xs)*xs;x<=xmax+1e-9*xs;x+=xs){g.beginPath();g.moveTo(X(x),box.y);g.lineTo(X(x),box.y+box.h);g.stroke();g.fillText(opt.xfmt?opt.xfmt(x):+x.toPrecision(3),X(x),Math.min(box.y+box.h,Math.max(box.y,Y(0)))+4);}
+  g.textAlign="right";g.textBaseline="middle";
+  for(let y=Math.ceil(ymin/ys)*ys;y<=ymax+1e-9*ys;y+=ys){g.beginPath();g.moveTo(box.x,Y(y));g.lineTo(box.x+box.w,Y(y));g.stroke();g.fillText(opt.yfmt?opt.yfmt(y):+y.toPrecision(3),box.x-6,Y(y));}
+  g.strokeStyle=ink;g.lineWidth=2;g.beginPath();
+  const y0=Math.min(box.y+box.h,Math.max(box.y,Y(0)));g.moveTo(box.x,y0);g.lineTo(box.x+box.w,y0);
+  g.moveTo(box.x,box.y);g.lineTo(box.x,box.y+box.h);g.stroke();
+  g.fillStyle=ink;g.font="bold 15px "+cv("--body");
+  if(opt.xl){g.textAlign="right";g.textBaseline="bottom";g.fillText(opt.xl,box.x+box.w,y0-4);}
+  if(opt.yl){g.textAlign="left";g.textBaseline="top";g.fillText(opt.yl,box.x+6,box.y-2);}
+  g.restore();
+  return {X,Y};
+}
+function arrow(g,x1,y1,x2,y2,col,wid=3,head=10){
+  const a=Math.atan2(y2-y1,x2-x1);g.save();g.strokeStyle=col;g.fillStyle=col;g.lineWidth=wid;
+  g.beginPath();g.moveTo(x1,y1);g.lineTo(x2-Math.cos(a)*head*0.6,y2-Math.sin(a)*head*0.6);g.stroke();
+  g.beginPath();g.moveTo(x2,y2);g.lineTo(x2-head*Math.cos(a-0.4),y2-head*Math.sin(a-0.4));g.lineTo(x2-head*Math.cos(a+0.4),y2-head*Math.sin(a+0.4));g.closePath();g.fill();g.restore();
+}
+function tabs(onchange){
+  document.querySelectorAll(".tabs button").forEach(b=>b.addEventListener("click",()=>{
+    document.querySelectorAll(".tabs button").forEach(x=>x.setAttribute("aria-selected",x===b));
+    document.querySelectorAll("[data-panel]").forEach(p=>p.hidden=p.dataset.panel!==b.dataset.tab);
+    if(onchange)onchange(b.dataset.tab);
+  }));
+}
+function onResize(f){let t;window.addEventListener("resize",()=>{clearTimeout(t);t=setTimeout(f,80);});
+  if(window.matchMedia)window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change",f);}
+
+</script>
+</head>
+<body>
+<div class="wrap">
+<header class="top"><h1>Wave Explorer</h1><span class="spec">AQA 7408 · 3.3.1.1 · progressive waves</span></header>
+<div class="tabs" role="tablist"><button data-tab="wave" aria-selected="true">Wave on a rope</button><button data-tab="graphs" aria-selected="false">Two kinds of graph</button><button data-tab="quiz" aria-selected="false">Read the graph</button></div>
+<div data-panel="wave" class="grid2">
+ <div class="panel"><canvas id="cv" aria-label="A transverse wave travelling to the right with one particle highlighted"></canvas>
+  <div class="legend" style="margin-top:6px"><span style="--c:var(--warm)">tracked particle (moves up and down only)</span><span style="--c:var(--accent)">wave profile (energy travels right)</span></div>
+  <div class="row" style="margin-top:10px"><button class="go" id="pause">Pause</button><button class="ghost" id="slow">Slow motion: off</button></div></div>
+ <div class="panel">
+  <label for="amp">Amplitude A: <span id="ampv" class="mono"></span> cm</label><input type="range" id="amp" min="0.5" max="4" step="0.1" value="2">
+  <label for="freq" style="margin-top:8px">Frequency f: <span id="freqv" class="mono"></span> Hz</label><input type="range" id="freq" min="0.2" max="2" step="0.05" value="0.5">
+  <label for="lam" style="margin-top:8px">Wavelength λ: <span id="lamv" class="mono"></span> cm</label><input type="range" id="lam" min="10" max="60" step="1" value="30">
+  <div class="steps" id="st" style="margin-top:12px"></div>
+  <div class="callout" style="margin-top:12px">Watch the orange particle: it only moves <b>up and down</b> about its rest position. The <b>wave</b> (and its energy) moves along. One full oscillation of the particle takes one period T, and in that time the wave moves forward one wavelength λ.</div>
+ </div>
+</div>
+<div data-panel="graphs" class="grid2" hidden>
+ <div class="panel"><h3 style="margin:0 0 6px">Displacement against distance (a snapshot)</h3><canvas id="g1" aria-label="Displacement against distance graph"></canvas></div>
+ <div class="panel"><h3 style="margin:0 0 6px">Displacement against time (one particle)</h3><canvas id="g2" aria-label="Displacement against time graph"></canvas></div>
+ <div class="panel" style="grid-column:1/-1"><div class="callout">The two graphs look alike, so <b>always read the x-axis label</b>. On a displacement–<b>distance</b> graph, one full cycle is the <b>wavelength λ</b>. On a displacement–<b>time</b> graph, one full cycle is the <b>period T</b>, and f = 1/T. The amplitude is measured from the <b>equilibrium line to a peak</b>, not peak to trough.</div></div>
+</div>
+<div data-panel="quiz" class="grid2" hidden>
+ <div class="panel"><canvas id="qc" aria-label="Graph for the question"></canvas></div>
+ <div class="panel"><p id="qtext" style="margin-top:0;font-size:20px"></p>
+  <div class="row"><div><label for="qa">Your answer</label><input type="number" id="qa" step="any" style="width:200px"></div><button class="go" id="qcheck">Check</button><button class="ghost" id="qnew">New question</button></div>
+  <div id="qfb" class="steps" style="margin-top:12px"></div></div>
+</div>
+</div>
+<script>
+let paused=false,slow=false,t=0,last=0;
+function v(){return {A:+$("amp").value,f:+$("freq").value,lam:+$("lam").value};}
+function info(){const p=v();$("ampv").textContent=p.A.toFixed(1);$("freqv").textContent=p.f.toFixed(2);$("lamv").textContent=p.lam;
+ const c=p.f*p.lam/100;
+ $("st").innerHTML=`<div>period T = 1/f = 1 ÷ ${p.f.toFixed(2)} = ${(1/p.f).toFixed(2)} s</div><div>λ = ${p.lam} cm = ${(p.lam/100).toFixed(2)} m</div><div>wave speed c = fλ = ${p.f.toFixed(2)} × ${(p.lam/100).toFixed(2)} = <b>${c.toFixed(3)} m s<sup>−1</sup></b></div>`;}
+function draw(){const p=v();const S=setup($("cv"),0.62),g=S.g,w=S.w,h=S.h;const L=100;const sx=w/L,mid=h/2,sy=h/11;
+ g.strokeStyle=cv("--line");g.lineWidth=1;g.setLineDash([6,6]);g.beginPath();g.moveTo(0,mid);g.lineTo(w,mid);g.stroke();g.setLineDash([]);
+ const k=2*Math.PI/p.lam,om=2*Math.PI*p.f,y=x=>p.A*Math.sin(k*x-om*t);
+ g.strokeStyle=cv("--accent");g.lineWidth=3;g.beginPath();for(let x=0;x<=L;x+=0.5){const Y=mid-y(x)*sy;x?g.lineTo(x*sx,Y):g.moveTo(x*sx,Y);}g.stroke();
+ g.fillStyle=cv("--muted");for(let x=2.5;x<L;x+=5){g.beginPath();g.arc(x*sx,mid-y(x)*sy,3.5,0,7);g.fill();}
+ const xp=47.5;g.fillStyle=cv("--warm");g.beginPath();g.arc(xp*sx,mid-y(xp)*sy,9,0,7);g.fill();
+ g.strokeStyle=cv("--warm");g.lineWidth=1.5;g.setLineDash([3,4]);g.beginPath();g.moveTo(xp*sx,mid-p.A*sy-14);g.lineTo(xp*sx,mid+p.A*sy+14);g.stroke();g.setLineDash([]);
+ // wavelength marker between successive crests
+ const ph=(om*t)%(2*Math.PI);let xc=(Math.PI/2+ph)/k;while(xc>p.lam)xc-=p.lam;while(xc<5)xc+=p.lam;
+ if(xc+p.lam<L){const yy=mid-p.A*sy-22;arrow(g,xc*sx,yy,(xc+p.lam)*sx,yy,cv("--ink"),2,9);arrow(g,(xc+p.lam)*sx,yy,xc*sx,yy,cv("--ink"),2,9);
+  g.fillStyle=cv("--ink");g.font="bold 16px "+cv("--body");g.textAlign="center";g.fillText("λ",(xc+p.lam/2)*sx,yy-8);}
+ arrow(g,w-90,h-18,w-20,h-18,cv("--accent"),3,10);g.fillStyle=cv("--accent");g.font="bold 14px "+cv("--body");g.textAlign="right";g.fillText("energy →",w-95,h-13);
+ g.fillStyle=cv("--muted");g.textAlign="left";g.font="14px "+cv("--body");g.fillText("t = "+t.toFixed(2)+" s",10,20);}
+function loop(ts){const dt=Math.min(0.05,(ts-last)/1000||0);last=ts;if(!paused)t+=dt*(slow?0.25:1);draw();requestAnimationFrame(loop);}
+function graphs(){const p=v();const L=100;
+ let S=setup($("g1"),0.65),g=S.g;let ax=axes(g,{x:50,y:16,w:S.w-66,h:S.h-46},0,L,-4.5,4.5,{xl:"distance / cm",yl:"displacement / cm",xstep:10,ystep:1});
+ g.strokeStyle=cv("--accent");g.lineWidth=3;g.beginPath();for(let x=0;x<=L;x+=0.5){const Y=ax.Y(p.A*Math.sin(2*Math.PI*x/p.lam));x?g.lineTo(ax.X(x),Y):g.moveTo(ax.X(x),Y);}g.stroke();
+ const x1=p.lam/4,x2=p.lam*1.25;if(x2<=L){g.strokeStyle=cv("--warm");g.lineWidth=2;arrow(g,ax.X(x1),ax.Y(p.A)-12,ax.X(x2),ax.Y(p.A)-12,cv("--warm"),2,8);arrow(g,ax.X(x2),ax.Y(p.A)-12,ax.X(x1),ax.Y(p.A)-12,cv("--warm"),2,8);g.fillStyle=cv("--warm");g.font="bold 15px "+cv("--body");g.textAlign="center";g.fillText("λ = "+p.lam+" cm",ax.X((x1+x2)/2),ax.Y(p.A)-18);}
+ arrow(g,ax.X(x1)+3,ax.Y(0),ax.X(x1)+3,ax.Y(p.A),cv("--good"),2,8);g.fillStyle=cv("--good");g.textAlign="left";g.fillText("A",ax.X(x1)+8,ax.Y(p.A/2));
+ const T=1/p.f,tm=Math.max(2.2*T,4);
+ S=setup($("g2"),0.65);g=S.g;ax=axes(g,{x:50,y:16,w:S.w-66,h:S.h-46},0,tm,-4.5,4.5,{xl:"time / s",yl:"displacement / cm",ystep:1});
+ g.strokeStyle=cv("--warm");g.lineWidth=3;g.beginPath();for(let i=0;i<=400;i++){const tt=tm*i/400,Y=ax.Y(-p.A*Math.sin(2*Math.PI*p.f*tt));i?g.lineTo(ax.X(tt),Y):g.moveTo(ax.X(tt),Y);}g.stroke();
+ const t1=0.75*T,t2=1.75*T;if(t2<=tm){arrow(g,ax.X(t1),ax.Y(p.A)-12,ax.X(t2),ax.Y(p.A)-12,cv("--accent"),2,8);arrow(g,ax.X(t2),ax.Y(p.A)-12,ax.X(t1),ax.Y(p.A)-12,cv("--accent"),2,8);g.fillStyle=cv("--accent");g.font="bold 15px "+cv("--body");g.textAlign="center";g.fillText("T = "+T.toFixed(2)+" s",ax.X((t1+t2)/2),ax.Y(p.A)-18);}}
+/* quiz */
+let Q={};
+function newQ(){const kind=Math.random()<0.5?"d":"t";const A=[1,1.5,2,2.5,3][Math.floor(Math.random()*5)];
+ if(kind==="d"){const lam=[12,16,20,24,30,40][Math.floor(Math.random()*6)];const f=[2,4,5,10,25,50][Math.floor(Math.random()*6)];Q={kind,A,lam,f,ask:Math.random()<0.5?"c":"lam"};
+  $("qtext").innerHTML=Q.ask==="lam"?`The graph shows a wave at one instant. What is the <b>wavelength</b>, in cm?`:`The graph shows a wave at one instant. Its frequency is ${f} Hz. Calculate the <b>wave speed</b> in m s<sup>−1</sup>.`;}
+ else{const T=[0.02,0.04,0.05,0.1,0.2,0.4][Math.floor(Math.random()*6)];Q={kind,A,T,ask:Math.random()<0.5?"f":"A"};
+  $("qtext").innerHTML=Q.ask==="f"?`The graph shows how the displacement of one particle varies with time. What is the <b>frequency</b> of the wave, in Hz?`:`The graph shows how the displacement of one particle varies with time. What is the <b>amplitude</b>, in cm?`;}
+ $("qa").value="";$("qfb").innerHTML="";qdraw();}
+function qdraw(){const S=setup($("qc"),0.65),g=S.g;
+ if(Q.kind==="d"){const L=Q.lam*2.5;const ax=axes(g,{x:50,y:16,w:S.w-66,h:S.h-46},0,L,-3.5,3.5,{xl:"distance / cm",yl:"displacement / cm",xstep:niceStep(L,8),ystep:0.5});
+  g.strokeStyle=cv("--accent");g.lineWidth=3;g.beginPath();for(let i=0;i<=400;i++){const x=L*i/400,Y=ax.Y(Q.A*Math.sin(2*Math.PI*x/Q.lam));i?g.lineTo(ax.X(x),Y):g.moveTo(ax.X(x),Y);}g.stroke();}
+ else{const L=Q.T*2.5;const ax=axes(g,{x:50,y:16,w:S.w-66,h:S.h-46},0,L*1000,-3.5,3.5,{xl:"time / ms",yl:"displacement / cm",xstep:niceStep(L*1000,8),ystep:0.5});
+  g.strokeStyle=cv("--warm");g.lineWidth=3;g.beginPath();for(let i=0;i<=400;i++){const x=L*i/400,Y=ax.Y(Q.A*Math.cos(2*Math.PI*x/Q.T));i?g.lineTo(ax.X(x*1000),Y):g.moveTo(ax.X(x*1000),Y);}g.stroke();}}
+function check(){const a=parseFloat($("qa").value);let ans,work;
+ if(Q.kind==="d"){if(Q.ask==="lam"){ans=Q.lam;work=`One full cycle (crest to crest) spans ${Q.lam} cm.`;}else{ans=Q.f*Q.lam/100;work=`λ = ${Q.lam} cm = ${(Q.lam/100)} m; c = fλ = ${Q.f} × ${Q.lam/100} = ${+ans.toPrecision(3)} m s<sup>−1</sup>`;}}
+ else{if(Q.ask==="f"){ans=1/Q.T;work=`One cycle takes T = ${Q.T*1000} ms = ${Q.T} s; f = 1/T = ${+ans.toPrecision(3)} Hz`;}else{ans=Q.A;work=`Amplitude is equilibrium to peak: ${Q.A} cm (not peak to trough).`;}}
+ const ok=isFinite(a)&&Math.abs(a-ans)<=0.02*Math.abs(ans);
+ $("qfb").innerHTML=`<div class="${ok?"good":"bad"}">${ok?"Correct.":"Not quite."} Answer: ${+ans.toPrecision(3)}</div><div>${work}</div>`;}
+["amp","freq","lam"].forEach(id=>$(id).addEventListener("input",()=>{info();graphs();}));
+$("pause").onclick=()=>{paused=!paused;$("pause").textContent=paused?"Play":"Pause";};
+$("slow").onclick=()=>{slow=!slow;$("slow").textContent="Slow motion: "+(slow?"on":"off");};
+$("qcheck").onclick=check;$("qnew").onclick=newQ;
+tabs(tb=>{if(tb==="graphs")graphs();if(tb==="quiz")qdraw();});onResize(()=>{graphs();qdraw();});
+info();graphs();newQ();requestAnimationFrame(loop);
+</script>
+</body></html>
