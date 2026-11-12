@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SHM Explorer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: whiteboard tool, one wide working panel under a slim header; large type for projection */
+:root{
+  --bg:#EEF3FA; --panel:#FFFFFF; --ink:#14213D; --muted:#56627A; --line:#D3DCE9;
+  --accent:#2F5DCC; --accent-ink:#FFFFFF; --warm:#D9661A; --good:#18915A; --bad:#C2372F; --soft:#E3EBF8;
+  --body:"Atkinson Hyperlegible",Verdana,Arial,sans-serif; --mono:"IBM Plex Mono",Consolas,"Courier New",monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0E1524; --panel:#16213A; --ink:#E9EFF9; --muted:#A0ACC2; --line:#2B3A57;
+  --accent:#86A8FF; --accent-ink:#0E1524; --warm:#F2A05A; --good:#4FCB8F; --bad:#F07B72; --soft:#1F2D4C; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E1524; --panel:#16213A; --ink:#E9EFF9; --muted:#A0ACC2; --line:#2B3A57;
+  --accent:#86A8FF; --accent-ink:#0E1524; --warm:#F2A05A; --good:#4FCB8F; --bad:#F07B72; --soft:#1F2D4C; color-scheme:dark}
+[hidden]{display:none!important}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:18px;line-height:1.45;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:18px 32px}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+header.top{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px 20px}
+header.top h1{font-size:clamp(26px,3.2vw,38px);margin:0;text-wrap:balance;letter-spacing:-.01em}
+header.top .spec{font-family:var(--mono);font-size:15px;color:var(--muted);letter-spacing:.04em}
+.tabs{display:flex;flex-wrap:wrap;gap:8px}
+.tabs button{font:inherit;font-weight:700;border:2px solid var(--line);background:var(--panel);color:var(--ink);padding:10px 18px;border-radius:10px;cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px;min-width:0}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}
+@media (max-width:820px){.grid2{grid-template-columns:minmax(0,1fr)}}
+label{font-weight:700;display:block;margin-bottom:4px}
+.row{display:flex;flex-wrap:wrap;gap:12px;align-items:end}
+input[type=number],input[type=text],select{font:inherit;font-family:var(--mono);font-size:20px;padding:8px 10px;border:2px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);min-width:0}
+input[type=range]{width:100%;accent-color:var(--accent)}
+button.go{font:inherit;font-weight:700;background:var(--accent);color:var(--accent-ink);border:0;border-radius:10px;padding:11px 20px;cursor:pointer}
+button.ghost{font:inherit;font-weight:700;background:transparent;color:var(--accent);border:2px solid var(--accent);border-radius:10px;padding:9px 18px;cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--warm);outline-offset:2px}
+.big{font-family:var(--mono);font-size:clamp(24px,3vw,34px);font-weight:600}
+.mono{font-family:var(--mono)}
+.muted{color:var(--muted)}
+.steps{display:flex;flex-direction:column;gap:6px;font-family:var(--mono);font-size:18px}
+.steps div{padding:6px 10px;background:var(--soft);border-radius:8px;overflow-x:auto}
+.good{color:var(--good)} .bad{color:var(--bad)} .warm{color:var(--warm)}
+.chip{display:inline-block;font-size:15px;font-weight:700;padding:3px 10px;border-radius:999px;background:var(--soft)}
+table{border-collapse:collapse;width:100%;font-size:17px}
+th,td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left}
+th{font-size:14px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.scroll{overflow-x:auto}
+canvas{display:block;width:100%;max-width:100%;touch-action:none}
+sup{font-size:.7em}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+.formula{font-family:var(--mono);font-size:20px;padding:10px 14px;background:var(--soft);border-radius:10px;overflow-x:auto}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:18px}
+.kv b{font-weight:700}
+.note{font-size:16px;color:var(--muted)}
+.callout{border-left:5px solid var(--warm);background:var(--soft);padding:10px 14px;border-radius:8px}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:15px}
+.legend span::before{content:"";display:inline-block;width:14px;height:4px;border-radius:2px;margin-right:6px;vertical-align:middle;background:var(--c)}
+</style>
+<style>body{margin:0}img{max-width:100%}select{max-width:100%;width:100%}.row>div{min-width:min(100%,150px)!important}</style>
+<script>
+const $=id=>document.getElementById(id);
+const cv=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const EPS0=8.85e-12, K=1/(4*Math.PI*8.85e-12), E_CH=1.60e-19, ME_=9.11e-31, MP=1.673e-27, G=6.67e-11;
+/* number in standard form as HTML, n significant figures */
+function sf(x,n=3){
+  if(x===0)return "0";
+  if(!isFinite(x))return "∞";
+  const neg=x<0;x=Math.abs(x);
+  let e=Math.floor(Math.log10(x));let m=x/Math.pow(10,e);let ms=m.toPrecision(n);
+  if(parseFloat(ms)>=10){e++;ms=(m/10).toPrecision(n);}
+  let s;
+  if(e>=-2&&e<n&&e<=3){s=x.toPrecision(n);if(s.includes("e"))s=ms+" × 10<sup>"+String(e).replace("-","−")+"</sup>";}
+  else s=ms+" × 10<sup>"+String(e).replace("-","−")+"</sup>";
+  return (neg?"−":"")+s;
+}
+/* plain-text version for canvas labels */
+function sft(x,n=3){return sf(x,n).replace(/<sup>/g,"^").replace(/<\/sup>/g,"").replace(" × 10^","e").replace(/e(−?\d+)/,(a,b)=>"×10"+sup(b));}
+function sup(s){const m={"0":"⁰","1":"¹","2":"²","3":"³","4":"⁴","5":"⁵","6":"⁶","7":"⁷","8":"⁸","9":"⁹","−":"⁻","-":"⁻"};return String(s).split("").map(c=>m[c]||c).join("");}
+function setup(c,aspect){
+  const dpr=window.devicePixelRatio||1,w=c.clientWidth||600,h=Math.round(w*aspect);
+  c.width=w*dpr;c.height=h*dpr;c.style.height=h+"px";
+  const g=c.getContext("2d");g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,w,h);
+  return {g,w,h};
+}
+function niceStep(range,target){const raw=range/target;const p=Math.pow(10,Math.floor(Math.log10(raw)));const f=raw/p;return (f<1.5?1:f<3?2:f<7?5:10)*p;}
+/* axes: box {x,y,w,h}; returns mapping functions */
+function axes(g,box,xmin,xmax,ymin,ymax,opt={}){
+  const X=x=>box.x+(x-xmin)/(xmax-xmin)*box.w, Y=y=>box.y+box.h-(y-ymin)/(ymax-ymin)*box.h;
+  const ink=cv("--ink"),line=cv("--line"),muted=cv("--muted");
+  g.save();g.font="14px "+cv("--body");g.lineWidth=1;
+  const xs=opt.xstep||niceStep(xmax-xmin,6), ys=opt.ystep||niceStep(ymax-ymin,5);
+  g.strokeStyle=line;g.fillStyle=muted;g.textAlign="center";g.textBaseline="top";
+  for(let x=Math.ceil(xmin/xs)*xs;x<=xmax+1e-9*xs;x+=xs){g.beginPath();g.moveTo(X(x),box.y);g.lineTo(X(x),box.y+box.h);g.stroke();g.fillText(opt.xfmt?opt.xfmt(x):+(Math.abs(x)<1e-9*xs?0:x).toPrecision(3),X(x),Math.min(box.y+box.h,Math.max(box.y,Y(0)))+4);}
+  g.textAlign="right";g.textBaseline="middle";
+  for(let y=Math.ceil(ymin/ys)*ys;y<=ymax+1e-9*ys;y+=ys){g.beginPath();g.moveTo(box.x,Y(y));g.lineTo(box.x+box.w,Y(y));g.stroke();g.fillText(opt.yfmt?opt.yfmt(y):+(Math.abs(y)<1e-9*ys?0:y).toPrecision(3),box.x-6,Y(y));}
+  g.strokeStyle=ink;g.lineWidth=2;g.beginPath();
+  const y0=Math.min(box.y+box.h,Math.max(box.y,Y(0)));g.moveTo(box.x,y0);g.lineTo(box.x+box.w,y0);
+  g.moveTo(box.x,box.y);g.lineTo(box.x,box.y+box.h);g.stroke();
+  g.fillStyle=ink;g.font="bold 15px "+cv("--body");
+  if(opt.xl){g.textAlign="right";g.textBaseline="bottom";g.fillText(opt.xl,box.x+box.w,y0-4);}
+  if(opt.yl){g.textAlign="left";g.textBaseline="top";g.fillText(opt.yl,box.x+6,box.y-2);}
+  g.restore();
+  return {X,Y};
+}
+function arrow(g,x1,y1,x2,y2,col,wid=3,head=10){
+  const a=Math.atan2(y2-y1,x2-x1);g.save();g.strokeStyle=col;g.fillStyle=col;g.lineWidth=wid;
+  g.beginPath();g.moveTo(x1,y1);g.lineTo(x2-Math.cos(a)*head*0.6,y2-Math.sin(a)*head*0.6);g.stroke();
+  g.beginPath();g.moveTo(x2,y2);g.lineTo(x2-head*Math.cos(a-0.4),y2-head*Math.sin(a-0.4));g.lineTo(x2-head*Math.cos(a+0.4),y2-head*Math.sin(a+0.4));g.closePath();g.fill();g.restore();
+}
+function tabs(onchange){
+  document.querySelectorAll(".tabs button").forEach(b=>b.addEventListener("click",()=>{
+    document.querySelectorAll(".tabs button").forEach(x=>x.setAttribute("aria-selected",x===b));
+    document.querySelectorAll("[data-panel]").forEach(p=>p.hidden=p.dataset.panel!==b.dataset.tab);
+    if(onchange)onchange(b.dataset.tab);
+  }));
+}
+function onResize(f){let t;window.addEventListener("resize",()=>{clearTimeout(t);t=setTimeout(f,80);});
+  if(window.matchMedia)window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change",f);}
+
+</script>
+</head>
+
+<body>
+<div class="wrap">
+<header class="top"><h1>SHM Explorer</h1><span class="spec">AQA 7408 · 3.6.1.2 · the condition for SHM</span></header>
+<div class="tabs" role="tablist"><button data-tab="spring" aria-selected="true">Mass on a spring</button><button data-tab="test" aria-selected="false">SHM or not?</button><button data-tab="quiz" aria-selected="false">Quick-fire questions</button></div>
+<div data-panel="spring" class="grid2">
+ <div class="panel"><canvas id="cv" aria-label="A trolley oscillating between two springs with force and acceleration arrows"></canvas>
+  <canvas id="ax" style="margin-top:8px" aria-label="Graph of acceleration against displacement"></canvas>
+  <div class="row" style="margin-top:10px"><button class="go" id="pause">Pause</button><button class="ghost" id="slow">Slow motion: off</button></div></div>
+ <div class="panel">
+  <label for="A">Amplitude A: <span id="Av" class="mono"></span> cm</label><input type="range" id="A" min="2" max="10" step="0.5" value="8">
+  <label for="k" style="margin-top:8px">Spring constant k: <span id="kv" class="mono"></span> N m<sup>−1</sup></label><input type="range" id="k" min="5" max="80" step="1" value="20">
+  <label for="m" style="margin-top:8px">Mass m: <span id="mv" class="mono"></span> kg</label><input type="range" id="m" min="0.1" max="2" step="0.05" value="0.5">
+  <div class="steps" id="st" style="margin-top:12px"></div>
+  <div class="callout" style="margin-top:12px">SHM needs a <b>restoring force</b> proportional to displacement and always <b>towards the equilibrium position</b>. Then a = −(k/m)x, which has the form <b>a = −ω²x</b>. The minus sign means a and x are always in opposite directions. The a–x graph is a straight line through the origin with gradient −ω².</div>
+ </div>
+</div>
+<div data-panel="test" class="grid2" hidden>
+ <div class="panel"><canvas id="tc" aria-label="Animation of the chosen oscillator"></canvas><canvas id="tg" style="margin-top:8px" aria-label="Acceleration against displacement for the chosen oscillator"></canvas></div>
+ <div class="panel">
+  <label for="sys">Choose a motion</label><select id="sys"><option value="spring">Mass on a spring</option><option value="pend">Pendulum released from 10°</option><option value="pendbig">Pendulum released from 80°</option><option value="ball">Ball bouncing on the floor</option><option value="tri">Ball rolling in a V-shaped trough</option></select>
+  <div class="steps" id="tst" style="margin-top:12px"></div>
+  <div class="callout" style="margin-top:12px">Test for SHM: is the a–x graph a <b>straight line through the origin with a negative gradient</b>? Repetitive motion is not enough: a bouncing ball is periodic but its acceleration is g downwards almost all the time, so it is <b>not</b> SHM.</div>
+ </div>
+</div>
+<div data-panel="quiz" class="grid2" hidden>
+ <div class="panel"><p id="qtext" style="margin-top:0;font-size:22px"></p>
+  <div class="row"><div><label for="qa">Your answer</label><input type="number" id="qa" step="any" style="width:220px"></div><button class="go" id="qcheck">Check</button><button class="ghost" id="qnew">New question</button></div>
+  <div id="qfb" class="steps" style="margin-top:12px"></div></div>
+ <div class="panel"><div class="formula">a = −ω²x &nbsp;&nbsp; ω = 2πf = 2π/T</div><p class="note">Answers to 3 significant figures. Keep the sign of a when the question asks for acceleration.</p><div class="kv" id="score"></div></div>
+</div>
+</div>
+<script>
+let paused=false,slow=false,t=0,last=0,tt=0,score=0,tries=0;
+const P=()=>({A:+$("A").value/100,k:+$("k").value,m:+$("m").value});
+function info(){const p=P(),w=Math.sqrt(p.k/p.m),x=p.A*Math.cos(w*t),a=-w*w*x;$("Av").textContent=(p.A*100).toFixed(1);$("kv").textContent=p.k;$("mv").textContent=p.m.toFixed(2);
+ $("st").innerHTML=`<div>ω² = k/m = ${p.k}/${p.m.toFixed(2)} = ${(w*w).toFixed(1)} s<sup>−2</sup>, ω = ${w.toFixed(2)} rad s<sup>−1</sup></div><div>T = 2π/ω = <b>${(2*Math.PI/w).toFixed(2)} s</b> (the same for any amplitude)</div><div>now: x = ${(x*100).toFixed(1)} cm, a = −ω²x = <b>${a.toFixed(2)} m s<sup>−2</sup></b></div><div>restoring force F = −kx = ${(-p.k*x).toFixed(2)} N</div>`;}
+function draw(){const p=P(),w=Math.sqrt(p.k/p.m),x=p.A*Math.cos(w*t),a=-w*w*x;
+ let S=setup($("cv"),0.34),g=S.g,W=S.w,H=S.h;const cx=W/2,sc=(W*0.36)/0.1,y0=H*0.62;const bx=cx+x*sc;
+ g.fillStyle=cv("--ink");g.fillRect(8,y0-40,8,60);g.fillRect(W-16,y0-40,8,60);g.strokeStyle=cv("--line");g.lineWidth=2;g.beginPath();g.moveTo(8,y0+22);g.lineTo(W-8,y0+22);g.stroke();
+ function spring(x1,x2){g.strokeStyle=cv("--muted");g.lineWidth=2;g.beginPath();const n=14;g.moveTo(x1,y0);for(let i=1;i<n;i++){g.lineTo(x1+(x2-x1)*i/n,y0+(i%2?-10:10));}g.lineTo(x2,y0);g.stroke();}
+ spring(16,bx-30);spring(bx+30,W-16);g.fillStyle=cv("--warm");g.fillRect(bx-30,y0-22,60,40);
+ g.strokeStyle=cv("--ink");g.setLineDash([4,4]);g.lineWidth=1.5;g.beginPath();g.moveTo(cx,y0-50);g.lineTo(cx,y0+30);g.stroke();g.setLineDash([]);
+ g.fillStyle=cv("--muted");g.font="13px "+cv("--body");g.textAlign="center";g.fillText("equilibrium",cx,y0-54);
+ if(Math.abs(x)>0.002)arrow(g,cx,y0-34,bx,y0-34,cv("--accent"),3,9);
+ const al=Math.max(-W*0.3,Math.min(W*0.3,a*12));if(Math.abs(al)>3)arrow(g,bx,y0+4,bx+al,y0+4,cv("--bad"),4,11);
+ g.font="bold 14px "+cv("--body");g.textAlign="left";g.fillStyle=cv("--accent");g.fillText("x (displacement)",10,18);g.fillStyle=cv("--bad");g.fillText("a (acceleration)",160,18);
+ S=setup($("ax"),0.45);g=S.g;const am=w*w*p.A*1.15||1;const ax=axes(g,{x:56,y:14,w:S.w-72,h:S.h-40},-0.11,0.11,-Math.max(am,1),Math.max(am,1),{xl:"x / m",yl:"a / m s⁻²",xstep:0.05});
+ g.strokeStyle=cv("--line");g.lineWidth=3;g.beginPath();g.moveTo(ax.X(-p.A),ax.Y(w*w*p.A));g.lineTo(ax.X(p.A),ax.Y(-w*w*p.A));g.strokeStyle=cv("--bad");g.stroke();
+ g.fillStyle=cv("--warm");g.beginPath();g.arc(ax.X(x),ax.Y(a),8,0,7);g.fill();
+ g.fillStyle=cv("--ink");g.font="bold 14px "+cv("--body");g.textAlign="right";g.fillText("gradient = −ω² = "+(-w*w).toFixed(1)+" s⁻²",S.w-20,30);}
+function loop(ts){const dt=Math.min(0.05,(ts-last)/1000||0);last=ts;if(!paused){t+=dt*(slow?0.25:1);tt+=dt;}if(!$("cv").closest("[data-panel]").hidden){draw();info();}else if(!$("tc").closest("[data-panel]").hidden)test();requestAnimationFrame(loop);}
+// SHM or not
+function motion(sys,time){ // returns {x,a,xs:[...],as:[...]} using precomputed data
+ return DATA[sys];}
+const DATA={};
+function simulate(){const dt=0.002;
+ // spring: k/m = 16
+ let d=[];for(let i=0;i<4000;i++){const tm=i*dt;const x=0.08*Math.cos(4*tm);d.push([x,-16*x]);}DATA.spring=d;
+ [["pend",10],["pendbig",80]].forEach(([n,deg])=>{let th=deg*Math.PI/180,om=0;const L=1;d=[];for(let i=0;i<6000;i++){const al=-9.81/L*Math.sin(th);om+=al*dt;th+=om*dt;const x=L*th;d.push([x,L*(-9.81/L*Math.sin(th))]);}DATA[n]=d;});
+ let y=1,v=0;d=[];for(let i=0;i<6000;i++){v+=-9.81*dt;y+=v*dt;let a=-9.81;if(y<0){y=-y;v=-v;a=400;}d.push([y,a]);}DATA.ball=d;
+ let x=0.3,vx=0;d=[];for(let i=0;i<6000;i++){const a=x>0?-3:3;vx+=a*dt;x+=vx*dt;d.push([x,a]);}DATA.tri=d;}
+const VERD={spring:["SHM","a = −(k/m)x: straight line through the origin, negative gradient."],pend:["SHM (very nearly)","For small angles sin θ ≈ θ, so a ≈ −(g/l)x."],pendbig:["Not SHM","At large angles sin θ is not ≈ θ: the a–x graph curves, and the period is longer than 2π√(l/g)."],ball:["Not SHM","Acceleration is g downwards whatever the height (a big upward spike only during the bounce). Periodic, but a is not ∝ −x."],tri:["Not SHM","The restoring force has constant size on each slope: a is constant, not proportional to x."]};
+function test(){const sys=$("sys").value,d=DATA[sys];const i=Math.floor((tt*500))%d.length;const [x,a]=d[i];
+ let S=setup($("tc"),0.4),g=S.g,W=S.w,H=S.h;g.fillStyle=cv("--ink");g.font="14px "+cv("--body");
+ if(sys==="spring"){const cx=W/2,y=H*0.6,bx=cx+x*W*3.5;g.fillRect(8,y-30,6,50);g.strokeStyle=cv("--muted");g.lineWidth=2;g.beginPath();g.moveTo(14,y);for(let k=1;k<14;k++)g.lineTo(14+(bx-30-14)*k/14,y+(k%2?-9:9));g.lineTo(bx-25,y);g.stroke();g.fillStyle=cv("--warm");g.fillRect(bx-25,y-18,50,36);}
+ if(sys==="pend"||sys==="pendbig"){const px=W/2,py=10,L=H*0.8,th=x;const bx=px+L*Math.sin(th),by=py+L*Math.cos(th);g.strokeStyle=cv("--muted");g.lineWidth=2;g.beginPath();g.moveTo(px,py);g.lineTo(bx,by);g.stroke();g.fillStyle=cv("--warm");g.beginPath();g.arc(bx,by,11,0,7);g.fill();}
+ if(sys==="ball"){const by=H-14-x*(H-40);g.strokeStyle=cv("--ink");g.beginPath();g.moveTo(0,H-3);g.lineTo(W,H-3);g.stroke();g.fillStyle=cv("--warm");g.beginPath();g.arc(W/2,by,11,0,7);g.fill();}
+ if(sys==="tri"){const cx=W/2,s=W*1.2;g.strokeStyle=cv("--ink");g.lineWidth=2;g.beginPath();g.moveTo(cx-0.35*s,H*0.2);g.lineTo(cx,H-10);g.lineTo(cx+0.35*s,H*0.2);g.stroke();const bx=cx+x*s;const by=H-10-Math.abs(x)*s*((H-10-H*0.2)/(0.35*s))-11;g.fillStyle=cv("--warm");g.beginPath();g.arc(bx,by,11,0,7);g.fill();}
+ S=setup($("tg"),0.5);g=S.g;let xm=0,am=0;d.forEach(([X,Ac])=>{xm=Math.max(xm,Math.abs(X));am=Math.max(am,Math.abs(Ac)>50?0:Math.abs(Ac));});am=Math.max(am,1)*1.3;xm*=1.15;
+ const xmin=sys==="ball"?0:-xm;const ax=axes(g,{x:56,y:14,w:S.w-72,h:S.h-40},xmin,xm,-am,am,{xl:sys==="ball"?"height / m":"x / m",yl:"a / m s⁻²"});
+ g.fillStyle=cv("--bad");for(let j=0;j<d.length;j+=7){const [X,Ac]=d[j];if(Math.abs(Ac)<=am)g.fillRect(ax.X(X)-1.5,ax.Y(Ac)-1.5,3,3);}
+ if(Math.abs(a)<=am){g.fillStyle=cv("--warm");g.beginPath();g.arc(ax.X(x),ax.Y(a),8,0,7);g.fill();}
+ const v=VERD[sys];$("tst").innerHTML=`<div class="${v[0].startsWith("Not")?"bad":"good"}"><b>${v[0]}</b></div><div>${v[1]}</div>`;}
+let Q={};const pick=a=>a[Math.floor(Math.random()*a.length)];
+function newQ(){const k=pick(["a","w","f","x","grad"]);
+ if(k==="a"){const w=pick([2,3,5,8]),x=pick([0.02,-0.03,0.05,-0.015]);Q={ans:-w*w*x,txt:`An object moves with SHM with ω = ${w} rad s<sup>−1</sup>. Calculate its acceleration when its displacement is ${x} m.`,w:`a = −ω²x = −${w}² × (${x}) = ${sf(-w*w*x)} m s<sup>−2</sup>`};}
+ if(k==="w"){const x=pick([0.02,0.04,0.05]),a=pick([0.8,2,3.2,5]);Q={ans:Math.sqrt(a/x),txt:`At a displacement of ${x} m an oscillator has an acceleration of magnitude ${a} m s<sup>−2</sup>. Calculate ω.`,w:`ω = √(a/x) = √(${a}/${x}) = ${sf(Math.sqrt(a/x))} rad s<sup>−1</sup>`};}
+ if(k==="f"){const x=pick([0.01,0.02,0.03]),a=pick([4,10,16]);const w=Math.sqrt(a/x);Q={ans:w/(2*Math.PI),txt:`A loudspeaker cone has an acceleration of ${a} m s<sup>−2</sup> when it is ${x*1000} mm from equilibrium. Calculate its frequency.`,w:`ω = √(a/x) = ${sf(w)} rad s<sup>−1</sup>; f = ω/2π = ${sf(w/(2*Math.PI))} Hz`};}
+ if(k==="x"){const T=pick([0.5,1,2]),a=pick([0.5,1.2,3]);const w=2*Math.PI/T;Q={ans:a/(w*w),txt:`A mass oscillates with period ${T} s. At what distance from equilibrium is the magnitude of its acceleration ${a} m s<sup>−2</sup>? Give your answer in m.`,w:`ω = 2π/T = ${sf(w)} rad s<sup>−1</sup>; x = a/ω² = ${sf(a/(w*w))} m`};}
+ if(k==="grad"){const g2=pick([25,49,100,400]);Q={ans:2*Math.PI/Math.sqrt(g2),txt:`The a–x graph for an oscillator is a straight line through the origin with gradient −${g2} s<sup>−2</sup>. Calculate the period.`,w:`ω² = ${g2}, ω = ${Math.sqrt(g2)} rad s<sup>−1</sup>; T = 2π/ω = ${sf(2*Math.PI/Math.sqrt(g2))} s`};}
+ $("qtext").innerHTML=Q.txt;$("qa").value="";$("qfb").innerHTML="";}
+function check(){const a=parseFloat($("qa").value);const ok=isFinite(a)&&Math.abs(a-Q.ans)<=0.02*Math.abs(Q.ans);tries++;if(ok)score++;
+ $("qfb").innerHTML=`<div class="${ok?"good":"bad"}">${ok?"Correct.":"Not quite."} Answer: ${sf(Q.ans,3)}</div><div>${Q.w}</div>`;$("score").innerHTML=`<b>Score</b><span>${score} / ${tries}</span>`;}
+$("pause").onclick=()=>{paused=!paused;$("pause").textContent=paused?"Play":"Pause";};
+$("slow").onclick=()=>{slow=!slow;$("slow").textContent="Slow motion: "+(slow?"on":"off");};
+$("sys").addEventListener("change",()=>{tt=0;});$("qcheck").onclick=check;$("qnew").onclick=newQ;
+simulate();tabs();newQ();requestAnimationFrame(loop);
+</script>
+</body></html>
