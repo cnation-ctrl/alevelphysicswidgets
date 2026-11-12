@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Two-Source Interference</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: whiteboard tool, one wide working panel under a slim header; large type for projection */
+:root{
+  --bg:#EEF3FA; --panel:#FFFFFF; --ink:#14213D; --muted:#56627A; --line:#D3DCE9;
+  --accent:#2F5DCC; --accent-ink:#FFFFFF; --warm:#D9661A; --good:#18915A; --bad:#C2372F; --soft:#E3EBF8;
+  --body:"Atkinson Hyperlegible",Verdana,Arial,sans-serif; --mono:"IBM Plex Mono",Consolas,"Courier New",monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0E1524; --panel:#16213A; --ink:#E9EFF9; --muted:#A0ACC2; --line:#2B3A57;
+  --accent:#86A8FF; --accent-ink:#0E1524; --warm:#F2A05A; --good:#4FCB8F; --bad:#F07B72; --soft:#1F2D4C; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E1524; --panel:#16213A; --ink:#E9EFF9; --muted:#A0ACC2; --line:#2B3A57;
+  --accent:#86A8FF; --accent-ink:#0E1524; --warm:#F2A05A; --good:#4FCB8F; --bad:#F07B72; --soft:#1F2D4C; color-scheme:dark}
+[hidden]{display:none!important}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:18px;line-height:1.45;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:18px 32px}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+header.top{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px 20px}
+header.top h1{font-size:clamp(26px,3.2vw,38px);margin:0;text-wrap:balance;letter-spacing:-.01em}
+header.top .spec{font-family:var(--mono);font-size:15px;color:var(--muted);letter-spacing:.04em}
+.tabs{display:flex;flex-wrap:wrap;gap:8px}
+.tabs button{font:inherit;font-weight:700;border:2px solid var(--line);background:var(--panel);color:var(--ink);padding:10px 18px;border-radius:10px;cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px;min-width:0}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}
+@media (max-width:820px){.grid2{grid-template-columns:minmax(0,1fr)}}
+label{font-weight:700;display:block;margin-bottom:4px}
+.row{display:flex;flex-wrap:wrap;gap:12px;align-items:end}
+input[type=number],input[type=text],select{font:inherit;font-family:var(--mono);font-size:20px;padding:8px 10px;border:2px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);min-width:0}
+input[type=range]{width:100%;accent-color:var(--accent)}
+button.go{font:inherit;font-weight:700;background:var(--accent);color:var(--accent-ink);border:0;border-radius:10px;padding:11px 20px;cursor:pointer}
+button.ghost{font:inherit;font-weight:700;background:transparent;color:var(--accent);border:2px solid var(--accent);border-radius:10px;padding:9px 18px;cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--warm);outline-offset:2px}
+.big{font-family:var(--mono);font-size:clamp(24px,3vw,34px);font-weight:600}
+.mono{font-family:var(--mono)}
+.muted{color:var(--muted)}
+.steps{display:flex;flex-direction:column;gap:6px;font-family:var(--mono);font-size:18px}
+.steps div{padding:6px 10px;background:var(--soft);border-radius:8px;overflow-x:auto}
+.good{color:var(--good)} .bad{color:var(--bad)} .warm{color:var(--warm)}
+.chip{display:inline-block;font-size:15px;font-weight:700;padding:3px 10px;border-radius:999px;background:var(--soft)}
+table{border-collapse:collapse;width:100%;font-size:17px}
+th,td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left}
+th{font-size:14px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.scroll{overflow-x:auto}
+canvas{display:block;width:100%;max-width:100%;touch-action:none}
+sup{font-size:.7em}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+.formula{font-family:var(--mono);font-size:20px;padding:10px 14px;background:var(--soft);border-radius:10px;overflow-x:auto}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:18px}
+.kv b{font-weight:700}
+.note{font-size:16px;color:var(--muted)}
+.callout{border-left:5px solid var(--warm);background:var(--soft);padding:10px 14px;border-radius:8px}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:15px}
+.legend span::before{content:"";display:inline-block;width:14px;height:4px;border-radius:2px;margin-right:6px;vertical-align:middle;background:var(--c)}
+</style>
+<style>body{margin:0}img{max-width:100%}select{max-width:100%;width:100%}.row>div{min-width:min(100%,150px)!important}</style>
+<script>
+const $=id=>document.getElementById(id);
+const cv=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const EPS0=8.85e-12, K=1/(4*Math.PI*8.85e-12), E_CH=1.60e-19, ME_=9.11e-31, MP=1.673e-27, G=6.67e-11;
+/* number in standard form as HTML, n significant figures */
+function sf(x,n=3){
+  if(x===0)return "0";
+  if(!isFinite(x))return "∞";
+  const neg=x<0;x=Math.abs(x);
+  let e=Math.floor(Math.log10(x));let m=x/Math.pow(10,e);let ms=m.toPrecision(n);
+  if(parseFloat(ms)>=10){e++;ms=(m/10).toPrecision(n);}
+  let s;
+  if(e>=-2&&e<n&&e<=3){s=x.toPrecision(n);if(s.includes("e"))s=ms+" × 10<sup>"+String(e).replace("-","−")+"</sup>";}
+  else s=ms+" × 10<sup>"+String(e).replace("-","−")+"</sup>";
+  return (neg?"−":"")+s;
+}
+/* plain-text version for canvas labels */
+function sft(x,n=3){return sf(x,n).replace(/<sup>/g,"^").replace(/<\/sup>/g,"").replace(" × 10^","e").replace(/e(−?\d+)/,(a,b)=>"×10"+sup(b));}
+function sup(s){const m={"0":"⁰","1":"¹","2":"²","3":"³","4":"⁴","5":"⁵","6":"⁶","7":"⁷","8":"⁸","9":"⁹","−":"⁻","-":"⁻"};return String(s).split("").map(c=>m[c]||c).join("");}
+function setup(c,aspect){
+  const dpr=window.devicePixelRatio||1,w=c.clientWidth||600,h=Math.round(w*aspect);
+  c.width=w*dpr;c.height=h*dpr;c.style.height=h+"px";
+  const g=c.getContext("2d");g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,w,h);
+  return {g,w,h};
+}
+function niceStep(range,target){const raw=range/target;const p=Math.pow(10,Math.floor(Math.log10(raw)));const f=raw/p;return (f<1.5?1:f<3?2:f<7?5:10)*p;}
+/* axes: box {x,y,w,h}; returns mapping functions */
+function axes(g,box,xmin,xmax,ymin,ymax,opt={}){
+  const X=x=>box.x+(x-xmin)/(xmax-xmin)*box.w, Y=y=>box.y+box.h-(y-ymin)/(ymax-ymin)*box.h;
+  const ink=cv("--ink"),line=cv("--line"),muted=cv("--muted");
+  g.save();g.font="14px "+cv("--body");g.lineWidth=1;
+  const xs=opt.xstep||niceStep(xmax-xmin,6), ys=opt.ystep||niceStep(ymax-ymin,5);
+  g.strokeStyle=line;g.fillStyle=muted;g.textAlign="center";g.textBaseline="top";
+  for(let x=Math.ceil(xmin/xs)*xs;x<=xmax+1e-9*xs;x+=xs){g.beginPath();g.moveTo(X(x),box.y);g.lineTo(X(x),box.y+box.h);g.stroke();g.fillText(opt.xfmt?opt.xfmt(x):+x.toPrecision(3),X(x),Math.min(box.y+box.h,Math.max(box.y,Y(0)))+4);}
+  g.textAlign="right";g.textBaseline="middle";
+  for(let y=Math.ceil(ymin/ys)*ys;y<=ymax+1e-9*ys;y+=ys){g.beginPath();g.moveTo(box.x,Y(y));g.lineTo(box.x+box.w,Y(y));g.stroke();g.fillText(opt.yfmt?opt.yfmt(y):+y.toPrecision(3),box.x-6,Y(y));}
+  g.strokeStyle=ink;g.lineWidth=2;g.beginPath();
+  const y0=Math.min(box.y+box.h,Math.max(box.y,Y(0)));g.moveTo(box.x,y0);g.lineTo(box.x+box.w,y0);
+  g.moveTo(box.x,box.y);g.lineTo(box.x,box.y+box.h);g.stroke();
+  g.fillStyle=ink;g.font="bold 15px "+cv("--body");
+  if(opt.xl){g.textAlign="right";g.textBaseline="bottom";g.fillText(opt.xl,box.x+box.w,y0-4);}
+  if(opt.yl){g.textAlign="left";g.textBaseline="top";g.fillText(opt.yl,box.x+6,box.y-2);}
+  g.restore();
+  return {X,Y};
+}
+function arrow(g,x1,y1,x2,y2,col,wid=3,head=10){
+  const a=Math.atan2(y2-y1,x2-x1);g.save();g.strokeStyle=col;g.fillStyle=col;g.lineWidth=wid;
+  g.beginPath();g.moveTo(x1,y1);g.lineTo(x2-Math.cos(a)*head*0.6,y2-Math.sin(a)*head*0.6);g.stroke();
+  g.beginPath();g.moveTo(x2,y2);g.lineTo(x2-head*Math.cos(a-0.4),y2-head*Math.sin(a-0.4));g.lineTo(x2-head*Math.cos(a+0.4),y2-head*Math.sin(a+0.4));g.closePath();g.fill();g.restore();
+}
+function tabs(onchange){
+  document.querySelectorAll(".tabs button").forEach(b=>b.addEventListener("click",()=>{
+    document.querySelectorAll(".tabs button").forEach(x=>x.setAttribute("aria-selected",x===b));
+    document.querySelectorAll("[data-panel]").forEach(p=>p.hidden=p.dataset.panel!==b.dataset.tab);
+    if(onchange)onchange(b.dataset.tab);
+  }));
+}
+function onResize(f){let t;window.addEventListener("resize",()=>{clearTimeout(t);t=setTimeout(f,80);});
+  if(window.matchMedia)window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change",f);}
+
+</script>
+</head>
+<body>
+<div class="wrap">
+<header class="top"><h1>Two-Source Interference</h1><span class="spec">AQA 7408 · 3.3.2.1 · path difference and coherence</span></header>
+<div class="tabs" role="tablist"><button data-tab="tank" aria-selected="true">Ripple tank</button><button data-tab="det" aria-selected="false">Walk past two speakers</button></div>
+<div data-panel="tank" class="grid2">
+ <div class="panel"><canvas id="cv" aria-label="Interference pattern from two sources; click to place point P"></canvas>
+  <p class="note" style="margin:6px 0 0">Click or tap on the pattern to move point P.</p></div>
+ <div class="panel">
+  <label for="view">View</label><select id="view"><option value="wave">waves (instantaneous)</option><option value="int">time-averaged intensity</option></select>
+  <label for="lam" style="margin-top:8px">Wavelength λ: <span id="lamv" class="mono"></span> cm</label><input type="range" id="lam" min="1" max="4" step="0.1" value="2">
+  <label for="sep" style="margin-top:8px">Source separation: <span id="sepv" class="mono"></span> cm</label><input type="range" id="sep" min="2" max="12" step="0.5" value="6">
+  <label for="ph" style="margin-top:8px">Sources</label><select id="ph"><option value="0">coherent, in phase</option><option value="180">coherent, in antiphase</option><option value="rand">not coherent (phase changes randomly)</option></select>
+  <div class="steps" id="st" style="margin-top:12px"></div>
+  <div class="callout" id="msg" style="margin-top:12px"></div>
+ </div>
+</div>
+<div data-panel="det" class="grid2" hidden>
+ <div class="panel"><canvas id="dc" aria-label="Two loudspeakers and a listener walking along a line"></canvas><canvas id="dg" style="margin-top:8px" aria-label="Loudness against position"></canvas></div>
+ <div class="panel">
+  <p style="margin-top:0">Two loudspeakers 1.50 m apart are connected to the <b>same</b> signal generator (so they are coherent). A student walks along a line 5.00 m away.</p>
+  <label for="fs">Frequency: <span id="fsv" class="mono"></span> Hz</label><input type="range" id="fs" min="300" max="1500" step="10" value="680">
+  <label for="xs" style="margin-top:8px">Student position: <span id="xsv" class="mono"></span> m from the centre line</label><input type="range" id="xs" min="-3" max="3" step="0.02" value="0">
+  <div class="big" id="loud" style="margin-top:10px"></div>
+  <div class="steps" id="dst" style="margin-top:10px"></div>
+  <p class="note">Speed of sound 340 m s<sup>−1</sup>. The same idea works with a microwave transmitter, a double slit made of metal plates and a probe receiver.</p>
+ </div>
+</div>
+</div>
+<script>
+let t=0,last=0,P={x:0.75,y:0.35},rph=0,rtimer=0,img=null;
+function p(){return {lam:+$("lam").value,sep:+$("sep").value,ph:$("ph").value,view:$("view").value};}
+const W=30,H=24; // tank size in cm (x from -15..15, y 0..24)
+function draw(){const v=p();const c=$("cv");const S=setup(c,0.8),g=S.g,w=S.w,h=S.h;
+ const res=3,nx=Math.ceil(w/res),ny=Math.ceil(h/res);const k=2*Math.PI/v.lam,om=2*Math.PI*0.8;
+ const s1=-v.sep/2,s2=v.sep/2,y0=0;const phi=v.ph==="rand"?rph:(+v.ph)*Math.PI/180;
+ const acc=cv("--accent"),bg=cv("--panel");
+ const id=g.createImageData(nx,ny);
+ const dark=getComputedStyle(document.body).backgroundColor;const isDark=matchMedia("(prefers-color-scheme: dark)").matches&&document.documentElement.dataset.theme!=="light";
+ for(let j=0;j<ny;j++){const Y=(j*res-14)/(h-14)*H;for(let i=0;i<nx;i++){const X=-W/2+W*i/nx;
+  const r1=Math.hypot(X-s1,Y-y0*0),r2=Math.hypot(X-s2,Y-y0*0);let val;
+  if(v.view==="wave"){val=(Math.sin(k*r1-om*t)+Math.sin(k*r2-om*t+phi))/2;}
+  else{val=v.ph==="rand"?0:Math.cos((k*(r2-r1)+phi)/2)**2*2-1;}
+  const q=(val+1)/2;const o=(j*nx+i)*4;
+  if(isDark){id.data[o]=14+q*120;id.data[o+1]=21+q*150;id.data[o+2]=36+q*219;}else{id.data[o]=255-q*208;id.data[o+1]=255-q*162;id.data[o+2]=255-q*51;}
+  id.data[o+3]=255;}}
+ const off=document.createElement("canvas");off.width=nx;off.height=ny;off.getContext("2d").putImageData(id,0,0);g.imageSmoothingEnabled=true;g.drawImage(off,0,0,w,h);
+ const X=x=>(x+W/2)/W*w,Yp=y=>14+y/H*(h-14);
+ g.fillStyle=cv("--warm");[s1,s2].forEach((s,i)=>{g.beginPath();g.arc(X(s),Yp(0),7,0,7);g.fill();g.font="bold 14px "+cv("--body");g.fillStyle=cv("--ink");g.fillText("S"+(i+1),X(s)-8,Yp(0)+24);g.fillStyle=cv("--warm");});
+ const px=-W/2+P.x*W,py=P.y*H;g.strokeStyle=cv("--ink");g.lineWidth=2;g.setLineDash([5,4]);g.beginPath();g.moveTo(X(s1),Yp(0));g.lineTo(X(px),Yp(py));g.lineTo(X(s2),Yp(0));g.stroke();g.setLineDash([]);
+ g.fillStyle=cv("--good");g.beginPath();g.arc(X(px),Yp(py),8,0,7);g.fill();g.fillStyle=cv("--ink");g.font="bold 15px "+cv("--body");g.fillText("P",X(px)+10,Yp(py)-8);
+ const r1=Math.hypot(px-s1,py),r2=Math.hypot(px-s2,py),pd=r2-r1,nl=pd/v.lam;return {r1,r2,pd,nl,phi};}
+function info(o){const v=p();$("lamv").textContent=v.lam.toFixed(1);$("sepv").textContent=v.sep.toFixed(1);
+ $("st").innerHTML=`<div>S<sub>1</sub>P = ${o.r1.toFixed(2)} cm, S<sub>2</sub>P = ${o.r2.toFixed(2)} cm</div><div>path difference = ${Math.abs(o.pd).toFixed(2)} cm = <b>${Math.abs(o.nl).toFixed(2)} λ</b></div>`;
+ const fr=Math.abs(o.nl)%1,near0=fr<0.12||fr>0.88,nearH=Math.abs(fr-0.5)<0.12;let m;
+ if(v.ph==="rand")m="The sources are <b>not coherent</b>: their phase difference keeps changing, so the maxima and minima move about too quickly to see. Time-averaged, there is <b>no stable pattern</b>.";
+ else if(v.ph==="0")m=near0?"Path difference ≈ <b>nλ</b>: the waves arrive <b>in phase</b>, constructive interference, a <b>maximum</b>.":nearH?"Path difference ≈ <b>(n + ½)λ</b>: the waves arrive in <b>antiphase</b>, destructive interference, a <b>minimum</b>.":"Between a maximum and a minimum.";
+ else m=near0?"The sources are in antiphase, so a path difference of nλ gives a <b>minimum</b> here: the rules swap.":nearH?"Sources in antiphase and path difference (n + ½)λ: the waves arrive in phase, a <b>maximum</b>.":"Between a maximum and a minimum.";
+ $("msg").innerHTML=m+"<br><span class='note'>Coherent sources: same frequency and a constant phase difference.</span>";}
+function loop(ts){const dt=Math.min(0.05,(ts-last)/1000||0);last=ts;t+=dt;rtimer+=dt;if(rtimer>0.15){rtimer=0;rph=Math.random()*2*Math.PI;}
+ if(!$("cv").closest("[data-panel]").hidden){const o=draw();info(o);}requestAnimationFrame(loop);}
+$("cv").addEventListener("pointerdown",e=>{const r=$("cv").getBoundingClientRect();P.x=Math.min(0.98,Math.max(0.02,(e.clientX-r.left)/r.width));P.y=Math.min(0.98,Math.max(0.03,(e.clientY-r.top)/r.height));});
+function det(){const f=+$("fs").value,x=+$("xs").value;$("fsv").textContent=f;$("xsv").textContent=x.toFixed(2);const lam=340/f,d=1.5,D=5;
+ const I=x0=>{const r1=Math.hypot(x0+d/2,D),r2=Math.hypot(x0-d/2,D);return Math.cos(Math.PI*(r2-r1)/lam)**2;};
+ const r1=Math.hypot(x+d/2,D),r2=Math.hypot(x-d/2,D),pd=Math.abs(r2-r1);
+ $("loud").textContent="loudness: "+(I(x)>0.85?"LOUD":I(x)<0.15?"quiet":"medium");
+ $("dst").innerHTML=`<div>λ = v/f = 340 ÷ ${f} = ${lam.toFixed(3)} m</div><div>path difference = ${pd.toFixed(3)} m = ${(pd/lam).toFixed(2)} λ</div><div>approximate spacing between loud spots = λD/s = ${(lam*D/d).toFixed(2)} m</div>`;
+ let S=setup($("dc"),0.45),g=S.g,w=S.w,h=S.h;const X=xx=>w/2+xx/3.2*(w/2),Yy=yy=>20+yy/5*(h-50);
+ [-d/2,d/2].forEach(s=>{g.fillStyle=cv("--ink");g.fillRect(X(s)-10,6,20,18);});g.fillStyle=cv("--muted");g.font="13px "+cv("--body");g.textAlign="center";g.fillText("speakers",w/2,40);
+ g.strokeStyle=cv("--line");g.lineWidth=2;g.beginPath();g.moveTo(10,Yy(5));g.lineTo(w-10,Yy(5));g.stroke();
+ g.strokeStyle=cv("--ink");g.setLineDash([5,4]);g.beginPath();g.moveTo(X(-d/2),24);g.lineTo(X(x),Yy(5));g.lineTo(X(d/2),24);g.stroke();g.setLineDash([]);
+ g.fillStyle=cv("--good");g.beginPath();g.arc(X(x),Yy(5),9,0,7);g.fill();
+ S=setup($("dg"),0.35);g=S.g;const ax=axes(g,{x:46,y:10,w:S.w-60,h:S.h-38},-3,3,0,1.1,{xl:"position / m",yl:"loudness",xstep:0.5,ystep:0.5,yfmt:()=>""});
+ g.strokeStyle=cv("--accent");g.lineWidth=2.5;g.beginPath();for(let i=0;i<=600;i++){const xx=-3+6*i/600,Y=ax.Y(I(xx));i?g.lineTo(ax.X(xx),Y):g.moveTo(ax.X(xx),Y);}g.stroke();
+ g.fillStyle=cv("--good");g.beginPath();g.arc(ax.X(x),ax.Y(I(x)),6,0,7);g.fill();}
+["fs","xs"].forEach(id=>$(id).addEventListener("input",det));
+tabs(tb=>{if(tb==="det")det();});onResize(det);det();requestAnimationFrame(loop);
+</script>
+</body></html>
