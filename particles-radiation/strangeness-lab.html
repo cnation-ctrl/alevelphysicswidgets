@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Strange Particle Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: whiteboard tool, one wide working panel under a slim header; large type for projection */
+:root{
+  --bg:#EEF3FA; --panel:#FFFFFF; --ink:#14213D; --muted:#56627A; --line:#D3DCE9;
+  --accent:#2F5DCC; --accent-ink:#FFFFFF; --warm:#D9661A; --good:#18915A; --bad:#C2372F; --soft:#E3EBF8;
+  --body:"Atkinson Hyperlegible",Verdana,Arial,sans-serif; --mono:"IBM Plex Mono",Consolas,"Courier New",monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0E1524; --panel:#16213A; --ink:#E9EFF9; --muted:#A0ACC2; --line:#2B3A57;
+  --accent:#86A8FF; --accent-ink:#0E1524; --warm:#F2A05A; --good:#4FCB8F; --bad:#F07B72; --soft:#1F2D4C; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E1524; --panel:#16213A; --ink:#E9EFF9; --muted:#A0ACC2; --line:#2B3A57;
+  --accent:#86A8FF; --accent-ink:#0E1524; --warm:#F2A05A; --good:#4FCB8F; --bad:#F07B72; --soft:#1F2D4C; color-scheme:dark}
+[hidden]{display:none!important}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:18px;line-height:1.45;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:18px 32px}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+header.top{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px 20px}
+header.top h1{font-size:clamp(26px,3.2vw,38px);margin:0;text-wrap:balance;letter-spacing:-.01em}
+header.top .spec{font-family:var(--mono);font-size:15px;color:var(--muted);letter-spacing:.04em}
+.tabs{display:flex;flex-wrap:wrap;gap:8px}
+.tabs button{font:inherit;font-weight:700;border:2px solid var(--line);background:var(--panel);color:var(--ink);padding:10px 18px;border-radius:10px;cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px;min-width:0}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}
+@media (max-width:820px){.grid2{grid-template-columns:minmax(0,1fr)}}
+label{font-weight:700;display:block;margin-bottom:4px}
+.row{display:flex;flex-wrap:wrap;gap:12px;align-items:end}
+input[type=number],input[type=text],select{font:inherit;font-family:var(--mono);font-size:20px;padding:8px 10px;border:2px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);min-width:0}
+input[type=range]{width:100%;accent-color:var(--accent)}
+button.go{font:inherit;font-weight:700;background:var(--accent);color:var(--accent-ink);border:0;border-radius:10px;padding:11px 20px;cursor:pointer}
+button.ghost{font:inherit;font-weight:700;background:transparent;color:var(--accent);border:2px solid var(--accent);border-radius:10px;padding:9px 18px;cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--warm);outline-offset:2px}
+.big{font-family:var(--mono);font-size:clamp(24px,3vw,34px);font-weight:600}
+.mono{font-family:var(--mono)}
+.muted{color:var(--muted)}
+.steps{display:flex;flex-direction:column;gap:6px;font-family:var(--mono);font-size:18px}
+.steps div{padding:6px 10px;background:var(--soft);border-radius:8px;overflow-x:auto}
+.good{color:var(--good)} .bad{color:var(--bad)} .warm{color:var(--warm)}
+.chip{display:inline-block;font-size:15px;font-weight:700;padding:3px 10px;border-radius:999px;background:var(--soft)}
+table{border-collapse:collapse;width:100%;font-size:17px}
+th,td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left}
+th{font-size:14px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.scroll{overflow-x:auto}
+canvas{display:block;width:100%;max-width:100%;touch-action:none}
+sup{font-size:.7em}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+.formula{font-family:var(--mono);font-size:20px;padding:10px 14px;background:var(--soft);border-radius:10px;overflow-x:auto}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:18px}
+.kv b{font-weight:700}
+.note{font-size:16px;color:var(--muted)}
+.callout{border-left:5px solid var(--warm);background:var(--soft);padding:10px 14px;border-radius:8px}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:15px}
+.legend span::before{content:"";display:inline-block;width:14px;height:4px;border-radius:2px;margin-right:6px;vertical-align:middle;background:var(--c)}
+</style>
+<style>body{margin:0}img{max-width:100%}select{max-width:100%;width:100%}.row>div{min-width:min(100%,150px)!important}</style>
+<script>
+const $=id=>document.getElementById(id);
+const cv=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const EPS0=8.85e-12, K=1/(4*Math.PI*8.85e-12), E_CH=1.60e-19, ME_=9.11e-31, MP=1.673e-27, G=6.67e-11;
+/* number in standard form as HTML, n significant figures */
+function sf(x,n=3){
+  if(x===0)return "0";
+  if(!isFinite(x))return "∞";
+  const neg=x<0;x=Math.abs(x);
+  let e=Math.floor(Math.log10(x));let m=x/Math.pow(10,e);let ms=m.toPrecision(n);
+  if(parseFloat(ms)>=10){e++;ms=(m/10).toPrecision(n);}
+  let s;
+  if(e>=-2&&e<n&&e<=3){s=x.toPrecision(n);if(s.includes("e"))s=ms+" × 10<sup>"+String(e).replace("-","−")+"</sup>";}
+  else s=ms+" × 10<sup>"+String(e).replace("-","−")+"</sup>";
+  return (neg?"−":"")+s;
+}
+/* plain-text version for canvas labels */
+function sft(x,n=3){return sf(x,n).replace(/<sup>/g,"^").replace(/<\/sup>/g,"").replace(" × 10^","e").replace(/e(−?\d+)/,(a,b)=>"×10"+sup(b));}
+function sup(s){const m={"0":"⁰","1":"¹","2":"²","3":"³","4":"⁴","5":"⁵","6":"⁶","7":"⁷","8":"⁸","9":"⁹","−":"⁻","-":"⁻"};return String(s).split("").map(c=>m[c]||c).join("");}
+function setup(c,aspect){
+  const dpr=window.devicePixelRatio||1,w=c.clientWidth||600,h=Math.round(w*aspect);
+  c.width=w*dpr;c.height=h*dpr;c.style.height=h+"px";
+  const g=c.getContext("2d");g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,w,h);
+  return {g,w,h};
+}
+function niceStep(range,target){const raw=range/target;const p=Math.pow(10,Math.floor(Math.log10(raw)));const f=raw/p;return (f<1.5?1:f<3?2:f<7?5:10)*p;}
+/* axes: box {x,y,w,h}; returns mapping functions */
+function axes(g,box,xmin,xmax,ymin,ymax,opt={}){
+  const X=x=>box.x+(x-xmin)/(xmax-xmin)*box.w, Y=y=>box.y+box.h-(y-ymin)/(ymax-ymin)*box.h;
+  const ink=cv("--ink"),line=cv("--line"),muted=cv("--muted");
+  g.save();g.font="14px "+cv("--body");g.lineWidth=1;
+  const xs=opt.xstep||niceStep(xmax-xmin,6), ys=opt.ystep||niceStep(ymax-ymin,5);
+  g.strokeStyle=line;g.fillStyle=muted;g.textAlign="center";g.textBaseline="top";
+  for(let x=Math.ceil(xmin/xs)*xs;x<=xmax+1e-9*xs;x+=xs){g.beginPath();g.moveTo(X(x),box.y);g.lineTo(X(x),box.y+box.h);g.stroke();g.fillText(opt.xfmt?opt.xfmt(x):+x.toPrecision(3),X(x),Math.min(box.y+box.h,Math.max(box.y,Y(0)))+4);}
+  g.textAlign="right";g.textBaseline="middle";
+  for(let y=Math.ceil(ymin/ys)*ys;y<=ymax+1e-9*ys;y+=ys){g.beginPath();g.moveTo(box.x,Y(y));g.lineTo(box.x+box.w,Y(y));g.stroke();g.fillText(opt.yfmt?opt.yfmt(y):+y.toPrecision(3),box.x-6,Y(y));}
+  g.strokeStyle=ink;g.lineWidth=2;g.beginPath();
+  const y0=Math.min(box.y+box.h,Math.max(box.y,Y(0)));g.moveTo(box.x,y0);g.lineTo(box.x+box.w,y0);
+  g.moveTo(box.x,box.y);g.lineTo(box.x,box.y+box.h);g.stroke();
+  g.fillStyle=ink;g.font="bold 15px "+cv("--body");
+  if(opt.xl){g.textAlign="right";g.textBaseline="bottom";g.fillText(opt.xl,box.x+box.w,y0-4);}
+  if(opt.yl){g.textAlign="left";g.textBaseline="top";g.fillText(opt.yl,box.x+6,box.y-2);}
+  g.restore();
+  return {X,Y};
+}
+function arrow(g,x1,y1,x2,y2,col,wid=3,head=10){
+  const a=Math.atan2(y2-y1,x2-x1);g.save();g.strokeStyle=col;g.fillStyle=col;g.lineWidth=wid;
+  g.beginPath();g.moveTo(x1,y1);g.lineTo(x2-Math.cos(a)*head*0.6,y2-Math.sin(a)*head*0.6);g.stroke();
+  g.beginPath();g.moveTo(x2,y2);g.lineTo(x2-head*Math.cos(a-0.4),y2-head*Math.sin(a-0.4));g.lineTo(x2-head*Math.cos(a+0.4),y2-head*Math.sin(a+0.4));g.closePath();g.fill();g.restore();
+}
+function tabs(onchange){
+  document.querySelectorAll(".tabs button").forEach(b=>b.addEventListener("click",()=>{
+    document.querySelectorAll(".tabs button").forEach(x=>x.setAttribute("aria-selected",x===b));
+    document.querySelectorAll("[data-panel]").forEach(p=>p.hidden=p.dataset.panel!==b.dataset.tab);
+    if(onchange)onchange(b.dataset.tab);
+  }));
+}
+function onResize(f){let t;window.addEventListener("resize",()=>{clearTimeout(t);t=setTimeout(f,80);});
+  if(window.matchMedia)window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change",f);}
+
+</script>
+</head>
+<body>
+<div class="wrap">
+<header class="top"><h1>Strange Particle Tracker</h1><span class="spec">AQA 7408 · 3.2.1.5 · strange particles and strangeness</span></header>
+<div class="tabs" role="tablist"><button data-tab="ev" aria-selected="true">Bubble chamber event</button><button data-tab="ss" aria-selected="false">Strong or weak?</button></div>
+<div data-panel="ev" class="grid2">
+ <div class="panel"><canvas id="cv" aria-label="Simulated bubble chamber tracks"></canvas>
+  <div class="row" style="margin-top:10px"><button class="ghost" id="back">◀ Back</button><button class="go" id="next">Next step ▶</button><span class="chip" id="sn"></span></div></div>
+ <div class="panel"><div class="big" id="eq" style="font-size:26px;overflow-x:auto"></div><div class="steps" id="st" style="margin-top:12px"></div><div class="callout" id="why" style="margin-top:12px"></div></div>
+</div>
+<div data-panel="ss" class="grid2" hidden>
+ <div class="panel"><div class="big" id="qeq" style="font-size:28px;overflow-x:auto"></div>
+  <div class="row" style="margin-top:14px"><button class="ghost" data-a="strong">Strong</button><button class="ghost" data-a="weak">Weak</button><button class="ghost" data-a="no">Cannot happen</button></div>
+  <div class="row" style="margin-top:12px"><button class="go" id="qn">Next</button><span class="chip" id="qs">Score 0 / 0</span></div></div>
+ <div class="panel"><div class="steps" id="qst"></div><div class="callout" id="qfb" style="margin-top:12px">Work out S before and after first.</div>
+  <div class="callout" style="margin-top:12px"><b>Rules:</b> strangeness is <b>conserved</b> in strong interactions. In weak interactions it can change by <b>0, +1 or −1</b>. Strange particles are <b>made in pairs</b> by the strong interaction (S = +1 and S = −1) and <b>decay one at a time</b> by the weak interaction.</div></div>
+</div>
+</div>
+<script>
+/* sym, name, class, Q, B, Le, Lmu, S, rest energy MeV, quarks */
+const P={
+ "p":["p","proton","baryon",1,1,0,0,0,938.257,"uud"],
+ "n":["n","neutron","baryon",0,1,0,0,0,939.551,"udd"],
+ "pbar":["p̄","antiproton","antibaryon",-1,-1,0,0,0,938.257,"ūūd̄"],
+ "nbar":["n̄","antineutron","antibaryon",0,-1,0,0,0,939.551,"ūd̄d̄"],
+ "L0":["Λ⁰","lambda","baryon",0,1,0,0,-1,1115.7,"uds"],
+ "Sp":["Σ⁺","sigma-plus","baryon",1,1,0,0,-1,1189.4,"uus"],
+ "Sm":["Σ⁻","sigma-minus","baryon",-1,1,0,0,-1,1197.4,"dds"],
+ "Om":["Ω⁻","omega-minus","baryon",-1,1,0,0,-3,1672.5,"sss"],
+ "pip":["π⁺","pion","meson",1,0,0,0,0,139.576,"ud̄"],
+ "pim":["π⁻","pion","meson",-1,0,0,0,0,139.576,"dū"],
+ "pi0":["π⁰","pion","meson",0,0,0,0,0,134.972,"uū or dd̄"],
+ "Kp":["K⁺","kaon","meson",1,0,0,0,1,493.821,"us̄"],
+ "Km":["K⁻","kaon","meson",-1,0,0,0,-1,493.821,"sū"],
+ "K0":["K⁰","kaon","meson",0,0,0,0,1,497.762,"ds̄"],
+ "K0bar":["K̄⁰","anti-kaon","meson",0,0,0,0,-1,497.762,"sd̄"],
+ "em":["e⁻","electron","lepton",-1,0,1,0,0,0.510999,""],
+ "ep":["e⁺","positron","antilepton",1,0,-1,0,0,0.510999,""],
+ "ve":["νₑ","electron neutrino","lepton",0,0,1,0,0,0,""],
+ "vebar":["ν̄ₑ","electron antineutrino","antilepton",0,0,-1,0,0,0,""],
+ "mum":["μ⁻","muon","lepton",-1,0,0,1,0,105.659,""],
+ "mup":["μ⁺","antimuon","antilepton",1,0,0,-1,0,105.659,""],
+ "vm":["ν_μ","muon neutrino","lepton",0,0,0,1,0,0,""],
+ "vmbar":["ν̄_μ","muon antineutrino","antilepton",0,0,0,-1,0,0,""],
+ "g":["γ","photon","photon",0,0,0,0,0,0,""]};
+P.vm[0]="ν<sub>μ</sub>";P.vmbar[0]="ν̄<sub>μ</sub>";P.ve[0]="ν<sub>e</sub>";P.vebar[0]="ν̄<sub>e</sub>";
+const plainSym=k=>P[k][0].replace(/<sub>(.*?)<\/sub>/g,"$1");
+const frac=x=>{const t=Math.round(x*3);if(t%3===0)return String(t/3).replace("-","−");return (t<0?"−":"+")+Math.abs(t)+"/3";};
+const sgn=x=>x>0?"+"+x:String(x).replace("-","−");
+
+const STEPS=[
+ ["Incoming beam","π⁻ + p","A π⁻ beam enters liquid hydrogen (protons). Charged particles leave bubble tracks; neutral particles leave none.",[],"S before = 0 + 0 = 0"],
+ ["Production by the strong force","π⁻ + p → K⁰ + Λ⁰","At the collision point two neutral strange particles are made together, so no tracks for a short distance.",["K⁰: S = +1","Λ⁰: S = −1","S after = +1 + (−1) = 0: conserved, so the strong interaction can do it","This is why strange particles are always made in pairs"],""],
+ ["K⁰ decays (weak)","K⁰ → π⁺ + π⁻","The kaon travels a few cm, then decays into two pions: a V-shaped pair of tracks.",["S: +1 → 0 + 0 = 0, a change of −1","Strangeness not conserved, so this must be the weak interaction","Weak decays are slow (about 10⁻¹⁰ s), so the kaon travels a measurable distance"],""],
+ ["Λ⁰ decays (weak)","Λ⁰ → p + π⁻","The lambda also decays by the weak interaction, giving a second V.",["S: −1 → 0 + 0, a change of +1: weak","B: +1 → +1 + 0 ✓   Q: 0 → +1 − 1 ✓","The proton is the only stable baryon: other baryons eventually decay into it"],""]];
+let k=0;
+function draw(){const S=setup($("cv"),0.75),g=S.g,w=S.w,h=S.h;g.fillStyle="#0E1524";g.fillRect(0,0,w,h);
+ for(let i=0;i<60;i++){g.fillStyle="rgba(200,215,240,0.15)";g.beginPath();g.arc((i*97)%w,(i*53)%h,1.5,0,7);g.fill();}
+ const V=[w*0.38,h*0.55],K=[w*0.62,h*0.3],L=[w*0.66,h*0.78];const dots=(x1,y1,x2,y2,c)=>{g.fillStyle=c;const n=Math.hypot(x2-x1,y2-y1)/5;for(let i=0;i<=n;i++){g.beginPath();g.arc(x1+(x2-x1)*i/n,y1+(y2-y1)*i/n,1.8,0,7);g.fill();}};
+ const curve=(x0,y0,a,R,len,c,dir)=>{g.fillStyle=c;for(let s=0;s<len;s+=5){const t=a+dir*s/R;const x=x0+R*(Math.sin(t)-Math.sin(a))*dir,y=y0-R*(Math.cos(t)-Math.cos(a))*dir;g.beginPath();g.arc(x,y,1.8,0,7);g.fill();}};
+ const lab=(t,x,y,c)=>{g.fillStyle=c;g.font="bold 17px "+cv("--body");g.fillText(t,x,y);};
+ if(k>=0){dots(0,h*0.62,V[0],V[1],"#86A8FF");lab("π⁻",12,h*0.62-10,"#86A8FF");}
+ if(k>=1){g.setLineDash([4,8]);g.strokeStyle="rgba(255,255,255,.35)";g.lineWidth=1.5;g.beginPath();g.moveTo(...V);g.lineTo(...K);g.moveTo(...V);g.lineTo(...L);g.stroke();g.setLineDash([]);lab("K⁰ (no track)",(V[0]+K[0])/2-60,(V[1]+K[1])/2-12,"#F2A05A");lab("Λ⁰ (no track)",(V[0]+L[0])/2-30,(V[1]+L[1])/2+28,"#F2A05A");g.fillStyle="#fff";g.beginPath();g.arc(...V,4,0,7);g.fill();}
+ if(k>=2){curve(K[0],K[1],-0.6,w*0.9,w*0.32,"#4FCB8F",1);curve(K[0],K[1],-0.1,w*0.6,w*0.3,"#F07B72",-1);lab("π⁺",K[0]+w*0.25,K[1]-h*0.2,"#4FCB8F");lab("π⁻",K[0]+w*0.28,K[1]+h*0.02,"#F07B72");}
+ if(k>=3){curve(L[0],L[1],0.2,w*2.5,w*0.3,"#E9EFF9",1);curve(L[0],L[1],0.9,w*0.25,w*0.22,"#F07B72",-1);lab("p",L[0]+w*0.28,L[1]-h*0.04,"#E9EFF9");lab("π⁻",L[0]+w*0.08,L[1]+h*0.17,"#F07B72");}
+ g.fillStyle="rgba(233,239,249,.7)";g.font="13px "+cv("--body");g.fillText("magnetic field into the screen: + and − tracks curve opposite ways",10,h-10);}
+function show(){const s=STEPS[k];$("sn").textContent=`Step ${k+1} of 4: ${s[0]}`;$("eq").textContent=s[1];$("st").innerHTML=(s[4]?`<div>${s[4]}</div>`:"")+s[3].map(x=>`<div>${x}</div>`).join("");$("why").textContent=s[2];draw();}
+$("next").onclick=()=>{k=Math.min(3,k+1);show();};$("back").onclick=()=>{k=Math.max(0,k-1);show();};
+const QS=[[["pim","p"],["K0","L0"],"strong"],[["Kp"],["pip","pi0"],"weak"],[["L0"],["p","pim"],"weak"],[["p","p"],["p","Sp","K0"],"strong"],[["pim","p"],["Kp","Sm"],"strong"],[["Km","p"],["Om","Kp","K0"],"strong"],[["Om"],["L0","Km"],"weak"],[["pim","p"],["K0","n"],"no"],[["p","p"],["p","p","Kp"],"no"],[["Sp"],["p","pi0"],"weak"],[["Km"],["mum","vmbar"],"weak"],[["Om"],["n","pim"],"no"]];
+let qi=0,sc=0,tt=0,qd=false;const sum=(a,j)=>a.reduce((x,k)=>x+P[k][j],0);
+function q(){qi=Math.floor(Math.random()*QS.length);qd=false;const [L,R]=QS[qi];$("qeq").innerHTML=L.map(k=>P[k][0]).join(" + ")+" → "+R.map(k=>P[k][0]).join(" + ");$("qst").innerHTML="";$("qfb").textContent="Work out S before and after first.";}
+document.querySelectorAll("[data-a]").forEach(b=>b.onclick=()=>{if(qd)return;qd=true;tt++;const [L,R,ans]=QS[qi];const ok=b.dataset.a===ans;if(ok)sc++;$("qs").textContent=`Score ${sc} / ${tt}`;
+ const sL=sum(L,7),sR=sum(R,7),d=sR-sL,lep=[...L,...R].some(k=>P[k][2].includes("lepton"));
+ $("qst").innerHTML=`<div>S before: ${L.map(k=>sgn(P[k][7])).join(" + ")} = ${sgn(sL)}</div><div>S after: ${R.map(k=>sgn(P[k][7])).join(" + ")} = ${sgn(sR)}</div><div>change ΔS = ${sgn(d)}</div><div>Q: ${sgn(sum(L,3))} → ${sgn(sum(R,3))}   B: ${sgn(sum(L,4))} → ${sgn(sum(R,4))}</div>`;
+ const why=ans==="strong"?"S is conserved and only hadrons are involved, so the strong interaction can do it.":ans==="weak"?(lep?"Leptons are involved, and S changes by 1: weak.":"S changes by 1, which only the weak interaction allows."):(Math.abs(d)>1?"S changes by more than 1: impossible in any interaction.":sum(L,3)!==sum(R,3)?"Charge is not conserved.":sum(L,4)!==sum(R,4)?"Baryon number is not conserved.":"A collision of hadrons that changes S by 1 would have to be weak, and the strong reaction would always win: in practice this does not happen. AQA answer: strangeness not conserved in a strong interaction.");
+ $("qfb").innerHTML=(ok?'<b class="good">Correct.</b> ':`<b class="bad">Answer: ${ans==="no"?"cannot happen":ans}.</b> `)+why;});
+$("qn").onclick=q;tabs(t=>{if(t==="ss")q();else show();});onResize(draw);k=3;show();q();
+</script>
+</body></html>
