@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Potential Divider Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: whiteboard tool, one wide working panel under a slim header; large type for projection */
+:root{
+  --bg:#EEF3FA; --panel:#FFFFFF; --ink:#14213D; --muted:#56627A; --line:#D3DCE9;
+  --accent:#2F5DCC; --accent-ink:#FFFFFF; --warm:#D9661A; --good:#18915A; --bad:#C2372F; --soft:#E3EBF8;
+  --body:"Atkinson Hyperlegible",Verdana,Arial,sans-serif; --mono:"IBM Plex Mono",Consolas,"Courier New",monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0E1524; --panel:#16213A; --ink:#E9EFF9; --muted:#A0ACC2; --line:#2B3A57;
+  --accent:#86A8FF; --accent-ink:#0E1524; --warm:#F2A05A; --good:#4FCB8F; --bad:#F07B72; --soft:#1F2D4C; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E1524; --panel:#16213A; --ink:#E9EFF9; --muted:#A0ACC2; --line:#2B3A57;
+  --accent:#86A8FF; --accent-ink:#0E1524; --warm:#F2A05A; --good:#4FCB8F; --bad:#F07B72; --soft:#1F2D4C; color-scheme:dark}
+[hidden]{display:none!important}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:18px;line-height:1.45;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:18px 32px}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+header.top{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px 20px}
+header.top h1{font-size:clamp(26px,3.2vw,38px);margin:0;text-wrap:balance;letter-spacing:-.01em}
+header.top .spec{font-family:var(--mono);font-size:15px;color:var(--muted);letter-spacing:.04em}
+.tabs{display:flex;flex-wrap:wrap;gap:8px}
+.tabs button{font:inherit;font-weight:700;border:2px solid var(--line);background:var(--panel);color:var(--ink);padding:10px 18px;border-radius:10px;cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px;min-width:0}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}
+@media (max-width:820px){.grid2{grid-template-columns:minmax(0,1fr)}}
+label{font-weight:700;display:block;margin-bottom:4px}
+.row{display:flex;flex-wrap:wrap;gap:12px;align-items:end}
+input[type=number],input[type=text],select{font:inherit;font-family:var(--mono);font-size:20px;padding:8px 10px;border:2px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);min-width:0}
+input[type=range]{width:100%;accent-color:var(--accent)}
+button.go{font:inherit;font-weight:700;background:var(--accent);color:var(--accent-ink);border:0;border-radius:10px;padding:11px 20px;cursor:pointer}
+button.ghost{font:inherit;font-weight:700;background:transparent;color:var(--accent);border:2px solid var(--accent);border-radius:10px;padding:9px 18px;cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--warm);outline-offset:2px}
+.big{font-family:var(--mono);font-size:clamp(24px,3vw,34px);font-weight:600}
+.mono{font-family:var(--mono)}
+.muted{color:var(--muted)}
+.steps{display:flex;flex-direction:column;gap:6px;font-family:var(--mono);font-size:18px}
+.steps div{padding:6px 10px;background:var(--soft);border-radius:8px;overflow-x:auto}
+.good{color:var(--good)} .bad{color:var(--bad)} .warm{color:var(--warm)}
+.chip{display:inline-block;font-size:15px;font-weight:700;padding:3px 10px;border-radius:999px;background:var(--soft)}
+table{border-collapse:collapse;width:100%;font-size:17px}
+th,td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left}
+th{font-size:14px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.scroll{overflow-x:auto}
+canvas{display:block;width:100%;max-width:100%;touch-action:none}
+sup{font-size:.7em}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+.formula{font-family:var(--mono);font-size:20px;padding:10px 14px;background:var(--soft);border-radius:10px;overflow-x:auto}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:18px}
+.kv b{font-weight:700}
+.note{font-size:16px;color:var(--muted)}
+.callout{border-left:5px solid var(--warm);background:var(--soft);padding:10px 14px;border-radius:8px}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:15px}
+.legend span::before{content:"";display:inline-block;width:14px;height:4px;border-radius:2px;margin-right:6px;vertical-align:middle;background:var(--c)}
+</style>
+<style>body{margin:0}img{max-width:100%}select{max-width:100%;width:100%}.row>div{min-width:min(100%,150px)!important}</style>
+<script>
+const $=id=>document.getElementById(id);
+const cv=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const EPS0=8.85e-12, K=1/(4*Math.PI*8.85e-12), E_CH=1.60e-19, ME_=9.11e-31, MP=1.673e-27, G=6.67e-11;
+/* number in standard form as HTML, n significant figures */
+function sf(x,n=3){
+  if(x===0)return "0";
+  if(!isFinite(x))return "∞";
+  const neg=x<0;x=Math.abs(x);
+  let e=Math.floor(Math.log10(x));let m=x/Math.pow(10,e);let ms=m.toPrecision(n);
+  if(parseFloat(ms)>=10){e++;ms=(m/10).toPrecision(n);}
+  let s;
+  if(e>=-2&&e<n&&e<=3){s=x.toPrecision(n);if(s.includes("e"))s=ms+" × 10<sup>"+String(e).replace("-","−")+"</sup>";}
+  else s=ms+" × 10<sup>"+String(e).replace("-","−")+"</sup>";
+  return (neg?"−":"")+s;
+}
+/* plain-text version for canvas labels */
+function sft(x,n=3){return sf(x,n).replace(/<sup>/g,"^").replace(/<\/sup>/g,"").replace(" × 10^","e").replace(/e(−?\d+)/,(a,b)=>"×10"+sup(b));}
+function sup(s){const m={"0":"⁰","1":"¹","2":"²","3":"³","4":"⁴","5":"⁵","6":"⁶","7":"⁷","8":"⁸","9":"⁹","−":"⁻","-":"⁻"};return String(s).split("").map(c=>m[c]||c).join("");}
+function setup(c,aspect){
+  const dpr=window.devicePixelRatio||1,w=c.clientWidth||600,h=Math.round(w*aspect);
+  c.width=w*dpr;c.height=h*dpr;c.style.height=h+"px";
+  const g=c.getContext("2d");g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,w,h);
+  return {g,w,h};
+}
+function niceStep(range,target){const raw=range/target;const p=Math.pow(10,Math.floor(Math.log10(raw)));const f=raw/p;return (f<1.5?1:f<3?2:f<7?5:10)*p;}
+/* axes: box {x,y,w,h}; returns mapping functions */
+function axes(g,box,xmin,xmax,ymin,ymax,opt={}){
+  const X=x=>box.x+(x-xmin)/(xmax-xmin)*box.w, Y=y=>box.y+box.h-(y-ymin)/(ymax-ymin)*box.h;
+  const ink=cv("--ink"),line=cv("--line"),muted=cv("--muted");
+  g.save();g.font="14px "+cv("--body");g.lineWidth=1;
+  const xs=opt.xstep||niceStep(xmax-xmin,6), ys=opt.ystep||niceStep(ymax-ymin,5);
+  g.strokeStyle=line;g.fillStyle=muted;g.textAlign="center";g.textBaseline="top";
+  for(let x=Math.ceil(xmin/xs)*xs;x<=xmax+1e-9*xs;x+=xs){g.beginPath();g.moveTo(X(x),box.y);g.lineTo(X(x),box.y+box.h);g.stroke();g.fillText(opt.xfmt?opt.xfmt(x):+(Math.abs(x)<1e-9*xs?0:x).toPrecision(3),X(x),Math.min(box.y+box.h,Math.max(box.y,Y(0)))+4);}
+  g.textAlign="right";g.textBaseline="middle";
+  for(let y=Math.ceil(ymin/ys)*ys;y<=ymax+1e-9*ys;y+=ys){g.beginPath();g.moveTo(box.x,Y(y));g.lineTo(box.x+box.w,Y(y));g.stroke();g.fillText(opt.yfmt?opt.yfmt(y):+(Math.abs(y)<1e-9*ys?0:y).toPrecision(3),box.x-6,Y(y));}
+  g.strokeStyle=ink;g.lineWidth=2;g.beginPath();
+  const y0=Math.min(box.y+box.h,Math.max(box.y,Y(0)));g.moveTo(box.x,y0);g.lineTo(box.x+box.w,y0);
+  g.moveTo(box.x,box.y);g.lineTo(box.x,box.y+box.h);g.stroke();
+  g.fillStyle=ink;g.font="bold 15px "+cv("--body");
+  if(opt.xl){g.textAlign="right";g.textBaseline="bottom";g.fillText(opt.xl,box.x+box.w,y0-4);}
+  if(opt.yl){g.textAlign="left";g.textBaseline="top";g.fillText(opt.yl,box.x+6,box.y-2);}
+  g.restore();
+  return {X,Y};
+}
+function arrow(g,x1,y1,x2,y2,col,wid=3,head=10){
+  const a=Math.atan2(y2-y1,x2-x1);g.save();g.strokeStyle=col;g.fillStyle=col;g.lineWidth=wid;
+  g.beginPath();g.moveTo(x1,y1);g.lineTo(x2-Math.cos(a)*head*0.6,y2-Math.sin(a)*head*0.6);g.stroke();
+  g.beginPath();g.moveTo(x2,y2);g.lineTo(x2-head*Math.cos(a-0.4),y2-head*Math.sin(a-0.4));g.lineTo(x2-head*Math.cos(a+0.4),y2-head*Math.sin(a+0.4));g.closePath();g.fill();g.restore();
+}
+function tabs(onchange){
+  document.querySelectorAll(".tabs button").forEach(b=>b.addEventListener("click",()=>{
+    document.querySelectorAll(".tabs button").forEach(x=>x.setAttribute("aria-selected",x===b));
+    document.querySelectorAll("[data-panel]").forEach(p=>p.hidden=p.dataset.panel!==b.dataset.tab);
+    if(onchange)onchange(b.dataset.tab);
+  }));
+}
+function onResize(f){let t;window.addEventListener("resize",()=>{clearTimeout(t);t=setTimeout(f,80);});
+  if(window.matchMedia)window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change",f);}
+
+</script>
+<script>
+/* Circuit drawing helpers: draw a component between two points (horizontal or vertical) */
+const CIRC={
+  lw:2.5,
+  wire(g,pts,col){g.save();g.strokeStyle=col||cv("--ink");g.lineWidth=CIRC.lw;g.lineJoin="round";g.beginPath();g.moveTo(pts[0][0],pts[0][1]);for(let i=1;i<pts.length;i++)g.lineTo(pts[i][0],pts[i][1]);g.stroke();g.restore();},
+  dot(g,x,y){g.save();g.fillStyle=cv("--ink");g.beginPath();g.arc(x,y,4,0,7);g.fill();g.restore();},
+  /* type: R, lamp, diode, cell, battery, A, V, therm, ldr, varR, switchO, switchC, bulb; size = symbol length in px */
+  comp(g,type,x1,y1,x2,y2,opt={}){
+    const ink=opt.col||cv("--ink"),L=Math.hypot(x2-x1,y2-y1),a=Math.atan2(y2-y1,x2-x1),s=opt.size||Math.min(60,L*0.6);
+    g.save();g.translate(x1,y1);g.rotate(a);g.strokeStyle=ink;g.fillStyle=ink;g.lineWidth=CIRC.lw;g.lineCap="round";
+    const m=L/2,h=s/2;
+    const lead=(w)=>{g.beginPath();g.moveTo(0,0);g.lineTo(m-w,0);g.moveTo(m+w,0);g.lineTo(L,0);g.stroke();};
+    const panel=cv("--panel");
+    if(type==="R"||type==="therm"||type==="ldr"||type==="varR"){
+      lead(h);g.fillStyle=panel;g.fillRect(m-h,-s*0.18,s,s*0.36);g.strokeRect(m-h,-s*0.18,s,s*0.36);
+      if(type==="therm"){g.beginPath();g.moveTo(m-h-6,s*0.32);g.lineTo(m-h+8,s*0.32);g.lineTo(m+h-4,-s*0.32);g.stroke();}
+      if(type==="varR"){g.beginPath();g.moveTo(m-h*0.8,s*0.36);g.lineTo(m+h*0.8,-s*0.36);g.stroke();CIRC._head(g,m-h*0.8,s*0.36,m+h*0.8,-s*0.36,ink);}
+      if(type==="ldr"){g.beginPath();g.arc(m,0,s*0.62,0,7);g.stroke();
+        for(const dx of[-8,6]){CIRC._arrow(g,m+dx-14,-s*0.95,m+dx-2,-s*0.62,ink);} }
+    }else if(type==="lamp"){
+      const r=s*0.3;lead(r);g.fillStyle=panel;g.beginPath();g.arc(m,0,r,0,7);g.fill();g.stroke();
+      g.beginPath();g.moveTo(m-r*0.7,-r*0.7);g.lineTo(m+r*0.7,r*0.7);g.moveTo(m-r*0.7,r*0.7);g.lineTo(m+r*0.7,-r*0.7);g.stroke();
+    }else if(type==="A"||type==="V"){
+      const r=s*0.3;lead(r);g.fillStyle=panel;g.beginPath();g.arc(m,0,r,0,7);g.fill();g.stroke();
+      g.save();g.translate(m,0);g.rotate(-a);g.fillStyle=ink;g.font="bold "+Math.round(r*1.1)+"px "+cv("--body");g.textAlign="center";g.textBaseline="middle";g.fillText(type,0,1);g.restore();
+    }else if(type==="diode"){
+      const w=s*0.25;lead(w);g.beginPath();g.moveTo(m-w,-w);g.lineTo(m-w,w);g.lineTo(m+w,0);g.closePath();g.fill();
+      g.beginPath();g.moveTo(m+w,-w);g.lineTo(m+w,w);g.stroke();
+    }else if(type==="cell"||type==="battery"){
+      const gap=7,n=type==="battery"?2:1,w=n*gap*2;lead(w/2);
+      for(let i=0;i<n;i++){const xl=m-w/2+i*gap*2;g.lineWidth=CIRC.lw;g.beginPath();g.moveTo(xl,-s*0.38);g.lineTo(xl,s*0.38);g.stroke();
+        g.lineWidth=CIRC.lw*2;g.beginPath();g.moveTo(xl+gap,-s*0.2);g.lineTo(xl+gap,s*0.2);g.stroke();}
+      if(n===2){g.setLineDash([3,4]);g.lineWidth=1.5;g.beginPath();g.moveTo(m-w/2+gap,0);g.lineTo(m-w/2+gap*2,0);g.stroke();g.setLineDash([]);}
+    }else if(type==="switchO"||type==="switchC"){
+      lead(h*0.6);CIRC.dot(g,m-h*0.6,0);CIRC.dot(g,m+h*0.6,0);g.beginPath();g.moveTo(m-h*0.6,0);
+      if(type==="switchO")g.lineTo(m+h*0.5,-h*0.5);else g.lineTo(m+h*0.6,0);g.stroke();
+    }else{lead(0);}
+    g.restore();
+    if(opt.label){g.save();g.fillStyle=opt.lcol||ink;g.font=(opt.lfont||"bold 15px ")+cv("--body");
+      const mx=(x1+x2)/2,my=(y1+y2)/2,horiz=Math.abs(y2-y1)<1;const off=opt.loff||(s*0.45+12);
+      if(horiz){g.textAlign="center";g.textBaseline=opt.below?"top":"bottom";g.fillText(opt.label,mx,my+(opt.below?off:-off));}
+      else{g.textAlign=opt.left?"right":"left";g.textBaseline="middle";g.fillText(opt.label,mx+(opt.left?-off:off),my);}
+      g.restore();}
+  },
+  _head(g,x1,y1,x2,y2,c){const a=Math.atan2(y2-y1,x2-x1),hd=8;g.beginPath();g.moveTo(x2,y2);g.lineTo(x2-hd*Math.cos(a-0.45),y2-hd*Math.sin(a-0.45));g.lineTo(x2-hd*Math.cos(a+0.45),y2-hd*Math.sin(a+0.45));g.closePath();g.fillStyle=c;g.fill();},
+  _arrow(g,x1,y1,x2,y2,c){g.beginPath();g.moveTo(x1,y1);g.lineTo(x2,y2);g.stroke();CIRC._head(g,x1,y1,x2,y2,c);},
+  /* small current arrow on a wire */
+  iarrow(g,x,y,dir,col,label){const d={r:[1,0],l:[-1,0],u:[0,-1],d:[0,1]}[dir];g.save();g.fillStyle=col;g.strokeStyle=col;
+    g.beginPath();g.moveTo(x+d[0]*8,y+d[1]*8);g.lineTo(x-d[0]*6+d[1]*7,y-d[1]*6+d[0]*7);g.lineTo(x-d[0]*6-d[1]*7,y-d[1]*6-d[0]*7);g.closePath();g.fill();
+    if(label){g.font="bold 15px "+cv("--body");g.textAlign=d[0]?"center":"left";g.textBaseline=d[0]?"bottom":"middle";g.fillText(label,x+(d[0]?0:12),y+(d[0]?-10:0));}
+    g.restore();}
+};
+function fmt(x,n=3){return sf(x,n);}
+function rnd(a,b,step){const n=Math.round((b-a)/step);return +(a+step*Math.floor(Math.random()*(n+1))).toFixed(6);}
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+/* generic quiz engine: gen() returns {txt, ans, w (working html), unit, tol} */
+function quiz(gen){let Q={},score=0,tries=0;
+  function nq(){Q=gen();$("qtext").innerHTML=Q.txt;$("qa").value="";$("qfb").innerHTML="";$("qunit").innerHTML=Q.unit||"";}
+  function ck(){const a=parseFloat(String($("qa").value).replace("−","-"));const tol=Q.tol||0.02;const ok=isFinite(a)&&Math.abs(a-Q.ans)<=tol*Math.abs(Q.ans)+1e-12;tries++;if(ok)score++;
+    $("qfb").innerHTML=`<div class="${ok?"good":"bad"}"><b>${ok?"Correct.":"Not quite."}</b> Answer: ${sf(Q.ans,3)} ${Q.unit||""}</div>`+Q.w.map(x=>`<div>${x}</div>`).join("");
+    $("score").innerHTML=`<b>Score</b><span>${score} / ${tries}</span>`;}
+  $("qcheck").onclick=ck;$("qnew").onclick=nq;$("qa").addEventListener("keydown",e=>{if(e.key==="Enter")ck();});nq();}
+</script>
+</head>
+
+<body>
+<div class="wrap">
+<header class="top"><h1>Potential Divider Lab</h1><span class="spec">AQA 7408 · 3.5.1.5 · potential divider</span></header>
+<div class="tabs" role="tablist"><button data-tab="fix" aria-selected="true">Two resistors</button><button data-tab="pot" aria-selected="false">Potentiometer</button><button data-tab="quiz" aria-selected="false">Quick-fire questions</button></div>
+<div data-panel="fix" class="grid2">
+ <div class="panel"><canvas id="fc" aria-label="Potential divider with two resistors and an output voltage"></canvas></div>
+ <div class="panel">
+  <label for="Vin">Input pd V<sub>in</sub>: <span id="Vinv" class="mono"></span> V</label><input type="range" id="Vin" min="1" max="24" step="0.5" value="12">
+  <label for="R1" style="margin-top:8px">R₁ (top): <span id="R1v" class="mono"></span> kΩ</label><input type="range" id="R1" min="0.5" max="50" step="0.5" value="10">
+  <label for="R2" style="margin-top:8px">R₂ (bottom, across the output): <span id="R2v" class="mono"></span> kΩ</label><input type="range" id="R2" min="0.5" max="50" step="0.5" value="5">
+  <label style="display:flex;gap:8px;align-items:center;margin-top:10px"><input type="checkbox" id="load"> connect a load across the output</label>
+  <label for="RL" style="margin-top:4px">Load resistance R<sub>L</sub>: <span id="RLv" class="mono"></span> kΩ</label><input type="range" id="RL" min="0.5" max="200" step="0.5" value="10">
+  <div class="steps" id="fst" style="margin-top:12px"></div>
+  <div class="callout" style="margin-top:12px">The pd is shared in the <b>ratio of the resistances</b>: V<sub>out</sub>/V<sub>in</sub> = R₂/(R₁ + R₂). A load in parallel with R₂ lowers the resistance of the bottom section, so V<sub>out</sub> drops, unless R<sub>L</sub> ≫ R₂.</div>
+ </div>
+</div>
+<div data-panel="pot" class="grid2" hidden>
+ <div class="panel"><canvas id="pc" aria-label="Potentiometer with a sliding contact"></canvas></div>
+ <div class="panel">
+  <label for="sl">Slider position (fraction of the track below the contact): <span id="slv" class="mono"></span></label><input type="range" id="sl" min="0" max="1" step="0.01" value="0.5">
+  <label for="pV" style="margin-top:8px">Supply: <span id="pVv" class="mono"></span> V</label><input type="range" id="pV" min="1" max="12" step="0.5" value="6">
+  <div class="steps" id="pst" style="margin-top:12px"></div>
+  <div class="callout" style="margin-top:12px">A variable resistor wired as a potentiometer gives an output that can be set anywhere from <b>0 V to the full supply pd</b>. A variable resistor in series (a rheostat) cannot reach 0 V. This is why the I–V circuit in Lesson 2 uses a potential divider.</div>
+ </div>
+</div>
+<div data-panel="quiz" class="grid2" hidden>
+ <div class="panel"><p id="qtext" style="margin-top:0;font-size:22px"></p>
+  <div class="row"><div><label for="qa">Your answer <span id="qunit" class="muted"></span></label><input type="text" inputmode="decimal" id="qa" style="width:220px"></div><button class="go" id="qcheck">Check</button><button class="ghost" id="qnew">New question</button></div>
+  <div id="qfb" class="steps" style="margin-top:12px"></div></div>
+ <div class="panel"><div class="formula">V<sub>out</sub> = V<sub>in</sub> × R₂/(R₁ + R₂)</div><p class="note">R₂ is the resistor the output is taken across. Answers to 3 significant figures.</p><div class="kv" id="score"></div></div>
+</div>
+</div>
+<script>
+function divider(g,w,h,R1l,R2l,Vin,Vout,fr,loadl){const x=w*0.35,T=30,B=h-30,ym=T+(B-T)*fr;
+ CIRC.wire(g,[[x-120,T],[x,T]]);CIRC.wire(g,[[x-120,B],[x,B]]);CIRC.comp(g,"battery",x-120,B,x-120,T,{size:40,label:Vin+" V"});
+ CIRC.comp(g,"R",x,T,x,ym,{size:Math.min(90,(ym-T)*0.7),label:R1l});CIRC.comp(g,"R",x,ym,x,B,{size:Math.min(90,(B-ym)*0.7),label:R2l});
+ CIRC.wire(g,[[x,ym],[w*0.78,ym]]);CIRC.wire(g,[[x,B],[w*0.78,B]]);CIRC.dot(g,x,ym);CIRC.dot(g,x,B);CIRC.dot(g,w*0.78,ym);CIRC.dot(g,w*0.78,B);
+ if(loadl){CIRC.wire(g,[[w*0.62,ym],[w*0.62,ym+10]]);CIRC.comp(g,"R",w*0.62,ym+10,w*0.62,B,{size:Math.min(70,(B-ym)*0.6),label:loadl});}
+ arrow(g,w*0.86,B-4,w*0.86,ym+4,cv("--good"),3);g.fillStyle=cv("--good");g.font="bold 18px "+cv("--body");g.textAlign="left";g.fillText("Vout",w*0.88,(ym+B)/2-10);g.fillText(sf(Vout)+" V",w*0.88,(ym+B)/2+14);
+ g.fillStyle=cv("--muted");g.font="13px "+cv("--body");g.fillText("0 V",w*0.8,B+18);}
+function finfo(){const Vin=+$("Vin").value,R1=+$("R1").value,R2=+$("R2").value,ld=$("load").checked,RL=+$("RL").value;["Vin","R1","R2","RL"].forEach(id=>$(id+"v").textContent=$(id).value);
+ const Rb=ld?1/(1/R2+1/RL):R2,Vout=Vin*Rb/(R1+Rb),Vu=Vin*R2/(R1+R2);
+ let s=`<div>V<sub>out</sub> = V<sub>in</sub> × R₂/(R₁ + R₂) = ${Vin} × ${R2}/(${R1} + ${R2}) = <b>${sf(Vu)} V</b></div><div>pd across R₁ = ${sf(Vin-Vu)} V (they add up to ${Vin} V)</div>`;
+ if(ld)s+=`<div>with load: R₂ ∥ R<sub>L</sub> = ${sf(Rb)} kΩ → V<sub>out</sub> = <b>${sf(Vout)} V</b> (${Vout<Vu*0.95?'<span class="bad">dropped by '+sf((Vu-Vout)/Vu*100,2)+'%</span>':'<span class="good">barely changed</span>'})</div>`;
+ $("fst").innerHTML=s;const {g,w,h}=setup($("fc"),0.75);divider(g,w,h,`R₁ = ${R1} kΩ`,`R₂ = ${R2} kΩ`,Vin,ld?Vout:Vu,0.5,ld?`RL = ${RL} kΩ`:null);}
+function pinfo(){const f=+$("sl").value,V=+$("pV").value;$("slv").textContent=f.toFixed(2);$("pVv").textContent=V;const Vout=V*f;
+ $("pst").innerHTML=`<div>V<sub>out</sub> = ${V} × ${f.toFixed(2)} = <b>${sf(Vout)} V</b></div><div>range available: 0 V to ${V} V</div>`;
+ const {g,w,h}=setup($("pc"),0.75);const x=w*0.35,T=30,B=h-30,ym=B-(B-T)*f;CIRC.wire(g,[[x-120,T],[x,T]]);CIRC.wire(g,[[x-120,B],[x,B]]);CIRC.comp(g,"cell",x-120,B,x-120,T,{size:40,label:V+" V"});
+ g.fillStyle=cv("--panel");g.strokeStyle=cv("--ink");g.lineWidth=2.5;g.fillRect(x-14,T+10,28,B-T-20);g.strokeRect(x-14,T+10,28,B-T-20);CIRC.wire(g,[[x,T],[x,T+10]]);CIRC.wire(g,[[x,B-10],[x,B]]);
+ const yy=Math.max(T+14,Math.min(B-14,ym));arrow(g,x+50,yy,x+16,yy,cv("--ink"),2.5,10);CIRC.wire(g,[[x+50,yy],[w*0.78,yy]]);CIRC.wire(g,[[x,B],[w*0.78,B]]);CIRC.dot(g,w*0.78,yy);CIRC.dot(g,w*0.78,B);
+ arrow(g,w*0.86,B-4,w*0.86,yy+4,cv("--good"),3);g.fillStyle=cv("--good");g.font="bold 18px "+cv("--body");g.textAlign="left";g.fillText(sf(Vout)+" V",w*0.88,(yy+B)/2);}
+["Vin","R1","R2","load","RL"].forEach(id=>$(id).addEventListener("input",finfo));["sl","pV"].forEach(id=>$(id).addEventListener("input",pinfo));
+quiz(()=>{const k=pick(["out","R2","R1","load"]);
+ if(k==="out"){const V=pick([5,9,12]),a=pick([1,2.2,4.7,10]),b=pick([1,3.3,6.8,15]);return{txt:`V<sub>in</sub> = ${V} V, R₁ = ${a} kΩ, R₂ = ${b} kΩ. Calculate V<sub>out</sub> across R₂.`,ans:V*b/(a+b),unit:"V",w:[`V<sub>out</sub> = ${V} × ${b}/(${a} + ${b}) = ${sf(V*b/(a+b))} V`]};}
+ if(k==="R2"){const V=pick([6,9,12]),a=pick([10,20]),Vo=pick([2,3,4]);return{txt:`A ${V} V supply feeds R₁ = ${a} kΩ in series with R₂. What value of R₂ (in kΩ) gives V<sub>out</sub> = ${Vo} V across R₂?`,ans:a*Vo/(V-Vo),unit:"kΩ",w:[`V₁ = ${V} − ${Vo} = ${V-Vo} V`,`same current, so R₂/R₁ = V₂/V₁ = ${Vo}/${V-Vo}`,`R₂ = ${a} × ${Vo}/${V-Vo} = ${sf(a*Vo/(V-Vo))} kΩ`]};}
+ if(k==="R1"){const V=12,b=pick([1,2,5]),Vo=pick([3,4,8]);return{txt:`With V<sub>in</sub> = 12 V and R₂ = ${b} kΩ, V<sub>out</sub> across R₂ is ${Vo} V. Find R₁ in kΩ.`,ans:b*(V-Vo)/Vo,unit:"kΩ",w:[`V₁ = 12 − ${Vo} = ${12-Vo} V`,`R₁ = R₂ × V₁/V₂ = ${b} × ${12-Vo}/${Vo} = ${sf(b*(12-Vo)/Vo)} kΩ`]};}
+ const R=pick([10,20]),RL=pick([10,20,40]);const Rb=1/(1/R+1/RL);return{txt:`Two ${R} kΩ resistors divide 12 V. A ${RL} kΩ load is connected across the bottom resistor. Calculate the new V<sub>out</sub>.`,ans:12*Rb/(R+Rb),unit:"V",w:[`bottom section = ${R} ∥ ${RL} = ${sf(Rb)} kΩ`,`V<sub>out</sub> = 12 × ${sf(Rb)}/(${R} + ${sf(Rb)}) = ${sf(12*Rb/(R+Rb))} V (less than 6 V)`]};});
+tabs(t=>{if(t==="fix")finfo();if(t==="pot")pinfo();});onResize(()=>{finfo();pinfo();});finfo();pinfo();
+</script>
+</body></html>
