@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gas Laws Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: whiteboard tool, one wide working panel under a slim header; large type for projection */
+:root{
+  --bg:#EEF3FA; --panel:#FFFFFF; --ink:#14213D; --muted:#56627A; --line:#D3DCE9;
+  --accent:#2F5DCC; --accent-ink:#FFFFFF; --warm:#D9661A; --good:#18915A; --bad:#C2372F; --soft:#E3EBF8;
+  --body:"Atkinson Hyperlegible",Verdana,Arial,sans-serif; --mono:"IBM Plex Mono",Consolas,"Courier New",monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0E1524; --panel:#16213A; --ink:#E9EFF9; --muted:#A0ACC2; --line:#2B3A57;
+  --accent:#86A8FF; --accent-ink:#0E1524; --warm:#F2A05A; --good:#4FCB8F; --bad:#F07B72; --soft:#1F2D4C; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E1524; --panel:#16213A; --ink:#E9EFF9; --muted:#A0ACC2; --line:#2B3A57;
+  --accent:#86A8FF; --accent-ink:#0E1524; --warm:#F2A05A; --good:#4FCB8F; --bad:#F07B72; --soft:#1F2D4C; color-scheme:dark}
+[hidden]{display:none!important}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:18px;line-height:1.45;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:18px 32px}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+header.top{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px 20px}
+header.top h1{font-size:clamp(26px,3.2vw,38px);margin:0;text-wrap:balance;letter-spacing:-.01em}
+header.top .spec{font-family:var(--mono);font-size:15px;color:var(--muted);letter-spacing:.04em}
+.tabs{display:flex;flex-wrap:wrap;gap:8px}
+.tabs button{font:inherit;font-weight:700;border:2px solid var(--line);background:var(--panel);color:var(--ink);padding:10px 18px;border-radius:10px;cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px;min-width:0}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}
+@media (max-width:820px){.grid2{grid-template-columns:minmax(0,1fr)}}
+label{font-weight:700;display:block;margin-bottom:4px}
+.row{display:flex;flex-wrap:wrap;gap:12px;align-items:end}
+input[type=number],input[type=text],select{font:inherit;font-family:var(--mono);font-size:20px;padding:8px 10px;border:2px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);min-width:0}
+input[type=range]{width:100%;accent-color:var(--accent)}
+button.go{font:inherit;font-weight:700;background:var(--accent);color:var(--accent-ink);border:0;border-radius:10px;padding:11px 20px;cursor:pointer}
+button.ghost{font:inherit;font-weight:700;background:transparent;color:var(--accent);border:2px solid var(--accent);border-radius:10px;padding:9px 18px;cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--warm);outline-offset:2px}
+.big{font-family:var(--mono);font-size:clamp(24px,3vw,34px);font-weight:600}
+.mono{font-family:var(--mono)}
+.muted{color:var(--muted)}
+.steps{display:flex;flex-direction:column;gap:6px;font-family:var(--mono);font-size:18px}
+.steps div{padding:6px 10px;background:var(--soft);border-radius:8px;overflow-x:auto}
+.good{color:var(--good)} .bad{color:var(--bad)} .warm{color:var(--warm)}
+.chip{display:inline-block;font-size:15px;font-weight:700;padding:3px 10px;border-radius:999px;background:var(--soft)}
+table{border-collapse:collapse;width:100%;font-size:17px}
+th,td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left}
+th{font-size:14px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.scroll{overflow-x:auto}
+canvas{display:block;width:100%;max-width:100%;touch-action:none}
+sup{font-size:.7em}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+.formula{font-family:var(--mono);font-size:20px;padding:10px 14px;background:var(--soft);border-radius:10px;overflow-x:auto}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:18px}
+.kv b{font-weight:700}
+.note{font-size:16px;color:var(--muted)}
+.callout{border-left:5px solid var(--warm);background:var(--soft);padding:10px 14px;border-radius:8px}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:15px}
+.legend span::before{content:"";display:inline-block;width:14px;height:4px;border-radius:2px;margin-right:6px;vertical-align:middle;background:var(--c)}
+</style>
+<style>body{margin:0}img{max-width:100%}select{max-width:100%;width:100%}.row>div{min-width:min(100%,150px)!important}</style>
+<script>
+const $=id=>document.getElementById(id);
+const cv=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const EPS0=8.85e-12, K=1/(4*Math.PI*8.85e-12), E_CH=1.60e-19, ME_=9.11e-31, MP=1.673e-27, G=6.67e-11;
+/* number in standard form as HTML, n significant figures */
+function sf(x,n=3){
+  if(x===0)return "0";
+  if(!isFinite(x))return "∞";
+  const neg=x<0;x=Math.abs(x);
+  let e=Math.floor(Math.log10(x));let m=x/Math.pow(10,e);let ms=m.toPrecision(n);
+  if(parseFloat(ms)>=10){e++;ms=(m/10).toPrecision(n);}
+  let s;
+  if(e>=-2&&e<n&&e<=3){s=x.toPrecision(n);if(s.includes("e"))s=ms+" × 10<sup>"+String(e).replace("-","−")+"</sup>";}
+  else s=ms+" × 10<sup>"+String(e).replace("-","−")+"</sup>";
+  return (neg?"−":"")+s;
+}
+/* plain-text version for canvas labels */
+function sft(x,n=3){return sf(x,n).replace(/<sup>/g,"^").replace(/<\/sup>/g,"").replace(" × 10^","e").replace(/e(−?\d+)/,(a,b)=>"×10"+sup(b));}
+function sup(s){const m={"0":"⁰","1":"¹","2":"²","3":"³","4":"⁴","5":"⁵","6":"⁶","7":"⁷","8":"⁸","9":"⁹","−":"⁻","-":"⁻"};return String(s).split("").map(c=>m[c]||c).join("");}
+function setup(c,aspect){
+  const dpr=window.devicePixelRatio||1,w=c.clientWidth||600,h=Math.round(w*aspect);
+  c.width=w*dpr;c.height=h*dpr;c.style.height=h+"px";
+  const g=c.getContext("2d");g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,w,h);
+  return {g,w,h};
+}
+function niceStep(range,target){const raw=range/target;const p=Math.pow(10,Math.floor(Math.log10(raw)));const f=raw/p;return (f<1.5?1:f<3?2:f<7?5:10)*p;}
+/* axes: box {x,y,w,h}; returns mapping functions */
+function axes(g,box,xmin,xmax,ymin,ymax,opt={}){
+  const X=x=>box.x+(x-xmin)/(xmax-xmin)*box.w, Y=y=>box.y+box.h-(y-ymin)/(ymax-ymin)*box.h;
+  const ink=cv("--ink"),line=cv("--line"),muted=cv("--muted");
+  g.save();g.font="14px "+cv("--body");g.lineWidth=1;
+  const xs=opt.xstep||niceStep(xmax-xmin,6), ys=opt.ystep||niceStep(ymax-ymin,5);
+  g.strokeStyle=line;g.fillStyle=muted;g.textAlign="center";g.textBaseline="top";
+  for(let x=Math.ceil(xmin/xs)*xs;x<=xmax+1e-9*xs;x+=xs){g.beginPath();g.moveTo(X(x),box.y);g.lineTo(X(x),box.y+box.h);g.stroke();g.fillText(opt.xfmt?opt.xfmt(x):+(Math.abs(x)<1e-9*xs?0:x).toPrecision(3),X(x),Math.min(box.y+box.h,Math.max(box.y,Y(0)))+4);}
+  g.textAlign="right";g.textBaseline="middle";
+  for(let y=Math.ceil(ymin/ys)*ys;y<=ymax+1e-9*ys;y+=ys){g.beginPath();g.moveTo(box.x,Y(y));g.lineTo(box.x+box.w,Y(y));g.stroke();g.fillText(opt.yfmt?opt.yfmt(y):+(Math.abs(y)<1e-9*ys?0:y).toPrecision(3),box.x-6,Y(y));}
+  g.strokeStyle=ink;g.lineWidth=2;g.beginPath();
+  const y0=Math.min(box.y+box.h,Math.max(box.y,Y(0)));g.moveTo(box.x,y0);g.lineTo(box.x+box.w,y0);
+  g.moveTo(box.x,box.y);g.lineTo(box.x,box.y+box.h);g.stroke();
+  g.fillStyle=ink;g.font="bold 15px "+cv("--body");
+  if(opt.xl){g.textAlign="right";g.textBaseline="bottom";g.fillText(opt.xl,box.x+box.w,y0-4);}
+  if(opt.yl){g.textAlign="left";g.textBaseline="top";g.fillText(opt.yl,box.x+6,box.y-2);}
+  g.restore();
+  return {X,Y};
+}
+function arrow(g,x1,y1,x2,y2,col,wid=3,head=10){
+  const a=Math.atan2(y2-y1,x2-x1);g.save();g.strokeStyle=col;g.fillStyle=col;g.lineWidth=wid;
+  g.beginPath();g.moveTo(x1,y1);g.lineTo(x2-Math.cos(a)*head*0.6,y2-Math.sin(a)*head*0.6);g.stroke();
+  g.beginPath();g.moveTo(x2,y2);g.lineTo(x2-head*Math.cos(a-0.4),y2-head*Math.sin(a-0.4));g.lineTo(x2-head*Math.cos(a+0.4),y2-head*Math.sin(a+0.4));g.closePath();g.fill();g.restore();
+}
+function tabs(onchange){
+  document.querySelectorAll(".tabs button").forEach(b=>b.addEventListener("click",()=>{
+    document.querySelectorAll(".tabs button").forEach(x=>x.setAttribute("aria-selected",x===b));
+    document.querySelectorAll("[data-panel]").forEach(p=>p.hidden=p.dataset.panel!==b.dataset.tab);
+    if(onchange)onchange(b.dataset.tab);
+  }));
+}
+function onResize(f){let t;window.addEventListener("resize",()=>{clearTimeout(t);t=setTimeout(f,80);});
+  if(window.matchMedia)window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change",f);}
+
+</script>
+<script>
+/* shared page builder for the 3.11 and 3.6.2 widgets */
+const C={};function cols(){["ink","accent","warm","good","bad","muted","line","soft","panel","bg"].forEach(k=>C[k]=cv("--"+k));}
+let TABS=[],cur=null,QZ=null;
+const v=id=>+$(id).value;
+function ctlHTML(c){
+  if(c.sel)return `<label for="${c.sel}" style="margin-top:8px">${c.label}</label><select id="${c.sel}">${c.opts.map(o=>`<option value="${o[0]}">${o[1]}</option>`).join("")}</select>`;
+  if(c.chk)return `<label style="display:flex;gap:8px;align-items:center;font-weight:400;margin-top:8px"><input type="checkbox" id="${c.chk}" ${c.on?"checked":""}> ${c.label}</label>`;
+  const [id,label,min,max,step,val,unit]=c;
+  return `<label for="${id}" style="margin-top:8px">${label}: <span id="${id}_v" class="mono"></span> ${unit||""}</label><input type="range" id="${id}" min="${min}" max="${max}" step="${step}" value="${val}">`;
+}
+function showVals(t){(t.controls||[]).forEach(c=>{if(Array.isArray(c)){const s=String(c[4]);const dp=s.includes(".")?s.split(".")[1].length:0;$(c[0]+"_v").textContent=(+$(c[0]).value).toFixed(dp);}});}
+function page(title,spec,tabsDef,quiz){
+  TABS=tabsDef;QZ=quiz;document.title=title;
+  const wrap=document.querySelector(".wrap");
+  let h=`<header class="top"><h1>${title}</h1><span class="spec">${spec}</span></header><div class="tabs" role="tablist">`+
+    tabsDef.map((t,i)=>`<button data-tab="${t.id}" aria-selected="${i==0}">${t.name}</button>`).join("")+
+    (quiz?`<button data-tab="quiz" aria-selected="false">Quick-fire quiz</button>`:"")+`</div>`;
+  tabsDef.forEach((t,i)=>{
+    h+=`<div data-panel="${t.id}" class="grid2" ${i?"hidden":""}><div class="panel">`+
+      (t.canvases||[]).map(c=>`<canvas id="${c[0]}" aria-label="${c[2]||""}" style="margin-bottom:8px"></canvas>`).join("")+
+      (t.legend?`<div class="legend">${t.legend.map(l=>`<span style="--c:var(--${l[0]})">${l[1]}</span>`).join("")}</div>`:"")+(t.left||"")+
+      `</div><div class="panel">`+(t.controls||[]).map(ctlHTML).join("")+
+      (t.buttons?`<div class="row" style="margin-top:12px">${t.buttons.map(b=>`<button class="${b[2]||"ghost"}" id="${b[0]}">${b[1]}</button>`).join("")}</div>`:"")+
+      `<div class="steps" id="${t.id}_st" style="margin-top:12px"></div>`+(t.right||"")+
+      (t.callout?`<div class="callout" style="margin-top:12px">${t.callout}</div>`:"")+`</div></div>`;
+  });
+  if(quiz)h+=`<div data-panel="quiz" class="grid2" hidden><div class="panel"><div class="chip" id="q_sc">score 0 / 0</div><p id="q_q" style="font-size:22px;margin:14px 0"></p>
+    <div class="row"><div><label for="q_in">Your answer <span id="q_u" class="muted"></span></label><input type="text" id="q_in" inputmode="decimal" autocomplete="off" placeholder="e.g. 2.5e3"></div>
+    <button class="go" id="q_chk">Check</button><button class="ghost" id="q_new">New question</button></div><p id="q_fb" class="big" style="margin:14px 0 0"></p></div>
+    <div class="panel"><b>Worked answer</b><div class="steps" id="q_w" style="margin-top:10px"><div class="muted">Answer first, then the working appears here.</div></div>
+    <div class="callout" style="margin-top:12px">Type numbers like 0.25, 314 or 2.5e3 (for 2.5 × 10³). Answers within 3% are marked correct. Give at least 2 significant figures.</div></div></div>`;
+  wrap.innerHTML=h;
+  cur=tabsDef[0];
+  tabs(id=>{cur=tabsDef.find(t=>t.id===id)||null;if(cur&&cur.enter)cur.enter();redraw();});
+  wrap.addEventListener("input",e=>{if(e.target.id!=="q_in")redraw();});
+  wrap.addEventListener("change",e=>{if(e.target.id!=="q_in")redraw();});
+  tabsDef.forEach(t=>{(t.buttons||[]).forEach(b=>{if(b[3])$(b[0]).addEventListener("click",()=>{b[3]();redraw();});});if(t.init)t.init();});
+  if(quiz){let qc=null,n=0,ok=0,done=false;
+    const nq=()=>{qc=quiz[Math.floor(Math.random()*quiz.length)]();done=false;$("q_q").innerHTML=qc.q;$("q_u").innerHTML=qc.u?"/ "+qc.u:"";$("q_in").value="";$("q_fb").textContent="";
+      $("q_w").innerHTML='<div class="muted">Answer first, then the working appears here.</div>';};
+    $("q_new").onclick=nq;
+    const chk=()=>{const x=parseFloat($("q_in").value.replace("×10^","e").replace(/\s/g,""));if(isNaN(x))return;const good=Math.abs(x-qc.a)<=0.03*Math.abs(qc.a)+1e-12;
+      if(!done){n++;if(good)ok++;done=true;}$("q_sc").textContent=`score ${ok} / ${n}`;
+      $("q_fb").innerHTML=good?'<span class="good">Correct</span>':`<span class="bad">Not quite:</span> ${sf(qc.a,3)} ${qc.u||""}`;
+      $("q_w").innerHTML=qc.w.map(s=>`<div>${s}</div>`).join("");};
+    $("q_chk").onclick=chk;$("q_in").addEventListener("keydown",e=>{if(e.key==="Enter")chk();});nq();}
+  onResize(redraw);redraw();
+  let last=0;function loop(ts){const dt=Math.min(0.05,(ts-last)/1000||0);last=ts;if(cur&&cur.tick){cur.tick(dt);cols();cur.draw(cur);}requestAnimationFrame(loop);}
+  requestAnimationFrame(loop);
+}
+function redraw(){if(!cur)return;cols();showVals(cur);cur.draw(cur);}
+function st(a){$(cur.id+"_st").innerHTML=a.filter(Boolean).map(s=>`<div>${s}</div>`).join("");}
+const rnd=(a,b,dp=0)=>+(a+Math.random()*(b-a)).toFixed(dp);
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const box=(S,l=62,t=18,r=18,b=30)=>({x:l,y:t,w:S.w-l-r,h:S.h-t-b});
+function plot(g,ax,f,x0,x1,col,wid=3,n=240){g.save();g.strokeStyle=col;g.lineWidth=wid;g.lineJoin="round";g.beginPath();for(let i=0;i<=n;i++){const x=x0+(x1-x0)*i/n;const y=f(x);i?g.lineTo(ax.X(x),ax.Y(y)):g.moveTo(ax.X(x),ax.Y(y));}g.stroke();g.restore();}
+function fillUnder(g,ax,f,x0,x1,col,base=0,n=120){g.save();g.fillStyle=col;g.globalAlpha=0.3;g.beginPath();g.moveTo(ax.X(x0),ax.Y(base));for(let i=0;i<=n;i++){const x=x0+(x1-x0)*i/n;g.lineTo(ax.X(x),ax.Y(f(x)));}g.lineTo(ax.X(x1),ax.Y(base));g.closePath();g.fill();g.restore();}
+function dot(g,x,y,col,r=7){g.fillStyle=col;g.beginPath();g.arc(x,y,r,0,7);g.fill();}
+function txt(g,s,x,y,col,size=15,align="center",bold=false){g.save();g.fillStyle=col||C.ink;g.font=(bold?"bold ":"")+size+"px "+cv("--body");g.textAlign=align;g.textBaseline="middle";g.fillText(s,x,y);g.restore();}
+function wheel(g,x,y,r,ang,col,kind="rim"){g.save();g.translate(x,y);g.rotate(ang);
+  if(kind==="disc"){g.fillStyle=col;g.beginPath();g.arc(0,0,r,0,7);g.fill();}
+  else{g.strokeStyle=col;g.lineWidth=Math.max(6,r*0.2);g.beginPath();g.arc(0,0,r*0.9,0,7);g.stroke();}
+  g.strokeStyle=kind==="disc"?C.panel:C.ink;g.lineWidth=3;for(let k=0;k<3;k++){g.rotate(Math.PI/3);g.beginPath();g.moveTo(-r*0.82,0);g.lineTo(r*0.82,0);g.stroke();}
+  g.fillStyle=C.muted;g.beginPath();g.arc(0,0,Math.max(5,r*0.12),0,7);g.fill();
+  g.fillStyle=C.warm;g.beginPath();g.arc(r*0.9,0,Math.max(4,r*0.07),0,7);g.fill();g.restore();}
+function bars(g,b,items,max,unit){const n=items.length,bw=b.w/n*0.6;g.save();g.strokeStyle=C.ink;g.lineWidth=2;g.beginPath();g.moveTo(b.x,b.y+b.h);g.lineTo(b.x+b.w,b.y+b.h);g.stroke();
+  items.forEach((it,i)=>{const cx=b.x+b.w*(i+0.5)/n,hh=Math.max(0,Math.min(1,Math.abs(it.val)/max))*(b.h-22);g.fillStyle=it.col;g.fillRect(cx-bw/2,b.y+b.h-hh,bw,hh);
+    txt(g,it.label,cx,b.y+b.h+13,C.ink,14,"center",true);txt(g,sft(it.val,3)+(unit?" "+unit:""),cx,b.y+b.h-hh-11,C.ink,14);});g.restore();}
+function piston(g,x,y,w,h,frac,hot){ /* frac 0..1 of the length occupied by gas; hot 0..1 colour */
+  g.save();const gw=w*frac;const r=Math.round(60+180*hot),bl=Math.round(220-150*hot);g.fillStyle=`rgba(${r},110,${bl},0.45)`;g.fillRect(x,y,gw,h);
+  g.strokeStyle=C.ink;g.lineWidth=4;g.beginPath();g.moveTo(x+w+6,y);g.lineTo(x,y);g.lineTo(x,y+h);g.lineTo(x+w+6,y+h);g.stroke();
+  g.fillStyle=C.muted;g.fillRect(x+gw,y+3,14,h-6);g.fillRect(x+gw+14,y+h/2-5,w*0.35,10);g.restore();}
+function flow(g,S,o){ /* o: {QH,W,QC,TH,TC,rev,mid,max} energy flow diagram */
+  const cx=S.w*0.42,top=20,bh=40,bw=Math.min(240,S.w*0.5),ey=S.h/2,er=Math.min(46,S.h*0.13),m=o.max||Math.max(o.QH,1e-9),sc=k=>Math.max(2,34*k/m);
+  g.save();g.lineWidth=2;
+  g.fillStyle="rgba(214,80,60,0.25)";g.strokeStyle=C.bad;g.fillRect(cx-bw/2,top,bw,bh);g.strokeRect(cx-bw/2,top,bw,bh);txt(g,o.hot||("hot source  "+o.TH+" K"),cx,top+bh/2,C.ink,16,"center",true);
+  g.fillStyle="rgba(60,110,220,0.25)";g.strokeStyle=C.accent;g.fillRect(cx-bw/2,S.h-top-bh,bw,bh);g.strokeRect(cx-bw/2,S.h-top-bh,bw,bh);txt(g,o.cold||("cold sink  "+o.TC+" K"),cx,S.h-top-bh/2,C.ink,16,"center",true);
+  const a1=top+bh+4,a2=ey-er-4,b1=ey+er+4,b2=S.h-top-bh-4,wx=cx+er+6,wx2=Math.min(S.w-70,cx+er+S.w*0.2);
+  if(o.rev){arrow(g,cx,a2,cx,a1,C.bad,sc(o.QH),16);arrow(g,cx,b2,cx,b1,C.accent,sc(o.QC),16);if(o.W>0)arrow(g,wx2,ey,wx,ey,C.good,sc(o.W),16);}
+  else{arrow(g,cx,a1,cx,a2,C.bad,sc(o.QH),16);if(o.QC>0)arrow(g,cx,b1,cx,b2,C.accent,sc(o.QC),16);if(o.W>0)arrow(g,wx,ey,wx2,ey,C.good,sc(o.W),16);}
+  g.fillStyle=C.panel;g.strokeStyle=C.ink;g.lineWidth=3;g.beginPath();g.arc(cx,ey,er,0,7);g.fill();g.stroke();txt(g,o.mid||"engine",cx,ey,C.ink,15,"center",true);
+  const f=o.fmt||(x=>sft(x,3));txt(g,"Q_H = "+f(o.QH),cx-28,(a1+a2)/2,C.bad,16,"right",true);txt(g,"Q_C = "+f(o.QC),cx-28,(b1+b2)/2,C.accent,16,"right",true);txt(g,"W = "+f(o.W),(wx+wx2)/2,ey-26,C.good,16,"center",true);
+  g.restore();}
+/* thermal physics helpers: random normal, a simple 3D ideal gas in a box drawn in 2D */
+function randn(){let u=0,w=0;while(!u)u=Math.random();while(!w)w=Math.random();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*w);}
+function makeGas(n,s){const a=[];for(let i=0;i<n;i++)a.push({x:Math.random(),y:Math.random(),z:Math.random(),vx:randn()*s,vy:randn()*s,vz:randn()*s});return a;}
+function stepGas(a,dt,Lx){let imp=0;for(const q of a){q.x+=q.vx*dt;q.y+=q.vy*dt;q.z+=q.vz*dt;
+  if(q.x>Lx){q.x=2*Lx-q.x;imp+=2*Math.abs(q.vx);q.vx=-Math.abs(q.vx);}if(q.x<0){q.x=-q.x;q.vx=Math.abs(q.vx);}
+  if(q.y>1){q.y=2-q.y;q.vy=-q.vy;}if(q.y<0){q.y=-q.y;q.vy=-q.vy;}if(q.z>1){q.z=2-q.z;q.vz=-q.vz;}if(q.z<0){q.z=-q.z;q.vz=-q.vz;}}return imp;}
+function scaleGas(a,f){for(const q of a){q.vx*=f;q.vy*=f;q.vz*=f;}}
+function meanSq(a){let s=0;for(const q of a)s+=q.vx*q.vx+q.vy*q.vy+q.vz*q.vz;return a.length?s/a.length:0;}
+function drawGas(g,a,x,y,w,h,col,r=4){g.save();g.fillStyle=col;for(const q of a){g.beginPath();g.arc(x+q.x*w,y+q.y*h,r,0,7);g.fill();}g.restore();}
+function tempCol(f){f=Math.max(0,Math.min(1,f));return `rgb(${Math.round(60+190*f)},${Math.round(110-40*f)},${Math.round(220-170*f)})`;}
+function fitLine(xs,ys){const n=xs.length,mx=xs.reduce((a,b)=>a+b,0)/n,my=ys.reduce((a,b)=>a+b,0)/n;let sxy=0,sxx=0;for(let i=0;i<n;i++){sxy+=(xs[i]-mx)*(ys[i]-my);sxx+=(xs[i]-mx)**2;}const m=sxy/sxx;return{m,c:my-m*mx};}
+const R_=8.31,KB=1.38e-23,NA=6.02e23;
+</script>
+</head>
+<body>
+<div class="wrap"></div>
+<script>
+const GN=0.1;let gas=makeGas(40,0.3),gV=1,gT=300,az=null;
+function newAZ(){const sys=rnd(-12,12,0);az=[];for(let th=0;th<=100;th+=20)az.push([th,1.0e5*(th+273+sys)/273*(1+randn()*0.004)]);}
+function boxDraw(g,S,V,Vmax,T,label){const x=20,y=20,h=S.h-60,wmax=S.w*0.42,w=wmax*V/Vmax;g.fillStyle=C.soft;g.fillRect(x,y,w,h);drawGas(g,gas,x,y,w,h,tempCol((T-200)/350),4);
+ g.strokeStyle=C.ink;g.lineWidth=4;g.beginPath();g.moveTo(x+wmax+10,y);g.lineTo(x,y);g.lineTo(x,y+h);g.lineTo(x+wmax+10,y+h);g.stroke();g.fillStyle=C.muted;g.fillRect(x+w,y+2,12,h-4);txt(g,label,x+wmax/2,S.h-20,C.ink,15,"center",true);}
+function gtick(dt){const s=0.35*Math.sqrt(gT/300);const ms=Math.sqrt(meanSq(gas)/3)||1;scaleGas(gas,s/ms);stepGas(gas,dt,1);}
+page("Gas Laws Lab","AQA 7408 · 3.6.2.2 · pV = constant, V/T = constant, p/T = constant",[
+{id:"bo",name:"Boyle's law",canvases:[["c1",0.45,"Gas being compressed and the p against V graph"]],controls:[["V","Volume V",1,5,0.1,2.5,"× 10⁻³ m³"]],
+ callout:"Fixed mass at <b>constant temperature</b>: p ∝ 1/V, so pV is constant. p against V is a curve; p against 1/V is a straight line through the origin.",
+ tick(dt){gT=300;gtick(dt);},
+ draw(){const S=setup($("c1"),0.45),g=S.g,V=v("V"),p=GN*R_*300/(V*1e-3);boxDraw(g,S,V,5,300,"T = 300 K (fixed)");
+  const ax=axes(g,{x:S.w*0.58,y:24,w:S.w*0.38,h:S.h-64},0,5,0,6,{xl:"V / 10⁻³ m³",yl:"p / 10⁵ Pa"});plot(g,ax,x=>GN*R_*300/(x*1e-3)/1e5,0.4,5,C.accent,3);dot(g,ax.X(V),ax.Y(p/1e5),C.bad,7);
+  st([`p = nRT/V = ${sf(p,3)} Pa`,`pV = ${(p*V*1e-3).toFixed(0)} J (constant)`,`1/V = ${(1/V).toFixed(3)} × 10³ m⁻³`]);}},
+{id:"ch",name:"Charles's law",canvases:[["c2",0.45,"Gas heated at constant pressure and the V against θ graph"]],controls:[["T","Temperature T",150,500,5,300,"K"]],
+ callout:"Fixed mass at <b>constant pressure</b>: V ∝ T (in kelvin). Extend the line back: it reaches V = 0 at −273 °C, absolute zero.",
+ tick(dt){gT=v("T");gtick(dt);},
+ draw(){const S=setup($("c2"),0.45),g=S.g,T=v("T"),V=GN*R_*T/1e5*1e3;boxDraw(g,S,V,4.2,T,"p = 1.0 × 10⁵ Pa (fixed)");
+  const ax=axes(g,{x:S.w*0.58,y:24,w:S.w*0.38,h:S.h-64},-300,250,0,4.5,{xl:"θ / °C",yl:"V / 10⁻³ m³",xstep:100});g.setLineDash([6,5]);plot(g,ax,th=>GN*R_*(th+273)/1e5*1e3,-273,-120,C.muted,2);g.setLineDash([]);plot(g,ax,th=>GN*R_*(th+273)/1e5*1e3,-120,227,C.accent,3);dot(g,ax.X(T-273),ax.Y(V),C.bad,7);
+  st([`θ = ${T-273} °C, T = ${T} K`,`V = nRT/p = ${V.toFixed(2)} × 10⁻³ m³`,`V/T = ${(V/T*1000).toFixed(3)} × 10⁻⁶ m³ K⁻¹ (constant)`]);}},
+{id:"pl",name:"Pressure law",canvases:[["c3",0.45,"Gas heated at constant volume and the p against T graph"]],controls:[["T3","Temperature T",150,500,5,300,"K"]],
+ callout:"Fixed mass at <b>constant volume</b>: p ∝ T (in kelvin). The molecules move faster, so they hit the walls harder and more often.",
+ tick(dt){gT=v("T3");gtick(dt);},
+ draw(){const S=setup($("c3"),0.45),g=S.g,T=v("T3"),p=GN*R_*T/2.5e-3;boxDraw(g,S,2.5,4.2,T,"V = 2.5 × 10⁻³ m³ (fixed)");
+  const ax=axes(g,{x:S.w*0.58,y:24,w:S.w*0.38,h:S.h-64},0,550,0,2,{xl:"T / K",yl:"p / 10⁵ Pa"});plot(g,ax,t=>GN*R_*t/2.5e-3/1e5,0,550,C.accent,3);dot(g,ax.X(T),ax.Y(p/1e5),C.bad,7);
+  st([`p = nRT/V = ${sf(p,3)} Pa`,`p/T = ${(p/T).toFixed(1)} Pa K⁻¹ (constant)`]);}},
+{id:"az",name:"Find absolute zero",canvases:[["c4",0.5,"Pressure against Celsius temperature extrapolated to zero"]],buttons:[["nd","New set of results","go",newAZ]],
+ callout:"A flask of air is heated in a water bath and p is read from a gauge. Draw the line of best fit and extend it to p = 0. The intercept on the θ axis is the estimate of absolute zero. Results are never perfect: compare with −273 °C.",
+ init(){newAZ();},
+ draw(){const S=setup($("c4"),0.5),g=S.g,xs=az.map(a=>a[0]),ys=az.map(a=>a[1]/1e5),f=fitLine(xs,ys),x0=-f.c/f.m;const ax=axes(g,box(S,56,22,20,34),-320,120,0,1.6,{xl:"θ / °C",yl:"p / 10⁵ Pa",xstep:50});
+  g.setLineDash([6,5]);plot(g,ax,x=>f.m*x+f.c,x0,0,C.muted,2);g.setLineDash([]);plot(g,ax,x=>f.m*x+f.c,0,110,C.accent,3);az.forEach(a=>dot(g,ax.X(a[0]),ax.Y(a[1]/1e5),C.bad,5));dot(g,ax.X(x0),ax.Y(0),C.good,8);
+  st([`gradient = ${sf(f.m*1e5,3)} Pa K⁻¹`,`intercept on p axis = ${sf(f.c*1e5,3)} Pa`,`p = 0 when θ = −c/m = <b>${x0.toFixed(0)} °C</b>`,`difference from −273 °C: ${(Math.abs(x0+273)/273*100).toFixed(1)}%`]);}}
+],[
+()=>{const p=rnd(1,3,1),V1=rnd(2,6,1),V2=rnd(0.5,1.9,1);return{q:`Gas at ${p} × 10⁵ Pa occupies ${V1} L. It is compressed at constant temperature to ${V2} L. Calculate the new pressure in units of 10⁵ Pa.`,u:"× 10⁵ Pa",a:p*V1/V2,w:[`p₁V₁ = p₂V₂`,`p₂ = ${p} × ${V1}/${V2} = ${sf(p*V1/V2,3)} × 10⁵ Pa`]};},
+()=>{const V=rnd(1,3,1),t1=rnd(0,40,0),t2=rnd(60,200,0);return{q:`Gas occupies ${V} L at ${t1} °C. It is heated at constant pressure to ${t2} °C. Calculate the new volume.`,u:"L",a:V*(t2+273)/(t1+273),w:[`T₁ = ${t1+273} K, T₂ = ${t2+273} K`,`V₂ = ${V} × ${t2+273}/${t1+273} = ${sf(V*(t2+273)/(t1+273),3)} L`]};},
+()=>{const p=rnd(1,3,1),T1=rnd(250,320,0),T2=rnd(330,500,0);return{q:`A sealed rigid can contains gas at ${p} × 10⁵ Pa and ${T1} K. It is heated to ${T2} K. Calculate the new pressure in units of 10⁵ Pa.`,u:"× 10⁵ Pa",a:p*T2/T1,w:[`p/T constant`,`p₂ = ${p} × ${T2}/${T1} = ${sf(p*T2/T1,3)} × 10⁵ Pa`]};},
+()=>{const p1=1.0,V1=rnd(2,5,1),T1=rnd(280,300,0),p2=rnd(2,5,1),T2=rnd(320,450,0);return{q:`Gas at ${p1}.0 × 10⁵ Pa, ${V1} L and ${T1} K is changed to ${p2} × 10⁵ Pa and ${T2} K. Calculate the new volume.`,u:"L",a:p1*V1*T2/(p2*T1),w:[`p₁V₁/T₁ = p₂V₂/T₂`,`V₂ = ${p1} × ${V1} × ${T2}/(${p2} × ${T1}) = ${sf(p1*V1*T2/(p2*T1),3)} L`]};}
+]);
+
+</script>
+</body></html>
