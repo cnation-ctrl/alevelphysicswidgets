@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Charge, Current and Potential Difference</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: whiteboard tool, one wide working panel under a slim header; large type for projection */
+:root{
+  --bg:#EEF3FA; --panel:#FFFFFF; --ink:#14213D; --muted:#56627A; --line:#D3DCE9;
+  --accent:#2F5DCC; --accent-ink:#FFFFFF; --warm:#D9661A; --good:#18915A; --bad:#C2372F; --soft:#E3EBF8;
+  --body:"Atkinson Hyperlegible",Verdana,Arial,sans-serif; --mono:"IBM Plex Mono",Consolas,"Courier New",monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0E1524; --panel:#16213A; --ink:#E9EFF9; --muted:#A0ACC2; --line:#2B3A57;
+  --accent:#86A8FF; --accent-ink:#0E1524; --warm:#F2A05A; --good:#4FCB8F; --bad:#F07B72; --soft:#1F2D4C; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E1524; --panel:#16213A; --ink:#E9EFF9; --muted:#A0ACC2; --line:#2B3A57;
+  --accent:#86A8FF; --accent-ink:#0E1524; --warm:#F2A05A; --good:#4FCB8F; --bad:#F07B72; --soft:#1F2D4C; color-scheme:dark}
+[hidden]{display:none!important}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:18px;line-height:1.45;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:18px 32px}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+header.top{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px 20px}
+header.top h1{font-size:clamp(26px,3.2vw,38px);margin:0;text-wrap:balance;letter-spacing:-.01em}
+header.top .spec{font-family:var(--mono);font-size:15px;color:var(--muted);letter-spacing:.04em}
+.tabs{display:flex;flex-wrap:wrap;gap:8px}
+.tabs button{font:inherit;font-weight:700;border:2px solid var(--line);background:var(--panel);color:var(--ink);padding:10px 18px;border-radius:10px;cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px;min-width:0}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}
+@media (max-width:820px){.grid2{grid-template-columns:minmax(0,1fr)}}
+label{font-weight:700;display:block;margin-bottom:4px}
+.row{display:flex;flex-wrap:wrap;gap:12px;align-items:end}
+input[type=number],input[type=text],select{font:inherit;font-family:var(--mono);font-size:20px;padding:8px 10px;border:2px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);min-width:0}
+input[type=range]{width:100%;accent-color:var(--accent)}
+button.go{font:inherit;font-weight:700;background:var(--accent);color:var(--accent-ink);border:0;border-radius:10px;padding:11px 20px;cursor:pointer}
+button.ghost{font:inherit;font-weight:700;background:transparent;color:var(--accent);border:2px solid var(--accent);border-radius:10px;padding:9px 18px;cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--warm);outline-offset:2px}
+.big{font-family:var(--mono);font-size:clamp(24px,3vw,34px);font-weight:600}
+.mono{font-family:var(--mono)}
+.muted{color:var(--muted)}
+.steps{display:flex;flex-direction:column;gap:6px;font-family:var(--mono);font-size:18px}
+.steps div{padding:6px 10px;background:var(--soft);border-radius:8px;overflow-x:auto}
+.good{color:var(--good)} .bad{color:var(--bad)} .warm{color:var(--warm)}
+.chip{display:inline-block;font-size:15px;font-weight:700;padding:3px 10px;border-radius:999px;background:var(--soft)}
+table{border-collapse:collapse;width:100%;font-size:17px}
+th,td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left}
+th{font-size:14px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.scroll{overflow-x:auto}
+canvas{display:block;width:100%;max-width:100%;touch-action:none}
+sup{font-size:.7em}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+.formula{font-family:var(--mono);font-size:20px;padding:10px 14px;background:var(--soft);border-radius:10px;overflow-x:auto}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:18px}
+.kv b{font-weight:700}
+.note{font-size:16px;color:var(--muted)}
+.callout{border-left:5px solid var(--warm);background:var(--soft);padding:10px 14px;border-radius:8px}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:15px}
+.legend span::before{content:"";display:inline-block;width:14px;height:4px;border-radius:2px;margin-right:6px;vertical-align:middle;background:var(--c)}
+</style>
+<style>body{margin:0}img{max-width:100%}select{max-width:100%;width:100%}.row>div{min-width:min(100%,150px)!important}</style>
+<script>
+const $=id=>document.getElementById(id);
+const cv=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const EPS0=8.85e-12, K=1/(4*Math.PI*8.85e-12), E_CH=1.60e-19, ME_=9.11e-31, MP=1.673e-27, G=6.67e-11;
+/* number in standard form as HTML, n significant figures */
+function sf(x,n=3){
+  if(x===0)return "0";
+  if(!isFinite(x))return "∞";
+  const neg=x<0;x=Math.abs(x);
+  let e=Math.floor(Math.log10(x));let m=x/Math.pow(10,e);let ms=m.toPrecision(n);
+  if(parseFloat(ms)>=10){e++;ms=(m/10).toPrecision(n);}
+  let s;
+  if(e>=-2&&e<n&&e<=3){s=x.toPrecision(n);if(s.includes("e"))s=ms+" × 10<sup>"+String(e).replace("-","−")+"</sup>";}
+  else s=ms+" × 10<sup>"+String(e).replace("-","−")+"</sup>";
+  return (neg?"−":"")+s;
+}
+/* plain-text version for canvas labels */
+function sft(x,n=3){return sf(x,n).replace(/<sup>/g,"^").replace(/<\/sup>/g,"").replace(" × 10^","e").replace(/e(−?\d+)/,(a,b)=>"×10"+sup(b));}
+function sup(s){const m={"0":"⁰","1":"¹","2":"²","3":"³","4":"⁴","5":"⁵","6":"⁶","7":"⁷","8":"⁸","9":"⁹","−":"⁻","-":"⁻"};return String(s).split("").map(c=>m[c]||c).join("");}
+function setup(c,aspect){
+  const dpr=window.devicePixelRatio||1,w=c.clientWidth||600,h=Math.round(w*aspect);
+  c.width=w*dpr;c.height=h*dpr;c.style.height=h+"px";
+  const g=c.getContext("2d");g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,w,h);
+  return {g,w,h};
+}
+function niceStep(range,target){const raw=range/target;const p=Math.pow(10,Math.floor(Math.log10(raw)));const f=raw/p;return (f<1.5?1:f<3?2:f<7?5:10)*p;}
+/* axes: box {x,y,w,h}; returns mapping functions */
+function axes(g,box,xmin,xmax,ymin,ymax,opt={}){
+  const X=x=>box.x+(x-xmin)/(xmax-xmin)*box.w, Y=y=>box.y+box.h-(y-ymin)/(ymax-ymin)*box.h;
+  const ink=cv("--ink"),line=cv("--line"),muted=cv("--muted");
+  g.save();g.font="14px "+cv("--body");g.lineWidth=1;
+  const xs=opt.xstep||niceStep(xmax-xmin,6), ys=opt.ystep||niceStep(ymax-ymin,5);
+  g.strokeStyle=line;g.fillStyle=muted;g.textAlign="center";g.textBaseline="top";
+  for(let x=Math.ceil(xmin/xs)*xs;x<=xmax+1e-9*xs;x+=xs){g.beginPath();g.moveTo(X(x),box.y);g.lineTo(X(x),box.y+box.h);g.stroke();g.fillText(opt.xfmt?opt.xfmt(x):+(Math.abs(x)<1e-9*xs?0:x).toPrecision(3),X(x),Math.min(box.y+box.h,Math.max(box.y,Y(0)))+4);}
+  g.textAlign="right";g.textBaseline="middle";
+  for(let y=Math.ceil(ymin/ys)*ys;y<=ymax+1e-9*ys;y+=ys){g.beginPath();g.moveTo(box.x,Y(y));g.lineTo(box.x+box.w,Y(y));g.stroke();g.fillText(opt.yfmt?opt.yfmt(y):+(Math.abs(y)<1e-9*ys?0:y).toPrecision(3),box.x-6,Y(y));}
+  g.strokeStyle=ink;g.lineWidth=2;g.beginPath();
+  const y0=Math.min(box.y+box.h,Math.max(box.y,Y(0)));g.moveTo(box.x,y0);g.lineTo(box.x+box.w,y0);
+  g.moveTo(box.x,box.y);g.lineTo(box.x,box.y+box.h);g.stroke();
+  g.fillStyle=ink;g.font="bold 15px "+cv("--body");
+  if(opt.xl){g.textAlign="right";g.textBaseline="bottom";g.fillText(opt.xl,box.x+box.w,y0-4);}
+  if(opt.yl){g.textAlign="left";g.textBaseline="top";g.fillText(opt.yl,box.x+6,box.y-2);}
+  g.restore();
+  return {X,Y};
+}
+function arrow(g,x1,y1,x2,y2,col,wid=3,head=10){
+  const a=Math.atan2(y2-y1,x2-x1);g.save();g.strokeStyle=col;g.fillStyle=col;g.lineWidth=wid;
+  g.beginPath();g.moveTo(x1,y1);g.lineTo(x2-Math.cos(a)*head*0.6,y2-Math.sin(a)*head*0.6);g.stroke();
+  g.beginPath();g.moveTo(x2,y2);g.lineTo(x2-head*Math.cos(a-0.4),y2-head*Math.sin(a-0.4));g.lineTo(x2-head*Math.cos(a+0.4),y2-head*Math.sin(a+0.4));g.closePath();g.fill();g.restore();
+}
+function tabs(onchange){
+  document.querySelectorAll(".tabs button").forEach(b=>b.addEventListener("click",()=>{
+    document.querySelectorAll(".tabs button").forEach(x=>x.setAttribute("aria-selected",x===b));
+    document.querySelectorAll("[data-panel]").forEach(p=>p.hidden=p.dataset.panel!==b.dataset.tab);
+    if(onchange)onchange(b.dataset.tab);
+  }));
+}
+function onResize(f){let t;window.addEventListener("resize",()=>{clearTimeout(t);t=setTimeout(f,80);});
+  if(window.matchMedia)window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change",f);}
+
+</script>
+<script>
+/* Circuit drawing helpers: draw a component between two points (horizontal or vertical) */
+const CIRC={
+  lw:2.5,
+  wire(g,pts,col){g.save();g.strokeStyle=col||cv("--ink");g.lineWidth=CIRC.lw;g.lineJoin="round";g.beginPath();g.moveTo(pts[0][0],pts[0][1]);for(let i=1;i<pts.length;i++)g.lineTo(pts[i][0],pts[i][1]);g.stroke();g.restore();},
+  dot(g,x,y){g.save();g.fillStyle=cv("--ink");g.beginPath();g.arc(x,y,4,0,7);g.fill();g.restore();},
+  /* type: R, lamp, diode, cell, battery, A, V, therm, ldr, varR, switchO, switchC, bulb; size = symbol length in px */
+  comp(g,type,x1,y1,x2,y2,opt={}){
+    const ink=opt.col||cv("--ink"),L=Math.hypot(x2-x1,y2-y1),a=Math.atan2(y2-y1,x2-x1),s=opt.size||Math.min(60,L*0.6);
+    g.save();g.translate(x1,y1);g.rotate(a);g.strokeStyle=ink;g.fillStyle=ink;g.lineWidth=CIRC.lw;g.lineCap="round";
+    const m=L/2,h=s/2;
+    const lead=(w)=>{g.beginPath();g.moveTo(0,0);g.lineTo(m-w,0);g.moveTo(m+w,0);g.lineTo(L,0);g.stroke();};
+    const panel=cv("--panel");
+    if(type==="R"||type==="therm"||type==="ldr"||type==="varR"){
+      lead(h);g.fillStyle=panel;g.fillRect(m-h,-s*0.18,s,s*0.36);g.strokeRect(m-h,-s*0.18,s,s*0.36);
+      if(type==="therm"){g.beginPath();g.moveTo(m-h-6,s*0.32);g.lineTo(m-h+8,s*0.32);g.lineTo(m+h-4,-s*0.32);g.stroke();}
+      if(type==="varR"){g.beginPath();g.moveTo(m-h*0.8,s*0.36);g.lineTo(m+h*0.8,-s*0.36);g.stroke();CIRC._head(g,m-h*0.8,s*0.36,m+h*0.8,-s*0.36,ink);}
+      if(type==="ldr"){g.beginPath();g.arc(m,0,s*0.62,0,7);g.stroke();
+        for(const dx of[-8,6]){CIRC._arrow(g,m+dx-14,-s*0.95,m+dx-2,-s*0.62,ink);} }
+    }else if(type==="lamp"){
+      const r=s*0.3;lead(r);g.fillStyle=panel;g.beginPath();g.arc(m,0,r,0,7);g.fill();g.stroke();
+      g.beginPath();g.moveTo(m-r*0.7,-r*0.7);g.lineTo(m+r*0.7,r*0.7);g.moveTo(m-r*0.7,r*0.7);g.lineTo(m+r*0.7,-r*0.7);g.stroke();
+    }else if(type==="A"||type==="V"){
+      const r=s*0.3;lead(r);g.fillStyle=panel;g.beginPath();g.arc(m,0,r,0,7);g.fill();g.stroke();
+      g.save();g.translate(m,0);g.rotate(-a);g.fillStyle=ink;g.font="bold "+Math.round(r*1.1)+"px "+cv("--body");g.textAlign="center";g.textBaseline="middle";g.fillText(type,0,1);g.restore();
+    }else if(type==="diode"){
+      const w=s*0.25;lead(w);g.beginPath();g.moveTo(m-w,-w);g.lineTo(m-w,w);g.lineTo(m+w,0);g.closePath();g.fill();
+      g.beginPath();g.moveTo(m+w,-w);g.lineTo(m+w,w);g.stroke();
+    }else if(type==="cell"||type==="battery"){
+      const gap=7,n=type==="battery"?2:1,w=n*gap*2;lead(w/2);
+      for(let i=0;i<n;i++){const xl=m-w/2+i*gap*2;g.lineWidth=CIRC.lw;g.beginPath();g.moveTo(xl,-s*0.38);g.lineTo(xl,s*0.38);g.stroke();
+        g.lineWidth=CIRC.lw*2;g.beginPath();g.moveTo(xl+gap,-s*0.2);g.lineTo(xl+gap,s*0.2);g.stroke();}
+      if(n===2){g.setLineDash([3,4]);g.lineWidth=1.5;g.beginPath();g.moveTo(m-w/2+gap,0);g.lineTo(m-w/2+gap*2,0);g.stroke();g.setLineDash([]);}
+    }else if(type==="switchO"||type==="switchC"){
+      lead(h*0.6);CIRC.dot(g,m-h*0.6,0);CIRC.dot(g,m+h*0.6,0);g.beginPath();g.moveTo(m-h*0.6,0);
+      if(type==="switchO")g.lineTo(m+h*0.5,-h*0.5);else g.lineTo(m+h*0.6,0);g.stroke();
+    }else{lead(0);}
+    g.restore();
+    if(opt.label){g.save();g.fillStyle=opt.lcol||ink;g.font=(opt.lfont||"bold 15px ")+cv("--body");
+      const mx=(x1+x2)/2,my=(y1+y2)/2,horiz=Math.abs(y2-y1)<1;const off=opt.loff||(s*0.45+12);
+      if(horiz){g.textAlign="center";g.textBaseline=opt.below?"top":"bottom";g.fillText(opt.label,mx,my+(opt.below?off:-off));}
+      else{g.textAlign=opt.left?"right":"left";g.textBaseline="middle";g.fillText(opt.label,mx+(opt.left?-off:off),my);}
+      g.restore();}
+  },
+  _head(g,x1,y1,x2,y2,c){const a=Math.atan2(y2-y1,x2-x1),hd=8;g.beginPath();g.moveTo(x2,y2);g.lineTo(x2-hd*Math.cos(a-0.45),y2-hd*Math.sin(a-0.45));g.lineTo(x2-hd*Math.cos(a+0.45),y2-hd*Math.sin(a+0.45));g.closePath();g.fillStyle=c;g.fill();},
+  _arrow(g,x1,y1,x2,y2,c){g.beginPath();g.moveTo(x1,y1);g.lineTo(x2,y2);g.stroke();CIRC._head(g,x1,y1,x2,y2,c);},
+  /* small current arrow on a wire */
+  iarrow(g,x,y,dir,col,label){const d={r:[1,0],l:[-1,0],u:[0,-1],d:[0,1]}[dir];g.save();g.fillStyle=col;g.strokeStyle=col;
+    g.beginPath();g.moveTo(x+d[0]*8,y+d[1]*8);g.lineTo(x-d[0]*6+d[1]*7,y-d[1]*6+d[0]*7);g.lineTo(x-d[0]*6-d[1]*7,y-d[1]*6-d[0]*7);g.closePath();g.fill();
+    if(label){g.font="bold 15px "+cv("--body");g.textAlign=d[0]?"center":"left";g.textBaseline=d[0]?"bottom":"middle";g.fillText(label,x+(d[0]?0:12),y+(d[0]?-10:0));}
+    g.restore();}
+};
+function fmt(x,n=3){return sf(x,n);}
+function rnd(a,b,step){const n=Math.round((b-a)/step);return +(a+step*Math.floor(Math.random()*(n+1))).toFixed(6);}
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+/* generic quiz engine: gen() returns {txt, ans, w (working html), unit, tol} */
+function quiz(gen){let Q={},score=0,tries=0;
+  function nq(){Q=gen();$("qtext").innerHTML=Q.txt;$("qa").value="";$("qfb").innerHTML="";$("qunit").innerHTML=Q.unit||"";}
+  function ck(){const a=parseFloat(String($("qa").value).replace("−","-"));const tol=Q.tol||0.02;const ok=isFinite(a)&&Math.abs(a-Q.ans)<=tol*Math.abs(Q.ans)+1e-12;tries++;if(ok)score++;
+    $("qfb").innerHTML=`<div class="${ok?"good":"bad"}"><b>${ok?"Correct.":"Not quite."}</b> Answer: ${sf(Q.ans,3)} ${Q.unit||""}</div>`+Q.w.map(x=>`<div>${x}</div>`).join("");
+    $("score").innerHTML=`<b>Score</b><span>${score} / ${tries}</span>`;}
+  $("qcheck").onclick=ck;$("qnew").onclick=nq;$("qa").addEventListener("keydown",e=>{if(e.key==="Enter")ck();});nq();}
+</script>
+</head>
+
+<body>
+<div class="wrap">
+<header class="top"><h1>Charge, Current and Potential Difference</h1><span class="spec">AQA 7408 · 3.5.1.1 · basics of electricity</span></header>
+<div class="tabs" role="tablist"><button data-tab="cur" aria-selected="true">Current: I = ΔQ/Δt</button><button data-tab="pd" aria-selected="false">Potential difference: V = W/Q</button><button data-tab="quiz" aria-selected="false">Quick-fire questions</button></div>
+<div data-panel="cur" class="grid2">
+ <div class="panel"><canvas id="wc" aria-label="Electrons drifting through a wire; conventional current shown the other way"></canvas>
+  <div class="legend" style="margin-top:8px"><span style="--c:#2F5DCC">electrons (charge −e) drift towards +</span><span style="--c:#D9661A">conventional current: + to −</span></div>
+  <div class="row" style="margin-top:10px"><button class="go" id="wpause">Pause</button><button class="ghost" id="wreset">Reset counter</button></div></div>
+ <div class="panel">
+  <label for="wI">Current I: <span id="wIv" class="mono"></span> A</label><input type="range" id="wI" min="0.1" max="5" step="0.1" value="1.5">
+  <label for="wt" style="margin-top:8px">Time Δt: <span id="wtv" class="mono"></span> s</label><input type="range" id="wt" min="1" max="120" step="1" value="10">
+  <div class="steps" id="wst" style="margin-top:12px"></div>
+  <div class="callout" style="margin-top:12px">Current is the <b>rate of flow of charge</b>: 1 A = 1 C s<sup>−1</sup>. In a metal the charge carriers are free electrons, moving the opposite way to the conventional current arrow. Each electron carries e = 1.60 × 10<sup>−19</sup> C.</div>
+ </div>
+</div>
+<div data-panel="pd" class="grid2" hidden>
+ <div class="panel"><canvas id="pc" aria-label="Energy transferred per coulomb across a component"></canvas></div>
+ <div class="panel">
+  <label for="pQ">Charge Q passing through the component: <span id="pQv" class="mono"></span> C</label><input type="range" id="pQ" min="1" max="50" step="1" value="10">
+  <label for="pW" style="margin-top:8px">Energy transferred W: <span id="pWv" class="mono"></span> J</label><input type="range" id="pW" min="1" max="300" step="1" value="60">
+  <label for="pI" style="margin-top:8px">Current (to find R = V/I): <span id="pIv" class="mono"></span> A</label><input type="range" id="pI" min="0.1" max="3" step="0.1" value="0.5">
+  <div class="steps" id="pst" style="margin-top:12px"></div>
+  <div class="callout" style="margin-top:12px">Potential difference is the <b>energy transferred per unit charge</b> between two points: 1 V = 1 J C<sup>−1</sup>. Resistance is defined by R = V/I and is measured in ohms (Ω = V A<sup>−1</sup>).</div>
+ </div>
+</div>
+<div data-panel="quiz" class="grid2" hidden>
+ <div class="panel"><p id="qtext" style="margin-top:0;font-size:22px"></p>
+  <div class="row"><div><label for="qa">Your answer <span id="qunit" class="muted"></span></label><input type="text" inputmode="decimal" id="qa" style="width:220px"></div><button class="go" id="qcheck">Check</button><button class="ghost" id="qnew">New question</button></div>
+  <div id="qfb" class="steps" style="margin-top:12px"></div></div>
+ <div class="panel"><div class="formula">I = ΔQ/Δt &nbsp;&nbsp; V = W/Q &nbsp;&nbsp; R = V/I</div><p class="note">e = 1.60 × 10<sup>−19</sup> C. Answers to 3 significant figures; give the number only, in the unit shown.</p><div class="kv" id="score"></div></div>
+</div>
+</div>
+<script>
+let run=true,elec=[],counted=0,last=0;
+function initE(){elec=[];for(let i=0;i<70;i++)elec.push({x:Math.random(),y:Math.random(),jx:0,jy:0});counted=0;}
+function draw(ts){const {g,w,h}=setup($("wc"),0.55);const I=+$("wI").value;const dt=last?Math.min(0.05,(ts-last)/1000):0;last=ts;
+ const top=h*0.22,bot=h*0.72,left=30,right=w-30;
+ g.fillStyle=cv("--soft");g.fillRect(left,top,right-left,bot-top);g.strokeStyle=cv("--line");g.strokeRect(left,top,right-left,bot-top);
+ /* lattice ions */
+ g.fillStyle=cv("--muted");for(let i=0;i<14;i++)for(let j=0;j<3;j++){g.globalAlpha=0.35;g.beginPath();g.arc(left+(i+0.5)*(right-left)/14,top+(j+0.5)*(bot-top)/3,7,0,7);g.fill();}
+ g.globalAlpha=1;
+ /* counting line */
+ const cx=(left+right)/2;g.setLineDash([6,5]);g.strokeStyle=cv("--warm");g.beginPath();g.moveTo(cx,top-10);g.lineTo(cx,bot+10);g.stroke();g.setLineDash([]);
+ const v=0.06*I;/* drift fraction per s */
+ for(const e of elec){const old=e.x;if(run){e.x-=v*dt;e.jx=(Math.random()-0.5)*0.004;e.jy=(Math.random()-0.5)*0.01;e.y=Math.min(0.97,Math.max(0.03,e.y+e.jy));}
+  if(old>=0.5&&e.x<0.5)counted++;if(e.x<0)e.x+=1;
+  g.fillStyle="#2F5DCC";g.beginPath();g.arc(left+(e.x+e.jx)*(right-left),top+e.y*(bot-top),5,0,7);g.fill();}
+ arrow(g,left+40,h*0.12,right-40,h*0.12,"#D9661A",4);g.fillStyle="#D9661A";g.font="bold 15px "+cv("--body");g.textAlign="center";g.fillText("conventional current I",cx,h*0.07);
+ arrow(g,right-40,h*0.85,left+40,h*0.85,"#2F5DCC",3);g.fillStyle="#2F5DCC";g.fillText("electron flow",cx,h*0.94);
+ g.fillStyle=cv("--ink");g.font="bold 18px "+cv("--body");g.textAlign="left";g.fillText("+",8,(top+bot)/2);g.textAlign="right";g.fillText("−",w-8,(top+bot)/2);
+ g.textAlign="left";g.font="14px "+cv("--body");g.fillStyle=cv("--muted");g.fillText("electrons crossing the dashed line (model): "+counted,left,top-8);
+ requestAnimationFrame(draw);}
+function winfo(){const I=+$("wI").value,t=+$("wt").value;$("wIv").textContent=I.toFixed(1);$("wtv").textContent=t;const Q=I*t,N=Q/E_CH;
+ $("wst").innerHTML=`<div>ΔQ = IΔt = ${I.toFixed(1)} × ${t} = <b>${sf(Q)} C</b></div><div>number of electrons N = ΔQ/e = ${sf(Q)} / 1.60 × 10<sup>−19</sup> = <b>${sf(N)}</b></div><div>per second: ${sf(I/E_CH)} electrons pass any point</div>`;}
+function pdraw(){const {g,w,h}=setup($("pc"),0.62);const Q=+$("pQ").value,W=+$("pW").value,V=W/Q;
+ const y=h*0.45;CIRC.wire(g,[[30,y],[w*0.3,y]]);CIRC.wire(g,[[w*0.7,y],[w-30,y]]);CIRC.comp(g,"R",w*0.3,y,w*0.7,y,{size:w*0.3,label:"component"});
+ g.fillStyle=cv("--ink");g.font="bold 16px "+cv("--body");g.textAlign="center";
+ const bh=Math.min(1,V/30)*h*0.25;
+ for(let i=0;i<3;i++){const xl=40+i*30,xr=w*0.72+i*30;
+  g.fillStyle="#D9661A";g.fillRect(xl-8,y-14-bh,16,bh);g.fillStyle="#2F5DCC";g.beginPath();g.arc(xl,y-8,7,0,7);g.fill();
+  g.fillStyle="#D9661A";g.fillRect(xr-8,y-16,16,2);g.fillStyle="#2F5DCC";g.beginPath();g.arc(xr,y-8,7,0,7);g.fill();}
+ g.fillStyle=cv("--muted");g.font="14px "+cv("--body");g.textAlign="left";g.fillText("1 C carries "+sf(V)+" J in",30,y-24-bh);
+ g.textAlign="right";g.fillText("… and leaves with "+sf(V)+" J less",w-30,y-30);
+ g.textAlign="center";g.fillText(Q+" C pass through in total: W = "+W+" J",w/2,h*0.6);
+ /* energy bar per coulomb */
+ const bw=Math.min(1,V/30)*(w*0.8);g.fillStyle="#D9661A";g.fillRect(w*0.1,h*0.72,bw,22);g.strokeStyle=cv("--line");g.strokeRect(w*0.1,h*0.72,w*0.8,22);
+ g.fillStyle=cv("--ink");g.textAlign="left";g.font="bold 16px "+cv("--body");g.fillText("energy per coulomb = "+sf(V)+" J C⁻¹ = "+sf(V)+" V",w*0.1,h*0.68);
+ g.font="13px "+cv("--body");g.fillStyle=cv("--muted");g.fillText("0 V",w*0.1,h*0.72+38);g.textAlign="right";g.fillText("30 V",w*0.9,h*0.72+38);}
+function pinfo(){const Q=+$("pQ").value,W=+$("pW").value,I=+$("pI").value;$("pQv").textContent=Q;$("pWv").textContent=W;$("pIv").textContent=I.toFixed(1);const V=W/Q;
+ $("pst").innerHTML=`<div>V = W/Q = ${W}/${Q} = <b>${sf(V)} V</b></div><div>R = V/I = ${sf(V)}/${I.toFixed(1)} = <b>${sf(V/I)} Ω</b></div><div>time for this charge at ${I.toFixed(1)} A: Δt = Q/I = ${sf(Q/I)} s</div>`;pdraw();}
+["wI","wt"].forEach(id=>$(id).addEventListener("input",winfo));["pQ","pW","pI"].forEach(id=>$(id).addEventListener("input",pinfo));
+$("wpause").onclick=()=>{run=!run;$("wpause").textContent=run?"Pause":"Play";};$("wreset").onclick=()=>{counted=0;};
+quiz(()=>{const k=pick(["Q","I","N","V","W","R","mAh"]);
+ if(k==="Q"){const I=pick([0.25,1.5,2.4,3.2]),t=pick([30,45,120,300]);return{txt:`A current of ${I} A flows for ${t} s. Calculate the charge that passes.`,ans:I*t,unit:"C",w:[`ΔQ = IΔt = ${I} × ${t} = ${sf(I*t)} C`]};}
+ if(k==="I"){const Q=pick([12,36,90,150]),t=pick([20,60,240]);return{txt:`${Q} C of charge passes a point in ${t} s. Calculate the current.`,ans:Q/t,unit:"A",w:[`I = ΔQ/Δt = ${Q}/${t} = ${sf(Q/t)} A`]};}
+ if(k==="N"){const I=pick([0.20,0.50,1.6]),t=pick([1,5,10]);const N=I*t/E_CH;return{txt:`A current of ${I} A flows for ${t} s. How many electrons pass a point? Give the number in the form like 3.1e18.`,ans:N,unit:"electrons",w:[`ΔQ = ${sf(I*t)} C`,`N = ΔQ/e = ${sf(I*t)}/1.60 × 10<sup>−19</sup> = ${sf(N)}`]};}
+ if(k==="V"){const W=pick([24,90,540]),Q=pick([4,15,45]);return{txt:`${W} J of energy is transferred when ${Q} C passes through a lamp. Calculate the pd across it.`,ans:W/Q,unit:"V",w:[`V = W/Q = ${W}/${Q} = ${sf(W/Q)} V`]};}
+ if(k==="W"){const V=pick([1.5,6.0,12,230]),Q=pick([20,50,200]);return{txt:`Calculate the energy transferred when ${Q} C passes through a pd of ${V} V.`,ans:V*Q,unit:"J",w:[`W = VQ = ${V} × ${Q} = ${sf(V*Q)} J`]};}
+ if(k==="R"){const V=pick([3.0,4.5,9.0,12]),I=pick([0.15,0.25,0.60]);return{txt:`The pd across a resistor is ${V} V and the current is ${I*1000} mA. Calculate its resistance.`,ans:V/I,unit:"Ω",w:[`I = ${I*1000} mA = ${I} A`,`R = V/I = ${V}/${I} = ${sf(V/I)} Ω`]};}
+ const c=pick([2000,3000,4500]),hrs=pick([2,5,8]);return{txt:`A phone battery is rated at ${c} mAh. Calculate the charge it can deliver.`,ans:c/1000*3600,unit:"C",w:[`${c} mAh = ${c/1000} A × 3600 s`,`Q = ${sf(c/1000*3600)} C`]};});
+tabs(t=>{if(t==="pd")pinfo();});onResize(()=>{pinfo();});initE();winfo();pinfo();requestAnimationFrame(draw);
+</script>
+</body></html>

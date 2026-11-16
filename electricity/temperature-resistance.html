@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Thermistors and Superconductors</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: whiteboard tool, one wide working panel under a slim header; large type for projection */
+:root{
+  --bg:#EEF3FA; --panel:#FFFFFF; --ink:#14213D; --muted:#56627A; --line:#D3DCE9;
+  --accent:#2F5DCC; --accent-ink:#FFFFFF; --warm:#D9661A; --good:#18915A; --bad:#C2372F; --soft:#E3EBF8;
+  --body:"Atkinson Hyperlegible",Verdana,Arial,sans-serif; --mono:"IBM Plex Mono",Consolas,"Courier New",monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0E1524; --panel:#16213A; --ink:#E9EFF9; --muted:#A0ACC2; --line:#2B3A57;
+  --accent:#86A8FF; --accent-ink:#0E1524; --warm:#F2A05A; --good:#4FCB8F; --bad:#F07B72; --soft:#1F2D4C; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E1524; --panel:#16213A; --ink:#E9EFF9; --muted:#A0ACC2; --line:#2B3A57;
+  --accent:#86A8FF; --accent-ink:#0E1524; --warm:#F2A05A; --good:#4FCB8F; --bad:#F07B72; --soft:#1F2D4C; color-scheme:dark}
+[hidden]{display:none!important}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:18px;line-height:1.45;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:18px 32px}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+header.top{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px 20px}
+header.top h1{font-size:clamp(26px,3.2vw,38px);margin:0;text-wrap:balance;letter-spacing:-.01em}
+header.top .spec{font-family:var(--mono);font-size:15px;color:var(--muted);letter-spacing:.04em}
+.tabs{display:flex;flex-wrap:wrap;gap:8px}
+.tabs button{font:inherit;font-weight:700;border:2px solid var(--line);background:var(--panel);color:var(--ink);padding:10px 18px;border-radius:10px;cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px;min-width:0}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}
+@media (max-width:820px){.grid2{grid-template-columns:minmax(0,1fr)}}
+label{font-weight:700;display:block;margin-bottom:4px}
+.row{display:flex;flex-wrap:wrap;gap:12px;align-items:end}
+input[type=number],input[type=text],select{font:inherit;font-family:var(--mono);font-size:20px;padding:8px 10px;border:2px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);min-width:0}
+input[type=range]{width:100%;accent-color:var(--accent)}
+button.go{font:inherit;font-weight:700;background:var(--accent);color:var(--accent-ink);border:0;border-radius:10px;padding:11px 20px;cursor:pointer}
+button.ghost{font:inherit;font-weight:700;background:transparent;color:var(--accent);border:2px solid var(--accent);border-radius:10px;padding:9px 18px;cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--warm);outline-offset:2px}
+.big{font-family:var(--mono);font-size:clamp(24px,3vw,34px);font-weight:600}
+.mono{font-family:var(--mono)}
+.muted{color:var(--muted)}
+.steps{display:flex;flex-direction:column;gap:6px;font-family:var(--mono);font-size:18px}
+.steps div{padding:6px 10px;background:var(--soft);border-radius:8px;overflow-x:auto}
+.good{color:var(--good)} .bad{color:var(--bad)} .warm{color:var(--warm)}
+.chip{display:inline-block;font-size:15px;font-weight:700;padding:3px 10px;border-radius:999px;background:var(--soft)}
+table{border-collapse:collapse;width:100%;font-size:17px}
+th,td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left}
+th{font-size:14px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.scroll{overflow-x:auto}
+canvas{display:block;width:100%;max-width:100%;touch-action:none}
+sup{font-size:.7em}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+.formula{font-family:var(--mono);font-size:20px;padding:10px 14px;background:var(--soft);border-radius:10px;overflow-x:auto}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:18px}
+.kv b{font-weight:700}
+.note{font-size:16px;color:var(--muted)}
+.callout{border-left:5px solid var(--warm);background:var(--soft);padding:10px 14px;border-radius:8px}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:15px}
+.legend span::before{content:"";display:inline-block;width:14px;height:4px;border-radius:2px;margin-right:6px;vertical-align:middle;background:var(--c)}
+</style>
+<style>body{margin:0}img{max-width:100%}select{max-width:100%;width:100%}.row>div{min-width:min(100%,150px)!important}</style>
+<script>
+const $=id=>document.getElementById(id);
+const cv=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const EPS0=8.85e-12, K=1/(4*Math.PI*8.85e-12), E_CH=1.60e-19, ME_=9.11e-31, MP=1.673e-27, G=6.67e-11;
+/* number in standard form as HTML, n significant figures */
+function sf(x,n=3){
+  if(x===0)return "0";
+  if(!isFinite(x))return "∞";
+  const neg=x<0;x=Math.abs(x);
+  let e=Math.floor(Math.log10(x));let m=x/Math.pow(10,e);let ms=m.toPrecision(n);
+  if(parseFloat(ms)>=10){e++;ms=(m/10).toPrecision(n);}
+  let s;
+  if(e>=-2&&e<n&&e<=3){s=x.toPrecision(n);if(s.includes("e"))s=ms+" × 10<sup>"+String(e).replace("-","−")+"</sup>";}
+  else s=ms+" × 10<sup>"+String(e).replace("-","−")+"</sup>";
+  return (neg?"−":"")+s;
+}
+/* plain-text version for canvas labels */
+function sft(x,n=3){return sf(x,n).replace(/<sup>/g,"^").replace(/<\/sup>/g,"").replace(" × 10^","e").replace(/e(−?\d+)/,(a,b)=>"×10"+sup(b));}
+function sup(s){const m={"0":"⁰","1":"¹","2":"²","3":"³","4":"⁴","5":"⁵","6":"⁶","7":"⁷","8":"⁸","9":"⁹","−":"⁻","-":"⁻"};return String(s).split("").map(c=>m[c]||c).join("");}
+function setup(c,aspect){
+  const dpr=window.devicePixelRatio||1,w=c.clientWidth||600,h=Math.round(w*aspect);
+  c.width=w*dpr;c.height=h*dpr;c.style.height=h+"px";
+  const g=c.getContext("2d");g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,w,h);
+  return {g,w,h};
+}
+function niceStep(range,target){const raw=range/target;const p=Math.pow(10,Math.floor(Math.log10(raw)));const f=raw/p;return (f<1.5?1:f<3?2:f<7?5:10)*p;}
+/* axes: box {x,y,w,h}; returns mapping functions */
+function axes(g,box,xmin,xmax,ymin,ymax,opt={}){
+  const X=x=>box.x+(x-xmin)/(xmax-xmin)*box.w, Y=y=>box.y+box.h-(y-ymin)/(ymax-ymin)*box.h;
+  const ink=cv("--ink"),line=cv("--line"),muted=cv("--muted");
+  g.save();g.font="14px "+cv("--body");g.lineWidth=1;
+  const xs=opt.xstep||niceStep(xmax-xmin,6), ys=opt.ystep||niceStep(ymax-ymin,5);
+  g.strokeStyle=line;g.fillStyle=muted;g.textAlign="center";g.textBaseline="top";
+  for(let x=Math.ceil(xmin/xs)*xs;x<=xmax+1e-9*xs;x+=xs){g.beginPath();g.moveTo(X(x),box.y);g.lineTo(X(x),box.y+box.h);g.stroke();g.fillText(opt.xfmt?opt.xfmt(x):+(Math.abs(x)<1e-9*xs?0:x).toPrecision(3),X(x),Math.min(box.y+box.h,Math.max(box.y,Y(0)))+4);}
+  g.textAlign="right";g.textBaseline="middle";
+  for(let y=Math.ceil(ymin/ys)*ys;y<=ymax+1e-9*ys;y+=ys){g.beginPath();g.moveTo(box.x,Y(y));g.lineTo(box.x+box.w,Y(y));g.stroke();g.fillText(opt.yfmt?opt.yfmt(y):+(Math.abs(y)<1e-9*ys?0:y).toPrecision(3),box.x-6,Y(y));}
+  g.strokeStyle=ink;g.lineWidth=2;g.beginPath();
+  const y0=Math.min(box.y+box.h,Math.max(box.y,Y(0)));g.moveTo(box.x,y0);g.lineTo(box.x+box.w,y0);
+  g.moveTo(box.x,box.y);g.lineTo(box.x,box.y+box.h);g.stroke();
+  g.fillStyle=ink;g.font="bold 15px "+cv("--body");
+  if(opt.xl){g.textAlign="right";g.textBaseline="bottom";g.fillText(opt.xl,box.x+box.w,y0-4);}
+  if(opt.yl){g.textAlign="left";g.textBaseline="top";g.fillText(opt.yl,box.x+6,box.y-2);}
+  g.restore();
+  return {X,Y};
+}
+function arrow(g,x1,y1,x2,y2,col,wid=3,head=10){
+  const a=Math.atan2(y2-y1,x2-x1);g.save();g.strokeStyle=col;g.fillStyle=col;g.lineWidth=wid;
+  g.beginPath();g.moveTo(x1,y1);g.lineTo(x2-Math.cos(a)*head*0.6,y2-Math.sin(a)*head*0.6);g.stroke();
+  g.beginPath();g.moveTo(x2,y2);g.lineTo(x2-head*Math.cos(a-0.4),y2-head*Math.sin(a-0.4));g.lineTo(x2-head*Math.cos(a+0.4),y2-head*Math.sin(a+0.4));g.closePath();g.fill();g.restore();
+}
+function tabs(onchange){
+  document.querySelectorAll(".tabs button").forEach(b=>b.addEventListener("click",()=>{
+    document.querySelectorAll(".tabs button").forEach(x=>x.setAttribute("aria-selected",x===b));
+    document.querySelectorAll("[data-panel]").forEach(p=>p.hidden=p.dataset.panel!==b.dataset.tab);
+    if(onchange)onchange(b.dataset.tab);
+  }));
+}
+function onResize(f){let t;window.addEventListener("resize",()=>{clearTimeout(t);t=setTimeout(f,80);});
+  if(window.matchMedia)window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change",f);}
+
+</script>
+<script>
+/* Circuit drawing helpers: draw a component between two points (horizontal or vertical) */
+const CIRC={
+  lw:2.5,
+  wire(g,pts,col){g.save();g.strokeStyle=col||cv("--ink");g.lineWidth=CIRC.lw;g.lineJoin="round";g.beginPath();g.moveTo(pts[0][0],pts[0][1]);for(let i=1;i<pts.length;i++)g.lineTo(pts[i][0],pts[i][1]);g.stroke();g.restore();},
+  dot(g,x,y){g.save();g.fillStyle=cv("--ink");g.beginPath();g.arc(x,y,4,0,7);g.fill();g.restore();},
+  /* type: R, lamp, diode, cell, battery, A, V, therm, ldr, varR, switchO, switchC, bulb; size = symbol length in px */
+  comp(g,type,x1,y1,x2,y2,opt={}){
+    const ink=opt.col||cv("--ink"),L=Math.hypot(x2-x1,y2-y1),a=Math.atan2(y2-y1,x2-x1),s=opt.size||Math.min(60,L*0.6);
+    g.save();g.translate(x1,y1);g.rotate(a);g.strokeStyle=ink;g.fillStyle=ink;g.lineWidth=CIRC.lw;g.lineCap="round";
+    const m=L/2,h=s/2;
+    const lead=(w)=>{g.beginPath();g.moveTo(0,0);g.lineTo(m-w,0);g.moveTo(m+w,0);g.lineTo(L,0);g.stroke();};
+    const panel=cv("--panel");
+    if(type==="R"||type==="therm"||type==="ldr"||type==="varR"){
+      lead(h);g.fillStyle=panel;g.fillRect(m-h,-s*0.18,s,s*0.36);g.strokeRect(m-h,-s*0.18,s,s*0.36);
+      if(type==="therm"){g.beginPath();g.moveTo(m-h-6,s*0.32);g.lineTo(m-h+8,s*0.32);g.lineTo(m+h-4,-s*0.32);g.stroke();}
+      if(type==="varR"){g.beginPath();g.moveTo(m-h*0.8,s*0.36);g.lineTo(m+h*0.8,-s*0.36);g.stroke();CIRC._head(g,m-h*0.8,s*0.36,m+h*0.8,-s*0.36,ink);}
+      if(type==="ldr"){g.beginPath();g.arc(m,0,s*0.62,0,7);g.stroke();
+        for(const dx of[-8,6]){CIRC._arrow(g,m+dx-14,-s*0.95,m+dx-2,-s*0.62,ink);} }
+    }else if(type==="lamp"){
+      const r=s*0.3;lead(r);g.fillStyle=panel;g.beginPath();g.arc(m,0,r,0,7);g.fill();g.stroke();
+      g.beginPath();g.moveTo(m-r*0.7,-r*0.7);g.lineTo(m+r*0.7,r*0.7);g.moveTo(m-r*0.7,r*0.7);g.lineTo(m+r*0.7,-r*0.7);g.stroke();
+    }else if(type==="A"||type==="V"){
+      const r=s*0.3;lead(r);g.fillStyle=panel;g.beginPath();g.arc(m,0,r,0,7);g.fill();g.stroke();
+      g.save();g.translate(m,0);g.rotate(-a);g.fillStyle=ink;g.font="bold "+Math.round(r*1.1)+"px "+cv("--body");g.textAlign="center";g.textBaseline="middle";g.fillText(type,0,1);g.restore();
+    }else if(type==="diode"){
+      const w=s*0.25;lead(w);g.beginPath();g.moveTo(m-w,-w);g.lineTo(m-w,w);g.lineTo(m+w,0);g.closePath();g.fill();
+      g.beginPath();g.moveTo(m+w,-w);g.lineTo(m+w,w);g.stroke();
+    }else if(type==="cell"||type==="battery"){
+      const gap=7,n=type==="battery"?2:1,w=n*gap*2;lead(w/2);
+      for(let i=0;i<n;i++){const xl=m-w/2+i*gap*2;g.lineWidth=CIRC.lw;g.beginPath();g.moveTo(xl,-s*0.38);g.lineTo(xl,s*0.38);g.stroke();
+        g.lineWidth=CIRC.lw*2;g.beginPath();g.moveTo(xl+gap,-s*0.2);g.lineTo(xl+gap,s*0.2);g.stroke();}
+      if(n===2){g.setLineDash([3,4]);g.lineWidth=1.5;g.beginPath();g.moveTo(m-w/2+gap,0);g.lineTo(m-w/2+gap*2,0);g.stroke();g.setLineDash([]);}
+    }else if(type==="switchO"||type==="switchC"){
+      lead(h*0.6);CIRC.dot(g,m-h*0.6,0);CIRC.dot(g,m+h*0.6,0);g.beginPath();g.moveTo(m-h*0.6,0);
+      if(type==="switchO")g.lineTo(m+h*0.5,-h*0.5);else g.lineTo(m+h*0.6,0);g.stroke();
+    }else{lead(0);}
+    g.restore();
+    if(opt.label){g.save();g.fillStyle=opt.lcol||ink;g.font=(opt.lfont||"bold 15px ")+cv("--body");
+      const mx=(x1+x2)/2,my=(y1+y2)/2,horiz=Math.abs(y2-y1)<1;const off=opt.loff||(s*0.45+12);
+      if(horiz){g.textAlign="center";g.textBaseline=opt.below?"top":"bottom";g.fillText(opt.label,mx,my+(opt.below?off:-off));}
+      else{g.textAlign=opt.left?"right":"left";g.textBaseline="middle";g.fillText(opt.label,mx+(opt.left?-off:off),my);}
+      g.restore();}
+  },
+  _head(g,x1,y1,x2,y2,c){const a=Math.atan2(y2-y1,x2-x1),hd=8;g.beginPath();g.moveTo(x2,y2);g.lineTo(x2-hd*Math.cos(a-0.45),y2-hd*Math.sin(a-0.45));g.lineTo(x2-hd*Math.cos(a+0.45),y2-hd*Math.sin(a+0.45));g.closePath();g.fillStyle=c;g.fill();},
+  _arrow(g,x1,y1,x2,y2,c){g.beginPath();g.moveTo(x1,y1);g.lineTo(x2,y2);g.stroke();CIRC._head(g,x1,y1,x2,y2,c);},
+  /* small current arrow on a wire */
+  iarrow(g,x,y,dir,col,label){const d={r:[1,0],l:[-1,0],u:[0,-1],d:[0,1]}[dir];g.save();g.fillStyle=col;g.strokeStyle=col;
+    g.beginPath();g.moveTo(x+d[0]*8,y+d[1]*8);g.lineTo(x-d[0]*6+d[1]*7,y-d[1]*6+d[0]*7);g.lineTo(x-d[0]*6-d[1]*7,y-d[1]*6-d[0]*7);g.closePath();g.fill();
+    if(label){g.font="bold 15px "+cv("--body");g.textAlign=d[0]?"center":"left";g.textBaseline=d[0]?"bottom":"middle";g.fillText(label,x+(d[0]?0:12),y+(d[0]?-10:0));}
+    g.restore();}
+};
+function fmt(x,n=3){return sf(x,n);}
+function rnd(a,b,step){const n=Math.round((b-a)/step);return +(a+step*Math.floor(Math.random()*(n+1))).toFixed(6);}
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+/* generic quiz engine: gen() returns {txt, ans, w (working html), unit, tol} */
+function quiz(gen){let Q={},score=0,tries=0;
+  function nq(){Q=gen();$("qtext").innerHTML=Q.txt;$("qa").value="";$("qfb").innerHTML="";$("qunit").innerHTML=Q.unit||"";}
+  function ck(){const a=parseFloat(String($("qa").value).replace("−","-"));const tol=Q.tol||0.02;const ok=isFinite(a)&&Math.abs(a-Q.ans)<=tol*Math.abs(Q.ans)+1e-12;tries++;if(ok)score++;
+    $("qfb").innerHTML=`<div class="${ok?"good":"bad"}"><b>${ok?"Correct.":"Not quite."}</b> Answer: ${sf(Q.ans,3)} ${Q.unit||""}</div>`+Q.w.map(x=>`<div>${x}</div>`).join("");
+    $("score").innerHTML=`<b>Score</b><span>${score} / ${tries}</span>`;}
+  $("qcheck").onclick=ck;$("qnew").onclick=nq;$("qa").addEventListener("keydown",e=>{if(e.key==="Enter")ck();});nq();}
+</script>
+</head>
+
+<body>
+<div class="wrap">
+<header class="top"><h1>Thermistors and Superconductors</h1><span class="spec">AQA 7408 · 3.5.1.3 · resistance and temperature</span></header>
+<div class="tabs" role="tablist"><button data-tab="lab" aria-selected="true">Resistance against temperature</button><button data-tab="quiz" aria-selected="false">Quick-fire questions</button></div>
+<div data-panel="lab" class="grid2">
+ <div class="panel"><canvas id="gc" aria-label="Resistance against temperature graph"></canvas>
+  <canvas id="lc" style="margin-top:10px" aria-label="Model of ions and charge carriers in the material"></canvas></div>
+ <div class="panel">
+  <label for="mat">Material</label>
+  <select id="mat"><option value="metal">metal wire (copper)</option><option value="ntc">NTC thermistor (semiconductor)</option><option value="hg">superconductor: mercury (T<sub>c</sub> = 4.2 K)</option><option value="ybco">superconductor: YBCO ceramic (T<sub>c</sub> = 92 K)</option></select>
+  <label for="T" style="margin-top:8px">Temperature: <span id="Tv" class="mono"></span></label><input type="range" id="T" min="0" max="400" step="1" value="293">
+  <div class="steps" id="st" style="margin-top:12px"></div>
+  <div class="callout" id="why" style="margin-top:12px"></div>
+ </div>
+</div>
+<div data-panel="quiz" class="grid2" hidden>
+ <div class="panel"><p id="qtext" style="margin-top:0;font-size:22px"></p>
+  <div class="row"><div><label for="qa">Your answer <span id="qunit" class="muted"></span></label><input type="text" inputmode="decimal" id="qa" style="width:220px"></div><button class="go" id="qcheck">Check</button><button class="ghost" id="qnew">New question</button></div>
+  <div id="qfb" class="steps" style="margin-top:12px"></div></div>
+ <div class="panel"><div class="formula">R ∝ L/A &nbsp;&nbsp; T(K) = θ(°C) + 273</div><p class="note">Read the graph values in the question. Answers to 3 significant figures.</p><div class="kv" id="score"></div></div>
+</div>
+</div>
+<script>
+let t0=0;
+const M={
+ metal:{R:T=>T<20?0.02:Math.max(0.02,(T-15)/278),max:1.5,lab:"R / Ω (1 Ω at 20 °C)",why:"<b>Metals</b>: as temperature rises the positive ions vibrate with larger amplitude, so the free electrons collide with them more often. Resistance increases (roughly linearly near room temperature).",carriers:()=>40},
+ ntc:{R:T=>Math.min(60,2.2*Math.exp(3900*(1/Math.max(T,150)-1/293))),max:20,lab:"R / kΩ (2.2 kΩ at 20 °C)",why:"<b>NTC thermistor</b>: a semiconductor. Heating gives more electrons enough energy to become free charge carriers. This effect beats the extra ion vibration, so resistance <b>decreases</b> as temperature rises (negative temperature coefficient).",carriers:T=>Math.round(8+40*Math.max(0,(T-150)/250))},
+ hg:{Tc:4.2,R:T=>T<4.2?0:0.0005+T/1200,max:0.4,lab:"R / Ω",why:"<b>Superconductor</b>: below the critical temperature T<sub>c</sub> the resistivity becomes exactly <b>zero</b>. A current can flow with no energy lost as heat. Mercury: T<sub>c</sub> = 4.2 K (needs liquid helium).",carriers:()=>40},
+ ybco:{Tc:92,R:T=>T<92?0:0.02+T/800,max:0.6,lab:"R / Ω",why:"<b>High-temperature superconductor</b> (YBCO ceramic): T<sub>c</sub> = 92 K, above the boiling point of liquid nitrogen (77 K), so it is cheaper to cool. Uses: MRI magnets, power cables, maglev, particle accelerator magnets.",carriers:()=>40}};
+function m(){return M[$("mat").value];}
+function draw(){const {g,w,h}=setup($("gc"),0.62);const c=m(),T=+$("T").value;const box={x:58,y:22,w:w-78,h:h-58};
+ const {X,Y}=axes(g,box,0,400,0,c.max,{xl:"T / K",yl:c.lab,xstep:50});
+ g.strokeStyle=cv("--accent");g.lineWidth=3;g.beginPath();let first=true;for(let t=0;t<=400;t+=0.5){const r=Math.min(c.max,c.R(t));if(first){g.moveTo(X(t),Y(r));first=false;}else g.lineTo(X(t),Y(r));}g.stroke();
+ if(c.Tc){g.setLineDash([5,4]);g.strokeStyle=cv("--bad");g.lineWidth=1.5;g.beginPath();g.moveTo(X(c.Tc),box.y);g.lineTo(X(c.Tc),box.y+box.h);g.stroke();g.setLineDash([]);g.fillStyle=cv("--bad");g.font="bold 14px "+cv("--body");g.textAlign="left";g.fillText("Tc = "+c.Tc+" K",X(c.Tc)+6,box.y+16);
+  if($("mat").value==="ybco"){g.strokeStyle=cv("--good");g.setLineDash([2,4]);g.beginPath();g.moveTo(X(77),box.y+30);g.lineTo(X(77),box.y+box.h);g.stroke();g.setLineDash([]);g.fillStyle=cv("--good");g.fillText("liquid N₂ 77 K",X(77)-110,box.y+44);}}
+ g.strokeStyle=cv("--line");g.setLineDash([3,4]);g.beginPath();g.moveTo(X(273),box.y);g.lineTo(X(273),box.y+box.h);g.stroke();g.setLineDash([]);g.fillStyle=cv("--muted");g.font="12px "+cv("--body");g.textAlign="center";g.fillText("0 °C",X(273),box.y+box.h-6);
+ g.fillStyle=cv("--warm");g.beginPath();g.arc(X(T),Y(Math.min(c.max,c.R(T))),7,0,7);g.fill();}
+function lattice(ts){const {g,w,h}=setup($("lc"),0.32);const T=+$("T").value,c=m();const sc=c.Tc&&T<c.Tc;const amp=Math.min(9,T/40);t0=ts/1000;
+ g.fillStyle=cv("--soft");g.fillRect(0,0,w,h);
+ for(let i=0;i<12;i++)for(let j=0;j<3;j++){const x=(i+0.5)*w/12+amp*Math.sin(t0*20+i*1.7+j),y=(j+0.5)*h/3+amp*Math.cos(t0*23+i+j*2.1);g.fillStyle="#9AA7BD";g.beginPath();g.arc(x,y,9,0,7);g.fill();g.fillStyle=cv("--ink");g.font="bold 11px "+cv("--body");g.textAlign="center";g.textBaseline="middle";g.fillText("+",x,y);}
+ const n=c.carriers(T);for(let k=0;k<n;k++){const sp=sc?1:0.6;const x=((k*97.3+t0*60*sp)%w),y=(k*53.7)%h+ (sc?0:Math.sin(t0*9+k)*6);g.fillStyle="#2F5DCC";g.beginPath();g.arc(x,y,4,0,7);g.fill();}
+ g.fillStyle=cv("--muted");g.font="13px "+cv("--body");g.textAlign="left";g.textBaseline="alphabetic";g.fillText(sc?"below Tc: zero resistance":"ion vibration grows with T; blue = free charge carriers",8,h-6);
+ requestAnimationFrame(lattice);}
+function info(){const T=+$("T").value,c=m();$("Tv").textContent=T+" K ("+(T-273)+" °C)";const r=c.R(T);
+ const unit=$("mat").value==="ntc"?" kΩ":" Ω";$("st").innerHTML=`<div>R = <b>${r===0?"0 (superconducting)":sf(r)+unit}</b></div>`+(c.Tc?`<div>${T<c.Tc?'<span class="good">below T<sub>c</sub>: resistivity = 0</span>':'above T<sub>c</sub>: normal resistance'}</div>`:"");
+ $("why").innerHTML=c.why;draw();}
+["mat","T"].forEach(id=>$(id).addEventListener("input",info));
+quiz(()=>{const k=pick(["conv","therm","pct","tc"]);
+ if(k==="conv"){const c=pick([-196,-269,20,100]);return{txt:`Convert ${c} °C to kelvin.`,ans:c+273,unit:"K",w:[`T = θ + 273 = ${c} + 273 = ${c+273} K`]};}
+ if(k==="therm"){const R1=pick([2.2,4.7]),f=pick([0.4,0.25]),V=pick([6,9]);const R2=R1*f;return{txt:`An NTC thermistor has resistance ${R1} kΩ at 20 °C. When warmed its resistance falls to ${sf(R2,2)} kΩ. With ${V} V across it, what is the new current in mA?`,ans:V/R2,unit:"mA",w:[`I = V/R = ${V}/${sf(R2,2)} kΩ = ${sf(V/R2)} mA`,`R fell, so I rose: thermistor conducts better when hot`]};}
+ if(k==="pct"){const a=0.0039,dT=pick([30,50,80]);return{txt:`Copper's resistance rises by about 0.39% per kelvin. A coil is 12.0 Ω at 20 °C. Estimate its resistance at ${20+dT} °C.`,ans:12*(1+a*dT),unit:"Ω",w:[`increase = 0.39% × ${dT} = ${(0.39*dT).toFixed(1)}%`,`R ≈ 12.0 × ${(1+a*dT).toFixed(3)} = ${sf(12*(1+a*dT))} Ω`]};}
+ const I=pick([200,500]),R=pick([0.5,1.2]);return{txt:`A copper magnet coil of resistance ${R} Ω carries ${I} A. Calculate the power wasted as heat, in kW. (A superconducting coil would waste none.)`,ans:I*I*R/1000,unit:"kW",w:[`P = I²R = ${I}² × ${R} = ${sf(I*I*R)} W = ${sf(I*I*R/1000)} kW`]};});
+tabs(t=>{if(t==="lab")info();});onResize(info);info();requestAnimationFrame(lattice);
+</script>
+</body></html>
